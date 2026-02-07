@@ -44,9 +44,9 @@ fn handle_normal_mode(app: &mut App, key: KeyEvent) {
         KeyCode::Char('l') | KeyCode::Right => app.move_cursor(Direction::Right),
         KeyCode::Tab => app.switch_half(),
 
-        // Layer navigation
-        KeyCode::Char('n') => app.next_layer(),
-        KeyCode::Char('p') => app.prev_layer(),
+        // Layer navigation (Shift+J/K)
+        KeyCode::Char('J') => app.next_layer(),
+        KeyCode::Char('K') => app.prev_layer(),
 
         // Color picking - initialize selection to current key's color
         KeyCode::Enter => {
@@ -64,9 +64,9 @@ fn handle_normal_mode(app: &mut App, key: KeyEvent) {
             app.quick_color(idx);
         }
 
-        // Copy/paste
+        // Copy/paste (vim-style)
         KeyCode::Char('y') => app.copy_color(),
-        KeyCode::Char('Y') => app.paste_color(),
+        KeyCode::Char('p') => app.paste_color(),
 
         // Undo/redo
         KeyCode::Char('u') => app.undo(),
@@ -74,6 +74,11 @@ fn handle_normal_mode(app: &mut App, key: KeyEvent) {
 
         // Save
         KeyCode::Char('s') => app.save(),
+        KeyCode::Char('S') => app.save_as(),
+
+        // Fade duration
+        KeyCode::Char('f') => app.increase_fade(),
+        KeyCode::Char('F') => app.decrease_fade(),
 
         // Help
         KeyCode::Char('?') => app.mode = Mode::Help,

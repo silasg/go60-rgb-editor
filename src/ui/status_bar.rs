@@ -24,15 +24,15 @@ impl<'a> Widget for StatusBarWidget<'a> {
         // Left side: file info
         let left = format!(" {} {} ", file_name, modified);
         
-        // Right side: help hint and mode
+        // Right side: help hint (only show mode if not Normal)
         let mode_str = match self.app.mode {
-            crate::app::Mode::Normal => "NORMAL",
-            crate::app::Mode::ColorPick => "COLOR",
-            crate::app::Mode::Help => "HELP",
-            crate::app::Mode::ConfirmQuit => "QUIT?",
+            crate::app::Mode::Normal => "",
+            crate::app::Mode::ColorPick => "COLOR  ",
+            crate::app::Mode::Help => "HELP  ",
+            crate::app::Mode::ConfirmQuit => "QUIT?  ",
         };
         
-        let right = format!(" {}  ?:help  q:quit  s:save ", mode_str);
+        let right = format!(" {}?:help  q:quit  s:save ", mode_str);
         
         // Status message if present
         let status_msg = self.app.status_message.as_ref().map(|(msg, _)| msg.as_str());

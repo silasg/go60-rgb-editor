@@ -20,7 +20,7 @@ impl<'a> LayerListWidget<'a> {
 impl<'a> Widget for LayerListWidget<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let block = Block::default()
-            .title(" Layers [n/p] ")
+            .title(" Layers [J/K] ")
             .borders(Borders::ALL);
 
         let items: Vec<ListItem> = self

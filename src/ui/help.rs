@@ -22,34 +22,31 @@ impl Widget for HelpWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let help_text = r#"
 NAVIGATION
-  h/←, j/↓, k/↑, l/→  Move cursor
-  Tab                  Switch between left/right half
-  n/p                  Next/Previous layer
+  h/←, j/↓, k/↑, l/→    Move cursor
+  Tab                   Switch between left/right half
+  J/K                   Next/Previous layer
 
 COLORS
-  Enter                Open color picker
-  0-9                  Quick select color (first 10)
-  Esc                  Cancel color selection
+  Enter                 Open color picker
+  0-9                   Quick select color (first 10)
+  Esc                   Cancel color selection
 
 EDITING
-  u                    Undo
-  Ctrl+r               Redo
-  y                    Copy color at cursor
-  Y                    Paste color at cursor
+  u                     Undo
+  Ctrl+r                Redo
+  y                     Copy color at cursor
+  p                     Paste color at cursor
+  f/F                   Increase/Decrease fade duration
 
 FILE
-  s                    Save
-  S                    Save as (not implemented)
-  q                    Quit (prompts if unsaved)
-  Q                    Force quit without saving
+  s                     Save
+  S                     Save as
+  q                     Quit (prompts if unsaved)
+  Q                     Force quit without saving
 
 OTHER
-  ?                    Show this help
-  Esc                  Close popup / Cancel
-
-LEGEND
-  *XX*  Lock indicator (on/off states)
-  →XX   Alias (points to another color)
+  ?                     Show this help
+  Esc                   Close popup / Cancel
 "#;
 
         let paragraph = Paragraph::new(help_text.trim())

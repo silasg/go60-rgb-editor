@@ -200,6 +200,32 @@ impl App {
         }
     }
 
+    /// Increase fade duration by 5ms
+    pub fn increase_fade(&mut self) {
+        if self.current_layer().is_some() {
+            self.push_undo();
+            if let Some(layer) = self.current_layer_mut() {
+                layer.fade_delay += 5;
+                let fade = layer.fade_delay;
+                self.modified = true;
+                self.show_status(&format!("Fade: {}ms", fade));
+            }
+        }
+    }
+
+    /// Decrease fade duration by 5ms (minimum 0)
+    pub fn decrease_fade(&mut self) {
+        if self.current_layer().is_some() {
+            self.push_undo();
+            if let Some(layer) = self.current_layer_mut() {
+                layer.fade_delay = layer.fade_delay.saturating_sub(5);
+                let fade = layer.fade_delay;
+                self.modified = true;
+                self.show_status(&format!("Fade: {}ms", fade));
+            }
+        }
+    }
+
     /// Set the color at current cursor position
     pub fn set_current_key_color(&mut self, color: &str) {
         self.push_undo();
@@ -257,6 +283,12 @@ impl App {
                 self.show_status(&format!("Save failed: {}", e));
             }
         }
+    }
+
+    /// Save as (placeholder - needs filename input UI)
+    pub fn save_as(&mut self) {
+        // TODO: Implement filename input mode
+        self.show_status("Save As: not yet implemented");
     }
 
     /// Show a status message

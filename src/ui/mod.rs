@@ -75,7 +75,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
     match app.mode {
         Mode::Help => {
             let help = HelpWidget::new();
-            let help_area = centered_rect(60, 80, area);
+            let help_area = centered_rect(62, 80, area);
             frame.render_widget(Clear, help_area);
             frame.render_widget(help, help_area);
         }
