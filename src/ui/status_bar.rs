@@ -27,7 +27,6 @@ impl<'a> Widget for StatusBarWidget<'a> {
         // Right side: help hint and mode
         let mode_str = match self.app.mode {
             crate::app::Mode::Normal => "NORMAL",
-            crate::app::Mode::LayerSelect => "LAYER",
             crate::app::Mode::ColorPick => "COLOR",
             crate::app::Mode::Help => "HELP",
             crate::app::Mode::ConfirmQuit => "QUIT?",

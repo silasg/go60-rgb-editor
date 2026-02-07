@@ -20,6 +20,7 @@ pub struct RgbColor {
 }
 
 impl RgbColor {
+    #[allow(dead_code)]
     pub fn new(r: u8, g: u8, b: u8) -> Self {
         Self { r, g, b }
     }
@@ -61,6 +62,7 @@ impl RgbColor {
     }
 
     /// Format as hex string for output
+    #[allow(dead_code)]
     pub fn to_hex(&self) -> String {
         format!("0x{:02X}{:02X}{:02X}", self.r, self.g, self.b)
     }
@@ -72,6 +74,7 @@ pub struct ColorDef {
     /// Short abbreviation (e.g., "RED", "CYN", "___")
     pub abbrev: String,
     /// RGB suffix name (e.g., "RED_RGB")
+    #[allow(dead_code)]
     pub rgb_name: String,
     /// The RGB color value
     pub rgb: RgbColor,
@@ -146,6 +149,7 @@ impl ColorPalette {
     }
 
     /// Get all regular (non-special) colors for the picker
+    #[allow(dead_code)]
     pub fn regular_colors(&self) -> Vec<&ColorDef> {
         self.colors
             .iter()

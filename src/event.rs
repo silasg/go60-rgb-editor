@@ -20,7 +20,6 @@ fn handle_key(app: &mut App, key: KeyEvent) {
         Mode::ColorPick => handle_color_pick_mode(app, key),
         Mode::Help => handle_help_mode(app, key),
         Mode::ConfirmQuit => handle_confirm_quit_mode(app, key),
-        Mode::LayerSelect => handle_layer_select_mode(app, key),
     }
 }
 
@@ -115,12 +114,4 @@ fn handle_confirm_quit_mode(app: &mut App, key: KeyEvent) {
     }
 }
 
-fn handle_layer_select_mode(app: &mut App, key: KeyEvent) {
-    match key.code {
-        KeyCode::Esc => app.mode = Mode::Normal,
-        KeyCode::Char('j') | KeyCode::Down => app.next_layer(),
-        KeyCode::Char('k') | KeyCode::Up => app.prev_layer(),
-        KeyCode::Enter => app.mode = Mode::Normal,
-        _ => {}
-    }
-}
+

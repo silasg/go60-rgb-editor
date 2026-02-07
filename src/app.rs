@@ -7,8 +7,6 @@ use crate::model::Config;
 pub enum Mode {
     /// Normal navigation mode
     Normal,
-    /// Layer selection mode
-    LayerSelect,
     /// Color picker mode
     ColorPick,
     /// Help popup

@@ -1,3 +1,9 @@
+//! Lexer utilities for parsing ZMK config files.
+//! These nom combinators are available for future use but the current
+//! parser uses simpler string operations in grammar.rs.
+
+#![allow(dead_code)]
+
 use nom::{
     IResult,
     bytes::complete::{tag, take_while1, take_while},

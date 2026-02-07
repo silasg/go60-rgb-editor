@@ -70,6 +70,7 @@ impl Layer {
     }
 
     /// Get the number of columns for a given row
+    #[allow(dead_code)]
     pub fn cols_for_row(row: usize) -> usize {
         if row < 4 {
             6 // Main rows
@@ -79,6 +80,7 @@ impl Layer {
     }
 
     /// Check if a position is valid
+    #[allow(dead_code)]
     pub fn is_valid_pos(row: usize, col: usize) -> bool {
         if row < 4 {
             col < 6
