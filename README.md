@@ -6,14 +6,18 @@ A terminal-based (TUI) RGB underglow editor for ZMK keyboards, specifically desi
 
 ## Features
 
-- **Visual keyboard layout** with real-time color display
-- **Layer navigation** - switch between RGB layers with `n`/`p`
-- **Color picker** - select from the full color palette
-- **Quick color assignment** - use `0-9` for fast color selection
+- **Visual keyboard layout** - color display matching the physical Go60 layout
+- **Layer management** - navigate between RGB layers, adjust fade duration
+- **Color picker** - select from the full color palette with keyboard navigation
+- **Quick color assignment** - number keys for fast color selection
 - **Undo/redo** - full edit history support
-- **Copy/paste colors** - quickly duplicate color assignments
-- **Special color indicators** - lock states and aliases clearly marked
-- **Roundtrip parsing** - preserves original file formatting
+- **Copy/paste colors** - duplicate color assignments between keys
+- **Clear colors** - quickly reset keys to black
+- **Clipboard export** - copy configuration to system clipboard
+- **Special color support** - lock indicators (CapsLock/NumLock/ScrollLock) and mouse speed aliases
+- **Roundtrip parsing** - preserves original file formatting and comments
+
+Press `?` in the editor to see all key bindings.
 
 ## Supported Keyboards
 
@@ -47,30 +51,6 @@ go60-rgb-editor <path-to-rgb-config.txt>
 go60-rgb-editor "Go60 TK Latest RGB scheme.txt"
 ```
 
-### Key Bindings
-
-| Key | Action |
-|-----|--------|
-| `h`/`j`/`k`/`l` or arrows | Navigate cursor |
-| `Tab` | Switch between left/right half |
-| `n`/`p` | Next/previous layer |
-| `Enter` | Open color picker |
-| `0-9` | Quick select color (first 10) |
-| `y` | Copy color at cursor |
-| `Y` | Paste color at cursor |
-| `u` | Undo |
-| `Ctrl+r` | Redo |
-| `s` | Save |
-| `q` | Quit (prompts if unsaved) |
-| `Q` | Force quit without saving |
-| `?` | Show help |
-
-### Color Indicators
-
-- Regular colors display as their 3-letter abbreviation (e.g., `RED`, `CYN`)
-- Lock indicators show as `*XX*` (toggle between off/on states)
-- Aliases show as `→XX` (reference to another color)
-
 ## Configuration File Format
 
 The editor works with TailorKey RGB configuration files. For detailed documentation on the file format and RGB configuration options, see:
@@ -93,5 +73,3 @@ cargo build --release
 # Run tests
 cargo test
 ```
-
-

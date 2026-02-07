@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod integration_tests {
+    use crate::model::{ColorDef, ColorKind, ColorPalette, Config, Layer, RgbColor};
     use crate::parser::{parse_config, write_config};
+    use std::path::PathBuf;
 
     const SAMPLE_CONFIG: &str = include_str!("../../Go60 TK Latest RGB scheme.txt");
 
@@ -103,5 +105,133 @@ mod integration_tests {
         // Check regular colors are not special
         let red = config.palette.get("RED").expect("Should have RED");
         assert!(!red.is_special(), "RED should not be marked as special");
+    }
+
+    #[test]
+    fn test_serialize_two_layers() {
+        // Create a config with HRM_WinLinx and Cursor layers from scratch
+        let mut config = Config::new(PathBuf::from("test.txt"));
+
+        // Set up minimal header and footer
+        config.raw_header = "// Test header\n".to_string();
+        config.raw_footer = "// Test footer\n".to_string();
+
+        // Create palette with colors used in these layers
+        let mut palette = ColorPalette::new();
+        for (abbrev, hex) in [
+            ("___", "000000"),
+            ("BCL", "FF0000"),
+            ("BNL", "FF0000"),
+            ("BSL", "FF0000"),
+            ("MAJ", "FF00FF"),
+            ("CYN", "00FFFF"),
+            ("CHU", "80FF00"),
+            ("YLW", "FFFF00"),
+            ("ORN", "FF8000"),
+            ("PNK", "FF66B2"),
+            ("WHT", "FFFFFF"),
+            ("GRN", "00FF00"),
+            ("DUG", "808080"),
+        ] {
+            palette.colors.push(ColorDef {
+                abbrev: abbrev.to_string(),
+                rgb_name: format!("{}_RGB", abbrev),
+                rgb: RgbColor::from_hex(hex).unwrap(),
+                kind: ColorKind::Regular,
+                comment: None,
+            });
+            palette.by_abbrev.insert(abbrev.to_string(), palette.colors.len() - 1);
+        }
+        config.palette = palette;
+
+        // Create HRM_WinLinx layer
+        let mut hrm = Layer::new("HRM_WinLinx".to_string(), "LAYER_HRM_WinLinx".to_string());
+        hrm.fade_delay = 30;
+        hrm.left_half = vec![
+            vec!["___", "___", "BCL", "BNL", "BSL", "___"].iter().map(|s| s.to_string()).collect(),
+            vec!["___", "___", "___", "___", "___", "___"].iter().map(|s| s.to_string()).collect(),
+            vec!["___", "MAJ", "CYN", "CHU", "YLW", "___"].iter().map(|s| s.to_string()).collect(),
+            vec!["___", "___", "___", "___", "___", "___"].iter().map(|s| s.to_string()).collect(),
+            vec!["___", "___", "___"].iter().map(|s| s.to_string()).collect(),
+            vec!["___", "___", "___"].iter().map(|s| s.to_string()).collect(),
+        ];
+        hrm.right_half = vec![
+            vec!["___", "___", "___", "___", "___", "___"].iter().map(|s| s.to_string()).collect(),
+            vec!["___", "___", "___", "___", "___", "___"].iter().map(|s| s.to_string()).collect(),
+            vec!["___", "YLW", "CHU", "CYN", "MAJ", "___"].iter().map(|s| s.to_string()).collect(),
+            vec!["___", "___", "___", "___", "___", "___"].iter().map(|s| s.to_string()).collect(),
+            vec!["___", "___", "___"].iter().map(|s| s.to_string()).collect(),
+            vec!["___", "___", "___"].iter().map(|s| s.to_string()).collect(),
+        ];
+        config.layers.push(hrm);
+
+        // Create Cursor layer
+        let mut cursor = Layer::new("Cursor".to_string(), "LAYER_Cursor".to_string());
+        cursor.fade_delay = 5;
+        cursor.left_half = vec![
+            vec!["___", "ORN", "ORN", "ORN", "ORN", "___"].iter().map(|s| s.to_string()).collect(),
+            vec!["___", "ORN", "MAJ", "MAJ", "ORN", "YLW"].iter().map(|s| s.to_string()).collect(),
+            vec!["WHT", "WHT", "WHT", "WHT", "WHT", "YLW"].iter().map(|s| s.to_string()).collect(),
+            vec!["MAJ", "CYN", "CYN", "CYN", "MAJ", "YLW"].iter().map(|s| s.to_string()).collect(),
+            vec!["___", "MAJ", "MAJ"].iter().map(|s| s.to_string()).collect(),
+            vec!["___", "DUG", "___"].iter().map(|s| s.to_string()).collect(),
+        ];
+        cursor.right_half = vec![
+            vec!["___", "___", "___", "___", "___", "___"].iter().map(|s| s.to_string()).collect(),
+            vec!["YLW", "ORN", "PNK", "PNK", "ORN", "___"].iter().map(|s| s.to_string()).collect(),
+            vec!["YLW", "GRN", "GRN", "GRN", "GRN", "WHT"].iter().map(|s| s.to_string()).collect(),
+            vec!["YLW", "GRN", "GRN", "GRN", "GRN", "MAJ"].iter().map(|s| s.to_string()).collect(),
+            vec!["MAJ", "MAJ", "MAJ"].iter().map(|s| s.to_string()).collect(),
+            vec!["CYN", "CYN", "CYN"].iter().map(|s| s.to_string()).collect(),
+        ];
+        config.layers.push(cursor);
+
+        // Serialize
+        let output = write_config(&config);
+
+        // Expected output
+        let expected = r#"// Test header
+// ==== PER-KEY-RGB <section begins> ====
+  / {
+    underglow-layer {
+      compatible = "zmk,underglow-layer";
+
+      #ifdef LAYER_HRM_WinLinx
+      HRM_WinLinx {
+        bindings = <
+          ___ ___ BCL BNL BSL ___                                     ___ ___ ___ ___ ___ ___
+          ___ ___ ___ ___ ___ ___                                     ___ ___ ___ ___ ___ ___
+          ___ MAJ CYN CHU YLW ___                                     ___ YLW CHU CYN MAJ ___
+          ___ ___ ___ ___ ___ ___                                     ___ ___ ___ ___ ___ ___
+                  ___ ___ ___                                             ___ ___ ___ 
+                                      ___ ___ ___     ___ ___ ___ 
+        >;
+        layer-id = <LAYER_HRM_WinLinx>;
+        fade-delay = <30>;
+      };
+      #endif
+
+      #ifdef LAYER_Cursor
+      Cursor {
+        bindings = <
+          ___ ORN ORN ORN ORN ___                                     ___ ___ ___ ___ ___ ___
+          ___ ORN MAJ MAJ ORN YLW                                     YLW ORN PNK PNK ORN ___
+          WHT WHT WHT WHT WHT YLW                                     YLW GRN GRN GRN GRN WHT
+          MAJ CYN CYN CYN MAJ YLW                                     YLW GRN GRN GRN GRN MAJ
+                  ___ MAJ MAJ                                             MAJ MAJ MAJ 
+                                      ___ DUG ___     CYN CYN CYN 
+        >;
+        layer-id = <LAYER_Cursor>;
+        fade-delay = <5>;
+      };
+      #endif
+
+    };
+  };
+  // ==== PER-KEY-RGB <section ends> =====
+// Test footer
+"#;
+
+        assert_eq!(output, expected, "Serialized output doesn't match expected");
     }
 }
