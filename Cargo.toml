@@ -1,0 +1,19 @@
+[package]
+name = "go60-rgb-editor"
+version = "0.1.0"
+edition = "2021"
+description = "TUI RGB Underglow Editor for ZMK Keyboards"
+license = "MIT"
+
+[dependencies]
+ratatui = "0.28"
+crossterm = "0.28"
+color-eyre = "0.6"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+nom = "7.1"
+unicode-width = "0.1"
+clap = { version = "4.5", features = ["derive"] }
+
+[dev-dependencies]
+pretty_assertions = "1.4"
