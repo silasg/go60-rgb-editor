@@ -75,15 +75,26 @@ pub fn draw(frame: &mut Frame, app: &App) {
     match app.mode {
         Mode::Help => {
             let help = HelpWidget::new();
-            let help_area = centered_rect(62, 80, area);
+            // Fixed size to fit all help content
+            let help_area = centered_rect_chars(58, 28, area);
             frame.render_widget(Clear, help_area);
             frame.render_widget(help, help_area);
         }
         Mode::ConfirmQuit => {
-            let popup = Paragraph::new("You have unsaved changes.\n\nPress 'y' to quit, 'n' to cancel, 's' to save and quit")
-                .block(Block::default().title("Confirm Quit").borders(Borders::ALL))
+            let text = "You have unsaved changes.\n\nPress 'y' to quit, 'n' to cancel, 's' to save and quit";
+            let popup = Paragraph::new(text)
+                .block(Block::default().title(" Confirm Quit ").borders(Borders::ALL))
                 .alignment(Alignment::Center);
-            let popup_area = centered_rect(50, 20, area);
+            let popup_area = centered_rect_fixed(text, area);
+            frame.render_widget(Clear, popup_area);
+            frame.render_widget(popup, popup_area);
+        }
+        Mode::ConfirmCopy => {
+            let text = "You have unsaved changes.\n\nPress 'y' to copy anyway, 'n' to cancel, 's' to save and copy";
+            let popup = Paragraph::new(text)
+                .block(Block::default().title(" Copy to Clipboard ").borders(Borders::ALL))
+                .alignment(Alignment::Center);
+            let popup_area = centered_rect_fixed(text, area);
             frame.render_widget(Clear, popup_area);
             frame.render_widget(popup, popup_area);
         }
@@ -91,7 +102,33 @@ pub fn draw(frame: &mut Frame, app: &App) {
     }
 }
 
-/// Create a centered rectangle within the given area
+/// Create a centered rectangle with fixed character dimensions
+fn centered_rect_chars(width: u16, height: u16, area: Rect) -> Rect {
+    let width = width.min(area.width);
+    let height = height.min(area.height);
+    let x = area.x + (area.width.saturating_sub(width)) / 2;
+    let y = area.y + (area.height.saturating_sub(height)) / 2;
+    Rect::new(x, y, width, height)
+}
+
+/// Create a centered rectangle sized to fit the text content
+fn centered_rect_fixed(text: &str, area: Rect) -> Rect {
+    let lines: Vec<&str> = text.lines().collect();
+    let max_line_width = lines.iter().map(|l| l.len()).max().unwrap_or(20);
+    let height = lines.len();
+    
+    // Add padding for borders (2) and some margin (2)
+    let width = (max_line_width + 4).min(area.width as usize) as u16;
+    let height = (height + 4).min(area.height as usize) as u16;
+    
+    let x = area.x + (area.width.saturating_sub(width)) / 2;
+    let y = area.y + (area.height.saturating_sub(height)) / 2;
+    
+    Rect::new(x, y, width, height)
+}
+
+/// Create a centered rectangle within the given area (percentage based)
+#[allow(dead_code)]
 fn centered_rect(percent_x: u16, percent_y: u16, area: Rect) -> Rect {
     let popup_layout = Layout::default()
         .direction(Direction::Vertical)

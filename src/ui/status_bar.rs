@@ -30,6 +30,7 @@ impl<'a> Widget for StatusBarWidget<'a> {
             crate::app::Mode::ColorPick => "COLOR  ",
             crate::app::Mode::Help => "HELP  ",
             crate::app::Mode::ConfirmQuit => "QUIT?  ",
+            crate::app::Mode::ConfirmCopy => "COPY?  ",
         };
         
         let right = format!(" {}?:help  q:quit  s:save ", mode_str);

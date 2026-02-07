@@ -13,6 +13,8 @@ pub enum Mode {
     Help,
     /// Confirm quit dialog
     ConfirmQuit,
+    /// Confirm copy to clipboard dialog
+    ConfirmCopy,
 }
 
 /// Cursor position on the keyboard
@@ -291,6 +293,52 @@ impl App {
         self.show_status("Save As: not yet implemented");
     }
 
+    /// Copy file contents to system clipboard
+    pub fn copy_to_clipboard(&mut self) {
+        use std::process::{Command, Stdio};
+        use std::io::Write;
+
+        // Read the current file contents
+        let content = match std::fs::read_to_string(&self.config.file_path) {
+            Ok(c) => c,
+            Err(e) => {
+                self.show_status(&format!("Read failed: {}", e));
+                return;
+            }
+        };
+
+        // Try pbcopy (macOS), then xclip (Linux), then xsel (Linux)
+        let result = Command::new("pbcopy")
+            .stdin(Stdio::piped())
+            .spawn()
+            .or_else(|_| Command::new("xclip").args(["-selection", "clipboard"]).stdin(Stdio::piped()).spawn())
+            .or_else(|_| Command::new("xsel").args(["--clipboard", "--input"]).stdin(Stdio::piped()).spawn());
+
+        match result {
+            Ok(mut child) => {
+                // Write to stdin and drop it to close the pipe
+                let write_result = {
+                    if let Some(mut stdin) = child.stdin.take() {
+                        stdin.write_all(content.as_bytes())
+                    } else {
+                        Err(std::io::Error::new(std::io::ErrorKind::Other, "no stdin"))
+                    }
+                };
+                // stdin is now dropped/closed, so pbcopy will complete
+                
+                if write_result.is_ok() {
+                    let _ = child.wait();
+                    self.show_status("Copied to clipboard!");
+                } else {
+                    self.show_status("Clipboard write failed");
+                }
+            }
+            Err(_) => {
+                self.show_status("No clipboard command available");
+            }
+        }
+    }
+
     /// Show a status message
     pub fn show_status(&mut self, message: &str) {
         self.status_message = Some((message.to_string(), Instant::now()));
@@ -328,6 +376,12 @@ impl App {
         } else {
             self.show_status("Nothing to paste");
         }
+    }
+
+    /// Clear color at cursor (set to black ___)
+    pub fn clear_color(&mut self) {
+        self.set_current_key_color("___");
+        self.show_status("Cleared");
     }
 
     /// Move selection in color picker
@@ -578,5 +632,38 @@ mod tests {
         app.move_cursor(Direction::Up);
         assert_eq!(app.cursor.row, 4);
         assert_eq!(app.cursor.col, 2);  // visual 5 - 2 = 3, but row 4 max is 2
+    }
+
+    #[test]
+    fn test_copy_to_clipboard_with_valid_file() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        // Create a temporary file with content
+        let mut temp_file = NamedTempFile::new().unwrap();
+        writeln!(temp_file, "test content").unwrap();
+        
+        let mut config = crate::model::Config::new(temp_file.path().to_path_buf());
+        config.palette = crate::model::ColorPalette::new();
+        let mut app = App::new(config);
+        
+        // Should not panic, and should set a status message
+        app.copy_to_clipboard();
+        assert!(app.status_message.is_some());
+    }
+
+    #[test]
+    fn test_copy_to_clipboard_with_nonexistent_file() {
+        use std::path::PathBuf;
+        
+        let mut config = crate::model::Config::new(PathBuf::from("/nonexistent/path/file.txt"));
+        config.palette = crate::model::ColorPalette::new();
+        let mut app = App::new(config);
+        
+        // Should not panic, should show error status
+        app.copy_to_clipboard();
+        assert!(app.status_message.is_some());
+        let (msg, _) = app.status_message.as_ref().unwrap();
+        assert!(msg.contains("Read failed"));
     }
 }

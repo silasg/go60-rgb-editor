@@ -32,17 +32,16 @@ COLORS
   Esc                   Cancel color selection
 
 EDITING
-  u                     Undo
-  Ctrl+r                Redo
+  u/Ctrl+r              Undo/Redo
   y                     Copy color at cursor
   p                     Paste color at cursor
   f/F                   Increase/Decrease fade duration
+  Del/Backspace         Clear color (set to black)
 
 FILE
-  s                     Save
-  S                     Save as
-  q                     Quit (prompts if unsaved)
-  Q                     Force quit without saving
+  s/S                   Save / Save as
+  c                     Copy file content to clipboard
+  q/Q                   Quit / Force quit
 
 OTHER
   ?                     Show this help

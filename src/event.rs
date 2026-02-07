@@ -20,6 +20,7 @@ fn handle_key(app: &mut App, key: KeyEvent) {
         Mode::ColorPick => handle_color_pick_mode(app, key),
         Mode::Help => handle_help_mode(app, key),
         Mode::ConfirmQuit => handle_confirm_quit_mode(app, key),
+        Mode::ConfirmCopy => handle_confirm_copy_mode(app, key),
     }
 }
 
@@ -68,6 +69,9 @@ fn handle_normal_mode(app: &mut App, key: KeyEvent) {
         KeyCode::Char('y') => app.copy_color(),
         KeyCode::Char('p') => app.paste_color(),
 
+        // Clear color (set to black)
+        KeyCode::Delete | KeyCode::Backspace => app.clear_color(),
+
         // Undo/redo
         KeyCode::Char('u') => app.undo(),
         KeyCode::Char('r') if key.modifiers.contains(KeyModifiers::CONTROL) => app.redo(),
@@ -79,6 +83,15 @@ fn handle_normal_mode(app: &mut App, key: KeyEvent) {
         // Fade duration
         KeyCode::Char('f') => app.increase_fade(),
         KeyCode::Char('F') => app.decrease_fade(),
+
+        // Copy file to clipboard
+        KeyCode::Char('c') => {
+            if app.modified {
+                app.mode = Mode::ConfirmCopy;
+            } else {
+                app.copy_to_clipboard();
+            }
+        }
 
         // Help
         KeyCode::Char('?') => app.mode = Mode::Help,
@@ -121,6 +134,26 @@ fn handle_confirm_quit_mode(app: &mut App, key: KeyEvent) {
         KeyCode::Char('s') | KeyCode::Char('S') => {
             app.save();
             app.should_quit = true;
+        }
+        _ => {}
+    }
+}
+
+fn handle_confirm_copy_mode(app: &mut App, key: KeyEvent) {
+    match key.code {
+        KeyCode::Char('y') | KeyCode::Char('Y') => {
+            // Copy without saving
+            app.copy_to_clipboard();
+            app.mode = Mode::Normal;
+        }
+        KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
+            app.mode = Mode::Normal;
+        }
+        KeyCode::Char('s') | KeyCode::Char('S') => {
+            // Save first, then copy
+            app.save();
+            app.copy_to_clipboard();
+            app.mode = Mode::Normal;
         }
         _ => {}
     }
