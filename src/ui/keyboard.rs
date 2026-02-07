@@ -34,26 +34,25 @@ impl<'a> KeyboardWidget<'a> {
                 .fg(Color::White)
         };
 
-        // Add visual indicator for selected key
+        // Add bold for selected key
         let style = if is_selected {
-            style.add_modifier(Modifier::BOLD | Modifier::REVERSED)
+            style.add_modifier(Modifier::BOLD)
         } else {
             style
         };
 
-        // Check if this is a special color
-        let display = if let Some(color) = self.palette.get(color_abbrev) {
-            if color.is_special() {
-                format!("*{}*", &color_abbrev[..color_abbrev.len().min(2)])
-            } else {
-                format!("{:^3}", color_abbrev)
-            }
-        } else {
-            format!("{:^3}", color_abbrev)
-        };
+        // Display the color abbreviation (no special markers - legend explains special types)
+        let display = format!("{:^3}", color_abbrev);
 
         // Render the key (3 chars wide)
         buf.set_string(x, y, &display, style);
+
+        // Draw selection pointers around selected key
+        if is_selected {
+            let pointer_style = Style::default().fg(Color::Yellow);
+            buf.set_string(x.saturating_sub(1), y, "▶", pointer_style);
+            buf.set_string(x + 3, y, "◀", pointer_style);
+        }
     }
 }
 

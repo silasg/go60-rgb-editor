@@ -48,8 +48,15 @@ fn handle_normal_mode(app: &mut App, key: KeyEvent) {
         KeyCode::Char('n') => app.next_layer(),
         KeyCode::Char('p') => app.prev_layer(),
 
-        // Color picking
-        KeyCode::Enter => app.mode = Mode::ColorPick,
+        // Color picking - initialize selection to current key's color
+        KeyCode::Enter => {
+            if let Some(color) = app.get_current_color() {
+                if let Some(&idx) = app.config.palette.by_abbrev.get(color) {
+                    app.selected_color = idx;
+                }
+            }
+            app.mode = Mode::ColorPick;
+        }
 
         // Quick color selection (0-9)
         KeyCode::Char(c) if c.is_ascii_digit() => {

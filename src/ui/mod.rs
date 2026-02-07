@@ -38,8 +38,8 @@ pub fn draw(frame: &mut Frame, app: &App) {
     let content_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Min(10),    // Keyboard
-            Constraint::Length(8),  // Color picker
+            Constraint::Min(8),     // Keyboard (reduced height)
+            Constraint::Length(10), // Color picker (more room for legend sections)
             Constraint::Length(1),  // Status bar
         ])
         .split(main_layout[1]);
@@ -50,10 +50,19 @@ pub fn draw(frame: &mut Frame, app: &App) {
         frame.render_widget(keyboard_widget, content_layout[0]);
     }
 
-    // Color picker
+    // Color picker - use app.selected_color when in ColorPick mode, 
+    // otherwise show current key's color
+    let selected_color_idx = if matches!(app.mode, Mode::ColorPick) {
+        app.selected_color
+    } else {
+        app.get_current_color()
+            .and_then(|color| app.config.palette.by_abbrev.get(color).copied())
+            .unwrap_or(0)
+    };
+    
     let color_picker = ColorPickerWidget::new(
         &app.config.palette,
-        app.selected_color,
+        selected_color_idx,
         matches!(app.mode, Mode::ColorPick),
     );
     frame.render_widget(color_picker, content_layout[1]);

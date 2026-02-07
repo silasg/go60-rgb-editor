@@ -106,6 +106,7 @@ impl ColorDef {
     }
 
     /// Check if this is a special color (lock indicator or alias)
+    #[allow(dead_code)]
     pub fn is_special(&self) -> bool {
         !matches!(self.kind, ColorKind::Regular)
     }
