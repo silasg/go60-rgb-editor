@@ -74,20 +74,66 @@ impl App {
         self.config.layers.get_mut(self.current_layer)
     }
 
+    /// Convert data column to visual column for a given row
+    /// Visual columns account for the shifted positions of rows 4 and 5
+    fn to_visual_col(&self, row: usize, col: usize) -> usize {
+        if self.cursor.is_left {
+            match row {
+                0..=3 => col,
+                4 => col + 2,      // Row 4 shifted 2 keys toward center
+                5 => col + 5,      // Row 5 (thumbs) shifted 5 keys toward center
+                _ => col,
+            }
+        } else {
+            // Right half is mirrored
+            match row {
+                0..=3 => col,
+                4 => col + 1,      // Row 4 shifted toward center
+                5 => col.saturating_sub(2),  // Row 5 (thumbs) toward center
+                _ => col,
+            }
+        }
+    }
+
+    /// Convert visual column to data column for a given row
+    /// Returns the closest valid data column
+    fn from_visual_col(&self, row: usize, visual_col: usize) -> usize {
+        let max_col = if row < 4 { 6 } else { 3 };
+        
+        let data_col = if self.cursor.is_left {
+            match row {
+                0..=3 => visual_col,
+                4 => visual_col.saturating_sub(2),
+                5 => visual_col.saturating_sub(5),
+                _ => visual_col,
+            }
+        } else {
+            match row {
+                0..=3 => visual_col,
+                4 => visual_col.saturating_sub(1),
+                5 => visual_col + 2,
+                _ => visual_col,
+            }
+        };
+        
+        data_col.min(max_col - 1)
+    }
+
     /// Move cursor in a direction
     pub fn move_cursor(&mut self, direction: Direction) {
         match direction {
             Direction::Up => {
                 if self.cursor.row > 0 {
+                    let visual_col = self.to_visual_col(self.cursor.row, self.cursor.col);
                     self.cursor.row -= 1;
-                    // Adjust column for thumb rows
-                    self.clamp_cursor_col();
+                    self.cursor.col = self.from_visual_col(self.cursor.row, visual_col);
                 }
             }
             Direction::Down => {
                 if self.cursor.row < 5 {
+                    let visual_col = self.to_visual_col(self.cursor.row, self.cursor.col);
                     self.cursor.row += 1;
-                    self.clamp_cursor_col();
+                    self.cursor.col = self.from_visual_col(self.cursor.row, visual_col);
                 }
             }
             Direction::Left => {
@@ -296,5 +342,137 @@ impl App {
             let abbrev = color.abbrev.clone();
             self.set_current_key_color(&abbrev);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_test_app() -> App {
+        use crate::model::{Config, ColorPalette, Layer};
+        use std::path::PathBuf;
+
+        let mut config = Config::new(PathBuf::from("test.txt"));
+        config.palette = ColorPalette::new();
+        config.layers.push(Layer::new("Test".to_string(), "LAYER_Test".to_string()));
+        
+        App::new(config)
+    }
+
+    #[test]
+    fn test_visual_col_mapping_left_half() {
+        let mut app = create_test_app();
+        app.cursor.is_left = true;
+
+        // Row 0-3: visual = data
+        assert_eq!(app.to_visual_col(0, 0), 0);
+        assert_eq!(app.to_visual_col(3, 5), 5);
+
+        // Row 4: visual = data + 2
+        assert_eq!(app.to_visual_col(4, 0), 2);
+        assert_eq!(app.to_visual_col(4, 1), 3);
+        assert_eq!(app.to_visual_col(4, 2), 4);
+
+        // Row 5: visual = data + 5
+        assert_eq!(app.to_visual_col(5, 0), 5);
+        assert_eq!(app.to_visual_col(5, 1), 6);
+        assert_eq!(app.to_visual_col(5, 2), 7);
+    }
+
+    #[test]
+    fn test_from_visual_col_left_half() {
+        let mut app = create_test_app();
+        app.cursor.is_left = true;
+
+        // Row 0-3: data = visual
+        assert_eq!(app.from_visual_col(3, 0), 0);
+        assert_eq!(app.from_visual_col(3, 5), 5);
+
+        // Row 4: data = visual - 2, clamped to 0-2
+        assert_eq!(app.from_visual_col(4, 2), 0);
+        assert_eq!(app.from_visual_col(4, 3), 1);
+        assert_eq!(app.from_visual_col(4, 4), 2);
+        assert_eq!(app.from_visual_col(4, 0), 0);  // Clamped
+
+        // Row 5: data = visual - 5, clamped to 0-2
+        assert_eq!(app.from_visual_col(5, 5), 0);
+        assert_eq!(app.from_visual_col(5, 6), 1);
+        assert_eq!(app.from_visual_col(5, 7), 2);
+    }
+
+    #[test]
+    fn test_navigation_down_from_row3_to_row4_left() {
+        let mut app = create_test_app();
+        app.cursor.is_left = true;
+
+        // r3,2 -> r4,0 (visual col 2 maps to data col 0 in row 4)
+        app.cursor.row = 3;
+        app.cursor.col = 2;
+        app.move_cursor(Direction::Down);
+        assert_eq!(app.cursor.row, 4);
+        assert_eq!(app.cursor.col, 0);
+
+        // r3,3 -> r4,1
+        app.cursor.row = 3;
+        app.cursor.col = 3;
+        app.move_cursor(Direction::Down);
+        assert_eq!(app.cursor.row, 4);
+        assert_eq!(app.cursor.col, 1);
+
+        // r3,4 -> r4,2
+        app.cursor.row = 3;
+        app.cursor.col = 4;
+        app.move_cursor(Direction::Down);
+        assert_eq!(app.cursor.row, 4);
+        assert_eq!(app.cursor.col, 2);
+
+        // r3,5 -> r5,0 (visual col 5 maps to data col 0 in row 5)
+        app.cursor.row = 3;
+        app.cursor.col = 5;
+        app.move_cursor(Direction::Down);
+        assert_eq!(app.cursor.row, 4);
+        // visual col 5 in row 4 would be data col 3, clamped to 2
+        assert_eq!(app.cursor.col, 2);
+    }
+
+    #[test]
+    fn test_navigation_up_from_row4_to_row3_left() {
+        let mut app = create_test_app();
+        app.cursor.is_left = true;
+
+        // r4,0 -> r3,2 (visual col 2)
+        app.cursor.row = 4;
+        app.cursor.col = 0;
+        app.move_cursor(Direction::Up);
+        assert_eq!(app.cursor.row, 3);
+        assert_eq!(app.cursor.col, 2);
+
+        // r4,1 -> r3,3 (visual col 3)
+        app.cursor.row = 4;
+        app.cursor.col = 1;
+        app.move_cursor(Direction::Up);
+        assert_eq!(app.cursor.row, 3);
+        assert_eq!(app.cursor.col, 3);
+
+        // r4,2 -> r3,4 (visual col 4)
+        app.cursor.row = 4;
+        app.cursor.col = 2;
+        app.move_cursor(Direction::Up);
+        assert_eq!(app.cursor.row, 3);
+        assert_eq!(app.cursor.col, 4);
+    }
+
+    #[test]
+    fn test_navigation_up_from_row5_to_row4_left() {
+        let mut app = create_test_app();
+        app.cursor.is_left = true;
+
+        // r5,0 -> r4,2 (visual col 5, closest in row 4 is col 2 at visual 4)
+        app.cursor.row = 5;
+        app.cursor.col = 0;
+        app.move_cursor(Direction::Up);
+        assert_eq!(app.cursor.row, 4);
+        assert_eq!(app.cursor.col, 2);  // visual 5 - 2 = 3, but row 4 max is 2
     }
 }

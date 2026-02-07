@@ -55,9 +55,9 @@ impl RgbColor {
     /// Get a contrasting foreground color (black or white)
     pub fn contrasting_fg(&self) -> ratatui::style::Color {
         if self.luminance() > 128.0 {
-            ratatui::style::Color::Black
+            ratatui::style::Color::Rgb(0, 0, 0)  // True black
         } else {
-            ratatui::style::Color::White
+            ratatui::style::Color::Rgb(255, 255, 255)  // True white
         }
     }
 
@@ -186,6 +186,31 @@ mod tests {
         let black = RgbColor::new(0, 0, 0);
         assert!(white.luminance() > 200.0);
         assert!(black.luminance() < 1.0);
+    }
+
+    #[test]
+    fn test_contrasting_fg_returns_true_black_and_white() {
+        use ratatui::style::Color;
+
+        // Bright colors should get true black text
+        let yellow = RgbColor::new(255, 255, 0);
+        assert_eq!(yellow.contrasting_fg(), Color::Rgb(0, 0, 0));
+
+        let white = RgbColor::new(255, 255, 255);
+        assert_eq!(white.contrasting_fg(), Color::Rgb(0, 0, 0));
+
+        let cyan = RgbColor::new(0, 255, 255);
+        assert_eq!(cyan.contrasting_fg(), Color::Rgb(0, 0, 0));
+
+        // Dark colors should get true white text
+        let black = RgbColor::new(0, 0, 0);
+        assert_eq!(black.contrasting_fg(), Color::Rgb(255, 255, 255));
+
+        let dark_blue = RgbColor::new(0, 0, 128);
+        assert_eq!(dark_blue.contrasting_fg(), Color::Rgb(255, 255, 255));
+
+        let purple = RgbColor::new(122, 0, 255);
+        assert_eq!(purple.contrasting_fg(), Color::Rgb(255, 255, 255));
     }
 
     #[test]

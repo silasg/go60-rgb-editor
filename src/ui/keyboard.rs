@@ -72,7 +72,7 @@ impl<'a> Widget for KeyboardWidget<'a> {
 
         let key_width: u16 = 4;  // 3 chars + 1 space
         let half_width = 6 * key_width;
-        let gap = 6;  // Gap between halves
+        let gap = 20;  // Gap between halves (wider to accommodate last row shift)
 
         // Calculate starting positions
         let left_start_x = inner.x + 2;
@@ -108,48 +108,58 @@ impl<'a> Widget for KeyboardWidget<'a> {
             }
         }
 
-        // Render inner thumb row (row 4) - indented
-        let thumb_y = start_y + 5;
-        let thumb_indent = 3 * key_width;  // Indent by 3 keys
+        // Render row 4 (outer 3 keys) - directly below main rows
+        let row4_y = start_y + 4;
+        let center_shift = 2 * key_width;  // Shift toward center
+        
+        // Left half row 4: shifted right toward center
+        let left_row4_x = left_start_x + center_shift;
 
         if self.layer.left_half.len() > 4 {
             for col in 0..self.layer.left_half[4].len().min(3) {
-                let x = left_start_x + thumb_indent + col as u16 * key_width;
+                let x = left_row4_x + col as u16 * key_width;
                 let color = &self.layer.left_half[4][col];
                 let is_selected = self.cursor.is_left && self.cursor.row == 4 && self.cursor.col == col;
-                self.render_key(buf, x, thumb_y, color, is_selected);
+                self.render_key(buf, x, row4_y, color, is_selected);
             }
         }
+
+        // Right half row 4: shifted left toward center (symmetric)
+        let right_row4_x = right_start_x + 3 * key_width - center_shift;
 
         if self.layer.right_half.len() > 4 {
             for col in 0..self.layer.right_half[4].len().min(3) {
-                let x = right_start_x + col as u16 * key_width;
+                let x = right_row4_x + col as u16 * key_width;
                 let color = &self.layer.right_half[4][col];
                 let is_selected = !self.cursor.is_left && self.cursor.row == 4 && self.cursor.col == col;
+                self.render_key(buf, x, row4_y, color, is_selected);
+            }
+        }
+
+        // Render row 5 (thumbs / inner 3 keys) - one line lower
+        let thumb_y = start_y + 5;
+        
+        // Left half thumbs: after row4 position
+        let left_thumb_x = left_row4_x + 3 * key_width;
+
+        if self.layer.left_half.len() > 5 {
+            for col in 0..self.layer.left_half[5].len().min(3) {
+                let x = left_thumb_x + col as u16 * key_width;
+                let color = &self.layer.left_half[5][col];
+                let is_selected = self.cursor.is_left && self.cursor.row == 5 && self.cursor.col == col;
                 self.render_key(buf, x, thumb_y, color, is_selected);
             }
         }
 
-        // Render outer thumb row (row 5) - centered
-        let outer_thumb_y = start_y + 6;
-        let outer_thumb_left_x = left_start_x + half_width - 3 * key_width + key_width; // Right-aligned in left half area
-        let outer_thumb_right_x = right_start_x;
-
-        if self.layer.left_half.len() > 5 {
-            for col in 0..self.layer.left_half[5].len().min(3) {
-                let x = outer_thumb_left_x + col as u16 * key_width;
-                let color = &self.layer.left_half[5][col];
-                let is_selected = self.cursor.is_left && self.cursor.row == 5 && self.cursor.col == col;
-                self.render_key(buf, x, outer_thumb_y, color, is_selected);
-            }
-        }
+        // Right half thumbs: before row4 position (symmetric)
+        let right_thumb_x = right_start_x - center_shift;
 
         if self.layer.right_half.len() > 5 {
             for col in 0..self.layer.right_half[5].len().min(3) {
-                let x = outer_thumb_right_x + col as u16 * key_width;
+                let x = right_thumb_x + col as u16 * key_width;
                 let color = &self.layer.right_half[5][col];
                 let is_selected = !self.cursor.is_left && self.cursor.row == 5 && self.cursor.col == col;
-                self.render_key(buf, x, outer_thumb_y, color, is_selected);
+                self.render_key(buf, x, thumb_y, color, is_selected);
             }
         }
 

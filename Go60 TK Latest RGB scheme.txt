@@ -314,9 +314,9 @@
       Cursor_macOS {
         bindings = <
           ___ ORN ORN ORN ORN ___                                     ___ ___ ___ ___ ___ ___
-          ___ ORN CYN CYN ORN YLW                                     YLW ORN PNK PNK ORN ___
-          WHT WHT WHT WHT WHT YLW                                     YLW GRN GRN GRN GRN WHT
-          MAJ CYN CYN CYN MAJ YLW                                     YLW GRN GRN GRN GRN MAJ
+          ___ ORN CYN CYN ORN YLW                                     ORN ORN PNK PNK YLW ___
+          WHT WHT WHT WHT WHT YLW                                     GRN GRN GRN GRN YLW WHT
+          MAJ CYN CYN CYN MAJ YLW                                     GRN ___ ___ GRN YLW MAJ
                   ___ MAJ MAJ                                             MAJ MAJ MAJ 
                                       ___ DUG ___     CYN CYN CYN 
         >;
