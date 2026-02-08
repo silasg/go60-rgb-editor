@@ -3,7 +3,7 @@ use ratatui::{
     widgets::{Block, Borders, Widget},
 };
 
-use crate::model::{ColorPalette, Half, Layer, RgbPos};
+use crate::model::{ColorPalette, Half, Layer, RgbPos, ROW_COUNT, MAIN_ROW_COLS, THUMB_ROW_COLS};
 
 const KEY_CELL_WIDTH: u16 = 4;
 const HALF_GAP: u16 = 20;
@@ -113,32 +113,36 @@ impl<'a> Widget for KeyboardWidget<'a> {
             return;
         }
 
-        let half_width = 6 * KEY_CELL_WIDTH;
-        let left_start_x = inner.x + 2;
-        let right_start_x = left_start_x + half_width + HALF_GAP;
+        let left_base_x = inner.x + 2;
+        let right_base_x = left_base_x + MAIN_ROW_COLS as u16 * KEY_CELL_WIDTH + HALF_GAP;
         let start_y = inner.y + 1;
         let center_shift = 2 * KEY_CELL_WIDTH;
+        let thumb_width = THUMB_ROW_COLS as u16 * KEY_CELL_WIDTH;
 
-        // Main rows (0-3)
-        for row in 0..4 {
+        // Precompute X position and column count per row
+        // Rows 0-3: full-width main rows, flush left/right
+        // Row 4: inner thumb keys, shifted toward center
+        // Row 5: outer thumb keys, shifted further toward center
+        let left_x = [
+            left_base_x, left_base_x, left_base_x, left_base_x,
+            left_base_x + center_shift,
+            left_base_x + center_shift + thumb_width,
+        ];
+        let right_x = [
+            right_base_x, right_base_x, right_base_x, right_base_x,
+            right_base_x + thumb_width - center_shift,
+            right_base_x - center_shift,
+        ];
+        let cols = [
+            MAIN_ROW_COLS, MAIN_ROW_COLS, MAIN_ROW_COLS, MAIN_ROW_COLS,
+            THUMB_ROW_COLS, THUMB_ROW_COLS,
+        ];
+
+        for row in 0..ROW_COUNT {
             let y = start_y + row as u16;
-            self.render_half_row(buf, &self.layer.left_half, &HalfRowPos { half: Half::Left, row, max_cols: 6, x: left_start_x, y });
-            self.render_half_row(buf, &self.layer.right_half, &HalfRowPos { half: Half::Right, row, max_cols: 6, x: right_start_x, y });
+            self.render_half_row(buf, &self.layer.left_half, &HalfRowPos { half: Half::Left, row, max_cols: cols[row], x: left_x[row], y });
+            self.render_half_row(buf, &self.layer.right_half, &HalfRowPos { half: Half::Right, row, max_cols: cols[row], x: right_x[row], y });
         }
-
-        // Row 4 (inner thumb keys)
-        let row4_y = start_y + 4;
-        let left_row4_x = left_start_x + center_shift;
-        let right_row4_x = right_start_x + 3 * KEY_CELL_WIDTH - center_shift;
-        self.render_half_row(buf, &self.layer.left_half, &HalfRowPos { half: Half::Left, row: 4, max_cols: 3, x: left_row4_x, y: row4_y });
-        self.render_half_row(buf, &self.layer.right_half, &HalfRowPos { half: Half::Right, row: 4, max_cols: 3, x: right_row4_x, y: row4_y });
-
-        // Row 5 (outer thumb keys)
-        let thumb_y = start_y + 5;
-        let left_thumb_x = left_row4_x + 3 * KEY_CELL_WIDTH;
-        let right_thumb_x = right_start_x - center_shift;
-        self.render_half_row(buf, &self.layer.left_half, &HalfRowPos { half: Half::Left, row: 5, max_cols: 3, x: left_thumb_x, y: thumb_y });
-        self.render_half_row(buf, &self.layer.right_half, &HalfRowPos { half: Half::Right, row: 5, max_cols: 3, x: right_thumb_x, y: thumb_y });
 
         // Selection info
         if inner.height > 8 {

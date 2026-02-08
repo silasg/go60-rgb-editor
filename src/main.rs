@@ -1,9 +1,11 @@
 mod app;
+mod cursor;
 mod event;
 mod model;
 mod parser;
 mod tui;
 mod ui;
+mod undo;
 
 use std::path::PathBuf;
 use std::time::Duration;

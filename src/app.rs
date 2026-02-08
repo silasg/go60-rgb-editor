@@ -1,8 +1,10 @@
 use std::time::Instant;
 
-use crate::model::{Config, Half, Layer, RgbPos, ROW_COUNT, COLORS_PER_PICKER_ROW};
+use crate::cursor;
+pub use crate::cursor::Direction;
+use crate::model::{Config, RgbPos, COLORS_PER_PICKER_ROW};
+use crate::undo::UndoHistory;
 
-const MAX_UNDO_HISTORY: usize = 50;
 const FADE_STEP_MS: u16 = 5;
 const STATUS_TIMEOUT_SECS: u64 = 3;
 
@@ -38,14 +40,6 @@ pub enum Mode {
     SaveAsConfirm,
 }
 
-#[derive(Debug, Clone, Copy)]
-pub enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
-}
-
 #[derive(Default)]
 struct ColorCategories {
     regular: Vec<usize>,
@@ -68,8 +62,7 @@ pub struct App {
     pub current_layer: usize,
     pub cursor: RgbPos,
     pub selected_color: usize,
-    pub undo_stack: Vec<Config>,
-    pub redo_stack: Vec<Config>,
+    history: UndoHistory<Config>,
     pub status_message: Option<(String, Instant)>,
     pub modified: bool,
     pub should_quit: bool,
@@ -85,8 +78,7 @@ impl App {
             current_layer: 0,
             cursor: RgbPos::default(),
             selected_color: 0,
-            undo_stack: Vec::new(),
-            redo_stack: Vec::new(),
+            history: UndoHistory::new(),
             status_message: None,
             modified: false,
             should_quit: false,
@@ -103,102 +95,12 @@ impl App {
         self.config.layers.get_mut(self.current_layer)
     }
 
-    /// Convert data column to visual column for a given row
-    /// Visual columns account for the shifted positions of rows 4 and 5
-    fn to_visual_col(&self, row: usize, col: usize) -> usize {
-        if self.cursor.half.is_left() {
-            match row {
-                0..=3 => col,
-                4 => col + 2,      // Row 4 shifted 2 keys toward center
-                5 => col + 5,      // Row 5 (thumbs) shifted 5 keys toward center
-                _ => col,
-            }
-        } else {
-            // Right half is mirrored
-            match row {
-                0..=3 => col,
-                4 => col + 1,      // Row 4 shifted toward center
-                5 => col.saturating_sub(2),  // Row 5 (thumbs) toward center
-                _ => col,
-            }
-        }
-    }
-
-    /// Convert visual column to data column for a given row
-    /// Returns the closest valid data column
-    fn visual_to_data_col(&self, row: usize, visual_col: usize) -> usize {
-        let max_col = Layer::cols_for_row(row);
-        
-        let data_col = if self.cursor.half.is_left() {
-            match row {
-                0..=3 => visual_col,
-                4 => visual_col.saturating_sub(2),
-                5 => visual_col.saturating_sub(5),
-                _ => visual_col,
-            }
-        } else {
-            match row {
-                0..=3 => visual_col,
-                4 => visual_col.saturating_sub(1),
-                5 => visual_col + 2,
-                _ => visual_col,
-            }
-        };
-        
-        data_col.min(max_col - 1)
-    }
-
     pub fn move_cursor(&mut self, direction: Direction) {
-        match direction {
-            Direction::Up => {
-                if self.cursor.row > 0 {
-                    let visual_col = self.to_visual_col(self.cursor.row, self.cursor.col);
-                    self.cursor.row -= 1;
-                    self.cursor.col = self.visual_to_data_col(self.cursor.row, visual_col);
-                }
-            }
-            Direction::Down => {
-                if self.cursor.row < ROW_COUNT - 1 {
-                    let visual_col = self.to_visual_col(self.cursor.row, self.cursor.col);
-                    self.cursor.row += 1;
-                    self.cursor.col = self.visual_to_data_col(self.cursor.row, visual_col);
-                }
-            }
-            Direction::Left => {
-                let max_col = self.max_col_for_row();
-                if self.cursor.col > 0 {
-                    self.cursor.col -= 1;
-                } else if self.cursor.half == Half::Right {
-                    self.cursor.half = Half::Left;
-                    self.cursor.col = max_col - 1;
-                }
-            }
-            Direction::Right => {
-                let max_col = self.max_col_for_row();
-                if self.cursor.col < max_col - 1 {
-                    self.cursor.col += 1;
-                } else if self.cursor.half == Half::Left {
-                    self.cursor.half = Half::Right;
-                    self.cursor.col = 0;
-                }
-            }
-        }
-    }
-
-    fn clamp_cursor_col(&mut self) {
-        let max_col = self.max_col_for_row();
-        if self.cursor.col >= max_col {
-            self.cursor.col = max_col - 1;
-        }
-    }
-
-    fn max_col_for_row(&self) -> usize {
-        Layer::cols_for_row(self.cursor.row)
+        cursor::move_cursor(&mut self.cursor, direction);
     }
 
     pub fn switch_half(&mut self) {
-        self.cursor.half = self.cursor.half.opposite();
-        self.clamp_cursor_col();
+        cursor::switch_half(&mut self.cursor);
     }
 
     pub fn next_layer(&mut self) {
@@ -247,16 +149,11 @@ impl App {
     }
 
     pub fn push_undo(&mut self) {
-        self.undo_stack.push(self.config.clone());
-        self.redo_stack.clear();
-        if self.undo_stack.len() > MAX_UNDO_HISTORY {
-            self.undo_stack.remove(0);
-        }
+        self.history.save(self.config.clone());
     }
 
     pub fn undo(&mut self) {
-        if let Some(prev_config) = self.undo_stack.pop() {
-            self.redo_stack.push(self.config.clone());
+        if let Some(prev_config) = self.history.undo(self.config.clone()) {
             self.config = prev_config;
             self.modified = true;
             self.show_status("Undo");
@@ -266,8 +163,7 @@ impl App {
     }
 
     pub fn redo(&mut self) {
-        if let Some(next_config) = self.redo_stack.pop() {
-            self.undo_stack.push(self.config.clone());
+        if let Some(next_config) = self.history.redo(self.config.clone()) {
             self.config = next_config;
             self.modified = true;
             self.show_status("Redo");
@@ -499,6 +395,7 @@ impl App {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::Half;
 
     fn create_test_app() -> App {
         use crate::model::{Config, ColorPalette, Layer};
@@ -509,82 +406,6 @@ mod tests {
         config.layers.push(Layer::new("Test".to_string(), "LAYER_Test".to_string()));
         
         App::new(config)
-    }
-
-    #[test]
-    fn test_visual_col_mapping_left_half() {
-        // Arrange
-        let mut app = create_test_app();
-        app.cursor.half = Half::Left;
-
-        // Act - main rows (0-3) have no offset
-        let main_row_first_col_visual = app.to_visual_col(0, 0);
-        let main_row_last_col_visual = app.to_visual_col(3, 5);
-
-        // Assert
-        assert_eq!(main_row_first_col_visual, 0);
-        assert_eq!(main_row_last_col_visual, 5);
-
-        // Act - row 4 (inner thumb) is offset by 2 toward center
-        let inner_thumb_col0_visual = app.to_visual_col(4, 0);
-        let inner_thumb_col1_visual = app.to_visual_col(4, 1);
-        let inner_thumb_col2_visual = app.to_visual_col(4, 2);
-
-        // Assert
-        let inner_thumb_offset = 2;
-        assert_eq!(inner_thumb_col0_visual, 0 + inner_thumb_offset);
-        assert_eq!(inner_thumb_col1_visual, 1 + inner_thumb_offset);
-        assert_eq!(inner_thumb_col2_visual, 2 + inner_thumb_offset);
-
-        // Act - row 5 (outer thumb) is offset by 5 toward center
-        let outer_thumb_col0_visual = app.to_visual_col(5, 0);
-        let outer_thumb_col1_visual = app.to_visual_col(5, 1);
-        let outer_thumb_col2_visual = app.to_visual_col(5, 2);
-
-        // Assert
-        let outer_thumb_offset = 5;
-        assert_eq!(outer_thumb_col0_visual, 0 + outer_thumb_offset);
-        assert_eq!(outer_thumb_col1_visual, 1 + outer_thumb_offset);
-        assert_eq!(outer_thumb_col2_visual, 2 + outer_thumb_offset);
-    }
-
-    #[test]
-    fn test_visual_to_data_col_left_half() {
-        // Arrange
-        let mut app = create_test_app();
-        app.cursor.half = Half::Left;
-        let inner_thumb_offset = 2;
-        let outer_thumb_offset = 5;
-
-        // Act - main rows (0-3) have no offset
-        let main_row_first_col_data = app.visual_to_data_col(3, 0);
-        let main_row_last_col_data = app.visual_to_data_col(3, 5);
-
-        // Assert
-        assert_eq!(main_row_first_col_data, 0);
-        assert_eq!(main_row_last_col_data, 5);
-
-        // Act - row 4 (inner thumb) visual col minus offset, clamped to 0-2
-        let inner_thumb_visual2_data = app.visual_to_data_col(4, inner_thumb_offset + 0);
-        let inner_thumb_visual3_data = app.visual_to_data_col(4, inner_thumb_offset + 1);
-        let inner_thumb_visual4_data = app.visual_to_data_col(4, inner_thumb_offset + 2);
-        let inner_thumb_clamped_data = app.visual_to_data_col(4, 0);
-
-        // Assert
-        assert_eq!(inner_thumb_visual2_data, 0);
-        assert_eq!(inner_thumb_visual3_data, 1);
-        assert_eq!(inner_thumb_visual4_data, 2);
-        assert_eq!(inner_thumb_clamped_data, 0);
-
-        // Act - row 5 (outer thumb) visual col minus offset, clamped to 0-2
-        let outer_thumb_visual5_data = app.visual_to_data_col(5, outer_thumb_offset + 0);
-        let outer_thumb_visual6_data = app.visual_to_data_col(5, outer_thumb_offset + 1);
-        let outer_thumb_visual7_data = app.visual_to_data_col(5, outer_thumb_offset + 2);
-
-        // Assert
-        assert_eq!(outer_thumb_visual5_data, 0);
-        assert_eq!(outer_thumb_visual6_data, 1);
-        assert_eq!(outer_thumb_visual7_data, 2);
     }
 
     #[test]
@@ -957,7 +778,7 @@ mod tests {
     }
 
     #[test]
-    fn test_new_change_after_undo_clears_redo_stack() {
+    fn test_new_change_after_undo_clears_redo() {
         // Arrange
         let mut app = create_test_app();
         app.cursor.row = 0;
@@ -965,37 +786,14 @@ mod tests {
         app.cursor.half = Half::Left;
         app.set_current_key_color("RED");
         app.undo();
-        assert!(!app.redo_stack.is_empty(), "redo stack should not be empty after undo");
 
         // Act
         app.set_current_key_color("CYN");
 
-        // Assert
-        assert!(
-            app.redo_stack.is_empty(),
-            "redo stack should be cleared after a new change"
-        );
-    }
-
-    #[test]
-    fn test_undo_stack_limited_to_max_entries() {
-        // Arrange
-        let mut app = create_test_app();
-        app.cursor.row = 0;
-        app.cursor.col = 0;
-        app.cursor.half = Half::Left;
-
-        // Act
-        for i in 0..=MAX_UNDO_HISTORY + 10 {
-            app.set_current_key_color(&format!("C{:02}", i % 100));
-        }
-
-        // Assert
-        assert!(
-            app.undo_stack.len() <= MAX_UNDO_HISTORY,
-            "undo stack should be limited to {} entries, got {}",
-            MAX_UNDO_HISTORY, app.undo_stack.len()
-        );
+        // Assert — redo should have nothing since the new change cleared it
+        app.redo();
+        let (msg, _) = app.status_message.as_ref().unwrap();
+        assert!(msg.contains("Nothing to redo"), "redo should be cleared after a new change");
     }
 
     // --- Copy / Paste color ---
@@ -1332,44 +1130,6 @@ mod tests {
 
         // Assert
         assert_eq!(app.cursor.row, 5, "should stay at row 5 when moving down from bottom");
-    }
-
-    // --- Visual column mapping: right half ---
-
-    #[test]
-    fn test_visual_col_mapping_right_half() {
-        // Arrange
-        let mut app = create_test_app();
-        app.cursor.half = Half::Right;
-
-        // Act & Assert: main rows have no offset
-        assert_eq!(app.to_visual_col(0, 0), 0, "right half main row col 0 should have no offset");
-        assert_eq!(app.to_visual_col(3, 5), 5, "right half main row col 5 should have no offset");
-
-        // Act & Assert: row 4 offset by 1
-        assert_eq!(app.to_visual_col(4, 0), 1, "right half row 4 col 0 should offset by 1");
-        assert_eq!(app.to_visual_col(4, 2), 3, "right half row 4 col 2 should offset by 1");
-
-        // Act & Assert: row 5 subtracts 2
-        assert_eq!(app.to_visual_col(5, 2), 0, "right half row 5 col 2 should map to visual 0");
-        assert_eq!(app.to_visual_col(5, 0), 0, "right half row 5 col 0 should saturate to visual 0");
-    }
-
-    #[test]
-    fn test_visual_to_data_col_right_half() {
-        // Arrange
-        let mut app = create_test_app();
-        app.cursor.half = Half::Right;
-
-        // Act & Assert: main rows have no offset
-        assert_eq!(app.visual_to_data_col(0, 3), 3, "right half main row visual 3 should map to data 3");
-
-        // Act & Assert: row 4 subtracts 1
-        assert_eq!(app.visual_to_data_col(4, 1), 0, "right half row 4 visual 1 should map to data 0");
-        assert_eq!(app.visual_to_data_col(4, 3), 2, "right half row 4 visual 3 should map to data 2");
-
-        // Act & Assert: row 5 adds 2, clamped
-        assert_eq!(app.visual_to_data_col(5, 0), 2, "right half row 5 visual 0 should map to data 2");
     }
 
     // --- Quick color selection ---
