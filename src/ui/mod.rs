@@ -118,6 +118,7 @@ fn render_modal(frame: &mut Frame, text: &str, title: &str, border_color: Option
     frame.render_widget(popup, popup_area);
 }
 
+#[allow(clippy::too_many_arguments)]
 fn render_fixed_modal(
     frame: &mut Frame, text: &str, title: &str,
     border_color: Color, alignment: Alignment,

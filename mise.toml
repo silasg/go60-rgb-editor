@@ -18,8 +18,12 @@ description = "Build optimized release binary"
 run = "cargo build --release"
 
 [tasks.test]
-description = "Run all tests"
-run = "cargo test"
+description = "Run all tests and clippy"
+run = ["cargo clippy -- -D warnings", "cargo test"]
+
+[tasks.lint]
+description = "Run clippy lints"
+run = "cargo clippy -- -D warnings"
 
 [tasks.coverage]
 description = "Run tests with coverage report"

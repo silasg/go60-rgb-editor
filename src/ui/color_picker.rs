@@ -24,6 +24,7 @@ impl<'a> ColorPickerWidget<'a> {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn render_labeled_section(
         &self, buf: &mut Buffer, indices: &[usize],
         label: &str, label_width: u16, explanation: &str,
