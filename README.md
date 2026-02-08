@@ -69,6 +69,10 @@ The editor works with TailorKey RGB configuration files. For detailed documentat
 
 The included `Go60 TK Latest RGB scheme.txt` is an example configuration from TailorKey.
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a list of all changes.
+
 ## Development
 
 Requires Rust 1.70+ and [mise](https://mise.jdx.dev/) for task management.
