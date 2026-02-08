@@ -4,6 +4,8 @@ A terminal-based (TUI) RGB underglow editor for ZMK keyboards, specifically desi
 
 ![Rust](https://img.shields.io/badge/rust-1.70%2B-orange)
 
+![Go60 RGB Editor Screenshot](screenshot.png)
+
 ## Features
 
 - **Visual keyboard layout** - color display matching the physical Go60 layout
