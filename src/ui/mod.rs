@@ -75,63 +75,63 @@ pub fn draw(frame: &mut Frame, app: &App) {
     match app.mode {
         Mode::Help => {
             let help = HelpWidget::new();
-            // Fixed size to fit all help content
             let help_area = centered_rect_chars(58, 28, area);
             frame.render_widget(Clear, help_area);
             frame.render_widget(help, help_area);
         }
         Mode::ConfirmQuit => {
             let text = "You have unsaved changes.\n\nPress 'y' to quit, 'n' to cancel, 's' to save and quit";
-            let popup = Paragraph::new(text)
-                .block(Block::default().title(" Confirm Quit ").borders(Borders::ALL))
-                .alignment(Alignment::Center);
-            let popup_area = centered_rect_for_text(text, area);
-            frame.render_widget(Clear, popup_area);
-            frame.render_widget(popup, popup_area);
+            render_modal(frame, text, " Confirm Quit ", None, area);
         }
         Mode::ConfirmCopy => {
             let text = "You have unsaved changes.\n\nPress 'y' to copy anyway, 'n' to cancel, 's' to save and copy";
-            let popup = Paragraph::new(text)
-                .block(Block::default().title(" Copy to Clipboard ").borders(Borders::ALL))
-                .alignment(Alignment::Center);
-            let popup_area = centered_rect_for_text(text, area);
-            frame.render_widget(Clear, popup_area);
-            frame.render_widget(popup, popup_area);
+            render_modal(frame, text, " Copy to Clipboard ", None, area);
         }
         Mode::SaveAs => {
-            let input = &app.filename_input;
-            // Show input with cursor indicator
-            let display_text = format!("Enter filename:\n\n{}▌\n\n[Enter] Save  [Esc] Cancel  [Ctrl+U] Clear", input);
-            
-            let popup = Paragraph::new(display_text)
-                .block(Block::default()
-                    .title(" Save As ")
-                    .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::Yellow)))
-                .alignment(Alignment::Left);
-            
-            let popup_area = centered_rect_chars(65, 8, area);
-            frame.render_widget(Clear, popup_area);
-            frame.render_widget(popup, popup_area);
+            let text = format!(
+                "Enter filename:\n\n{}▌\n\n[Enter] Save  [Esc] Cancel  [Ctrl+U] Clear",
+                &app.filename_input
+            );
+            render_fixed_modal(frame, &text, " Save As ", Color::Yellow, Alignment::Left, 65, 8, area);
         }
         Mode::SaveAsConfirm => {
             let text = format!(
                 "File already exists:\n{}\n\nOverwrite? [y] Yes  [n] Back  [Esc] Cancel",
                 &app.filename_input
             );
-            let popup = Paragraph::new(text.as_str())
-                .block(Block::default()
-                    .title(" Confirm Overwrite ")
-                    .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::Red)))
-                .alignment(Alignment::Center);
-            
-            let popup_area = centered_rect_chars(65, 8, area);
-            frame.render_widget(Clear, popup_area);
-            frame.render_widget(popup, popup_area);
+            render_fixed_modal(frame, &text, " Confirm Overwrite ", Color::Red, Alignment::Center, 65, 8, area);
         }
         _ => {}
     }
+}
+
+fn render_modal(frame: &mut Frame, text: &str, title: &str, border_color: Option<Color>, area: Rect) {
+    let mut block = Block::default().title(title).borders(Borders::ALL);
+    if let Some(color) = border_color {
+        block = block.border_style(Style::default().fg(color));
+    }
+    let popup = Paragraph::new(text)
+        .block(block)
+        .alignment(Alignment::Center);
+    let popup_area = centered_rect_for_text(text, area);
+    frame.render_widget(Clear, popup_area);
+    frame.render_widget(popup, popup_area);
+}
+
+fn render_fixed_modal(
+    frame: &mut Frame, text: &str, title: &str,
+    border_color: Color, alignment: Alignment,
+    width: u16, height: u16, area: Rect,
+) {
+    let popup = Paragraph::new(text)
+        .block(Block::default()
+            .title(title)
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(border_color)))
+        .alignment(alignment);
+    let popup_area = centered_rect_chars(width, height, area);
+    frame.render_widget(Clear, popup_area);
+    frame.render_widget(popup, popup_area);
 }
 
 /// Create a centered rectangle with fixed character dimensions

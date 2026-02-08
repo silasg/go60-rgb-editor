@@ -33,6 +33,22 @@ pub enum Direction {
     Right,
 }
 
+#[derive(Default)]
+struct ColorCategories {
+    regular: Vec<usize>,
+    locks: Vec<usize>,
+    aliases: Vec<usize>,
+}
+
+fn move_within_section(section: &[usize], pos: usize, delta: isize) -> usize {
+    let new_pos = pos as isize + delta;
+    if new_pos >= 0 && (new_pos as usize) < section.len() {
+        section[new_pos as usize]
+    } else {
+        section[pos]
+    }
+}
+
 pub struct App {
     pub config: Config,
     pub mode: Mode,
@@ -191,25 +207,21 @@ impl App {
     }
 
     pub fn increase_fade(&mut self) {
-        if self.current_layer().is_some() {
-            self.push_undo();
-            if let Some(layer) = self.current_layer_mut() {
-                layer.fade_delay += FADE_STEP_MS;
-                let fade = layer.fade_delay;
-                self.modified = true;
-                self.show_status(&format!("Fade: {}ms", fade));
-            }
-        }
+        self.adjust_fade(FADE_STEP_MS as i32);
     }
 
     pub fn decrease_fade(&mut self) {
+        self.adjust_fade(-(FADE_STEP_MS as i32));
+    }
+
+    fn adjust_fade(&mut self, delta: i32) {
         if self.current_layer().is_some() {
             self.push_undo();
             if let Some(layer) = self.current_layer_mut() {
-                layer.fade_delay = layer.fade_delay.saturating_sub(FADE_STEP_MS);
-                let fade = layer.fade_delay;
+                let new_delay = (layer.fade_delay as i32 + delta).max(0) as u16;
+                layer.fade_delay = new_delay;
                 self.modified = true;
-                self.show_status(&format!("Fade: {}ms", fade));
+                self.show_status(&format!("Fade: {}ms", new_delay));
             }
         }
     }
@@ -398,103 +410,77 @@ impl App {
     }
 
     pub fn move_color_selection(&mut self, direction: Direction) {
-        use crate::model::ColorKind;
-        
-        // Separate colors by type
-        let mut regular: Vec<usize> = Vec::new();
-        let mut locks: Vec<usize> = Vec::new();
-        let mut aliases: Vec<usize> = Vec::new();
-        
-        for (i, color) in self.config.palette.colors.iter().enumerate() {
-            match &color.kind {
-                ColorKind::Regular => regular.push(i),
-                ColorKind::LockIndicator { .. } => locks.push(i),
-                ColorKind::Alias { .. } => aliases.push(i),
-            }
-        }
-        
-        let cols = COLORS_PER_PICKER_ROW;
+        let categories = self.categorize_palette_colors();
         let current = self.selected_color;
-        
-        // Determine which section we're in
-        let in_regular = regular.contains(&current);
-        let in_locks = locks.contains(&current);
-        let in_aliases = aliases.contains(&current);
-        
+        let cols = COLORS_PER_PICKER_ROW;
+
+        // Ordered top-to-bottom as they appear in the picker
+        let sections = [&categories.regular, &categories.locks, &categories.aliases];
+
+        let (section_idx, pos) = match sections.iter().enumerate()
+            .find_map(|(i, s)| s.iter().position(|&x| x == current).map(|p| (i, p)))
+        {
+            Some(found) => found,
+            None => return,
+        };
+        let section = sections[section_idx];
+
         match direction {
+            Direction::Left => {
+                self.selected_color = move_within_section(section, pos, -1);
+            }
+            Direction::Right => {
+                self.selected_color = move_within_section(section, pos, 1);
+            }
             Direction::Up => {
-                if in_aliases && !locks.is_empty() {
-                    // Move from aliases to locks
-                    let pos = aliases.iter().position(|&x| x == current).unwrap_or(0);
-                    self.selected_color = locks[pos.min(locks.len() - 1)];
-                } else if in_locks && !regular.is_empty() {
-                    // Move from locks to last row of regular
-                    let pos = locks.iter().position(|&x| x == current).unwrap_or(0);
-                    let last_row_start = (regular.len() - 1) / cols * cols;
-                    let target = last_row_start + pos;
-                    self.selected_color = regular[target.min(regular.len() - 1)];
-                } else if in_regular {
-                    // Move up within regular colors
-                    let pos = regular.iter().position(|&x| x == current).unwrap_or(0);
+                if section_idx == 0 {
+                    // Within regular: move up one row
                     if pos >= cols {
-                        self.selected_color = regular[pos - cols];
+                        self.selected_color = section[pos - cols];
+                    }
+                } else {
+                    // Jump to previous section
+                    let target = sections[section_idx - 1];
+                    if !target.is_empty() {
+                        let target_pos = if section_idx - 1 == 0 {
+                            // Jumping into regular: land on last row at same column
+                            let last_row_start = (target.len() - 1) / cols * cols;
+                            last_row_start + pos
+                        } else {
+                            pos
+                        };
+                        self.selected_color = target[target_pos.min(target.len() - 1)];
                     }
                 }
             }
             Direction::Down => {
-                if in_regular {
-                    let pos = regular.iter().position(|&x| x == current).unwrap_or(0);
-                    if pos + cols < regular.len() {
-                        // Move down within regular colors
-                        self.selected_color = regular[pos + cols];
-                    } else if !locks.is_empty() {
-                        // Move from regular to locks
-                        let col = pos % cols;
-                        self.selected_color = locks[col.min(locks.len() - 1)];
-                    }
-                } else if in_locks && !aliases.is_empty() {
-                    // Move from locks to aliases
-                    let pos = locks.iter().position(|&x| x == current).unwrap_or(0);
-                    self.selected_color = aliases[pos.min(aliases.len() - 1)];
-                }
-            }
-            Direction::Left => {
-                if in_regular {
-                    let pos = regular.iter().position(|&x| x == current).unwrap_or(0);
-                    if pos > 0 {
-                        self.selected_color = regular[pos - 1];
-                    }
-                } else if in_locks {
-                    let pos = locks.iter().position(|&x| x == current).unwrap_or(0);
-                    if pos > 0 {
-                        self.selected_color = locks[pos - 1];
-                    }
-                } else if in_aliases {
-                    let pos = aliases.iter().position(|&x| x == current).unwrap_or(0);
-                    if pos > 0 {
-                        self.selected_color = aliases[pos - 1];
-                    }
-                }
-            }
-            Direction::Right => {
-                if in_regular {
-                    let pos = regular.iter().position(|&x| x == current).unwrap_or(0);
-                    if pos + 1 < regular.len() {
-                        self.selected_color = regular[pos + 1];
-                    }
-                } else if in_locks {
-                    let pos = locks.iter().position(|&x| x == current).unwrap_or(0);
-                    if pos + 1 < locks.len() {
-                        self.selected_color = locks[pos + 1];
-                    }
-                } else if in_aliases {
-                    let pos = aliases.iter().position(|&x| x == current).unwrap_or(0);
-                    if pos + 1 < aliases.len() {
-                        self.selected_color = aliases[pos + 1];
+                if section_idx == 0 && pos + cols < section.len() {
+                    // Within regular: move down one row
+                    self.selected_color = section[pos + cols];
+                } else if section_idx + 1 < sections.len() {
+                    // Jump to next section
+                    let target = sections[section_idx + 1];
+                    if !target.is_empty() {
+                        let target_pos = if section_idx == 0 { pos % cols } else { pos };
+                        self.selected_color = target[target_pos.min(target.len() - 1)];
                     }
                 }
             }
         }
+    }
+
+    fn categorize_palette_colors(&self) -> ColorCategories {
+        use crate::model::ColorKind;
+
+        let mut categories = ColorCategories::default();
+        for (i, color) in self.config.palette.colors.iter().enumerate() {
+            match &color.kind {
+                ColorKind::Regular => categories.regular.push(i),
+                ColorKind::LockIndicator { .. } => categories.locks.push(i),
+                ColorKind::Alias { .. } => categories.aliases.push(i),
+            }
+        }
+        categories
     }
 
     pub fn apply_selected_color(&mut self) {

@@ -27,6 +27,40 @@ impl<'a> KeyboardWidget<'a> {
         }
     }
 
+    fn render_half_row(
+        &self, buf: &mut Buffer, half: &[Vec<String>],
+        row: usize, start_x: u16, y: u16, max_cols: usize, is_left: bool,
+    ) {
+        if row < half.len() {
+            for col in 0..half[row].len().min(max_cols) {
+                let x = start_x + col as u16 * KEY_CELL_WIDTH;
+                let color = &half[row][col];
+                let is_selected = self.cursor.is_left == is_left
+                    && self.cursor.row == row
+                    && self.cursor.col == col;
+                self.render_key(buf, x, y, color, is_selected);
+            }
+        }
+    }
+
+    fn render_selection_info(&self, buf: &mut Buffer, x: u16, y: u16) {
+        let half_data = if self.cursor.is_left {
+            &self.layer.left_half
+        } else {
+            &self.layer.right_half
+        };
+        let selected_color = half_data.get(self.cursor.row).and_then(|r| r.get(self.cursor.col));
+
+        if let Some(color) = selected_color {
+            let half = if self.cursor.is_left { "L" } else { "R" };
+            let info = format!(
+                "Selected: {} @ {}{},{} ",
+                color, half, self.cursor.row, self.cursor.col
+            );
+            buf.set_string(x, y, info, Style::default().fg(Color::Cyan));
+        }
+    }
+
     fn render_key(&self, buf: &mut Buffer, x: u16, y: u16, color_abbrev: &str, is_selected: bool) {
         // Get the effective RGB color (resolving aliases)
         let style = if let Some(rgb) = self.palette.get_effective_rgb(color_abbrev) {
@@ -75,113 +109,35 @@ impl<'a> Widget for KeyboardWidget<'a> {
         }
 
         let half_width = 6 * KEY_CELL_WIDTH;
-
-        // Calculate starting positions
         let left_start_x = inner.x + 2;
         let right_start_x = left_start_x + half_width + HALF_GAP;
         let start_y = inner.y + 1;
+        let center_shift = 2 * KEY_CELL_WIDTH;
 
-        // Render main rows (0-3)
+        // Main rows (0-3)
         for row in 0..4 {
             let y = start_y + row as u16;
-
-            // Left half
-            if row < self.layer.left_half.len() {
-                for col in 0..self.layer.left_half[row].len().min(6) {
-                    let x = left_start_x + col as u16 * KEY_CELL_WIDTH;
-                    let color = &self.layer.left_half[row][col];
-                    let is_selected = self.cursor.is_left
-                        && self.cursor.row == row
-                        && self.cursor.col == col;
-                    self.render_key(buf, x, y, color, is_selected);
-                }
-            }
-
-            // Right half
-            if row < self.layer.right_half.len() {
-                for col in 0..self.layer.right_half[row].len().min(6) {
-                    let x = right_start_x + col as u16 * KEY_CELL_WIDTH;
-                    let color = &self.layer.right_half[row][col];
-                    let is_selected = !self.cursor.is_left
-                        && self.cursor.row == row
-                        && self.cursor.col == col;
-                    self.render_key(buf, x, y, color, is_selected);
-                }
-            }
+            self.render_half_row(buf, &self.layer.left_half, row, left_start_x, y, 6, true);
+            self.render_half_row(buf, &self.layer.right_half, row, right_start_x, y, 6, false);
         }
 
-        // Render row 4 (outer 3 keys) - directly below main rows
+        // Row 4 (inner thumb keys)
         let row4_y = start_y + 4;
-        let center_shift = 2 * KEY_CELL_WIDTH;  // Shift toward center
-        
-        // Left half row 4: shifted right toward center
         let left_row4_x = left_start_x + center_shift;
-
-        if self.layer.left_half.len() > 4 {
-            for col in 0..self.layer.left_half[4].len().min(3) {
-                let x = left_row4_x + col as u16 * KEY_CELL_WIDTH;
-                let color = &self.layer.left_half[4][col];
-                let is_selected = self.cursor.is_left && self.cursor.row == 4 && self.cursor.col == col;
-                self.render_key(buf, x, row4_y, color, is_selected);
-            }
-        }
-
-        // Right half row 4: shifted left toward center (symmetric)
         let right_row4_x = right_start_x + 3 * KEY_CELL_WIDTH - center_shift;
+        self.render_half_row(buf, &self.layer.left_half, 4, left_row4_x, row4_y, 3, true);
+        self.render_half_row(buf, &self.layer.right_half, 4, right_row4_x, row4_y, 3, false);
 
-        if self.layer.right_half.len() > 4 {
-            for col in 0..self.layer.right_half[4].len().min(3) {
-                let x = right_row4_x + col as u16 * KEY_CELL_WIDTH;
-                let color = &self.layer.right_half[4][col];
-                let is_selected = !self.cursor.is_left && self.cursor.row == 4 && self.cursor.col == col;
-                self.render_key(buf, x, row4_y, color, is_selected);
-            }
-        }
-
-        // Render row 5 (thumbs / inner 3 keys) - one line lower
+        // Row 5 (outer thumb keys)
         let thumb_y = start_y + 5;
-        
-        // Left half thumbs: after row4 position
         let left_thumb_x = left_row4_x + 3 * KEY_CELL_WIDTH;
-
-        if self.layer.left_half.len() > 5 {
-            for col in 0..self.layer.left_half[5].len().min(3) {
-                let x = left_thumb_x + col as u16 * KEY_CELL_WIDTH;
-                let color = &self.layer.left_half[5][col];
-                let is_selected = self.cursor.is_left && self.cursor.row == 5 && self.cursor.col == col;
-                self.render_key(buf, x, thumb_y, color, is_selected);
-            }
-        }
-
-        // Right half thumbs: before row4 position (symmetric)
         let right_thumb_x = right_start_x - center_shift;
+        self.render_half_row(buf, &self.layer.left_half, 5, left_thumb_x, thumb_y, 3, true);
+        self.render_half_row(buf, &self.layer.right_half, 5, right_thumb_x, thumb_y, 3, false);
 
-        if self.layer.right_half.len() > 5 {
-            for col in 0..self.layer.right_half[5].len().min(3) {
-                let x = right_thumb_x + col as u16 * KEY_CELL_WIDTH;
-                let color = &self.layer.right_half[5][col];
-                let is_selected = !self.cursor.is_left && self.cursor.row == 5 && self.cursor.col == col;
-                self.render_key(buf, x, thumb_y, color, is_selected);
-            }
-        }
-
-        // Render current selection info
+        // Selection info
         if inner.height > 8 {
-            let info_y = start_y + 8;
-            let selected_color = if self.cursor.is_left {
-                self.layer.left_half.get(self.cursor.row).and_then(|r| r.get(self.cursor.col))
-            } else {
-                self.layer.right_half.get(self.cursor.row).and_then(|r| r.get(self.cursor.col))
-            };
-
-            if let Some(color) = selected_color {
-                let half = if self.cursor.is_left { "L" } else { "R" };
-                let info = format!(
-                    "Selected: {} @ {}{},{} ",
-                    color, half, self.cursor.row, self.cursor.col
-                );
-                buf.set_string(inner.x + 2, info_y, info, Style::default().fg(Color::Cyan));
-            }
+            self.render_selection_info(buf, inner.x + 2, start_y + 8);
         }
     }
 }

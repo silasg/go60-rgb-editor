@@ -24,6 +24,24 @@ impl<'a> ColorPickerWidget<'a> {
         }
     }
 
+    fn render_labeled_section(
+        &self, buf: &mut Buffer, indices: &[usize],
+        label: &str, label_width: u16, explanation: &str,
+        inner: Rect, y: u16, label_style: Style,
+    ) -> u16 {
+        if indices.is_empty() || y >= inner.y + inner.height {
+            return y;
+        }
+        buf.set_string(inner.x, y, label, label_style);
+        let mut x = inner.x + label_width;
+        for &idx in indices {
+            self.render_color(buf, x, y, idx);
+            x += KEY_CELL_WIDTH;
+        }
+        buf.set_string(x + 1, y, explanation, label_style);
+        y + 1
+    }
+
     fn render_color(&self, buf: &mut Buffer, x: u16, y: u16, idx: usize) {
         let color = &self.palette.colors[idx];
 
@@ -117,43 +135,17 @@ impl<'a> Widget for ColorPickerWidget<'a> {
         }
         current_y += 3; // 2 rows + 1 empty line
 
-        // Lock indicators with label
-        if !lock_indicators.is_empty() && current_y < inner.y + inner.height {
-            buf.set_string(inner.x, current_y, "Lock:", label_style);
-            let mut x = inner.x + 7;  // Extra space for pointer
-            for &idx in &lock_indicators {
-                self.render_color(buf, x, current_y, idx);
-                x += KEY_CELL_WIDTH;
-            }
-            // Add explanation
-            let explain_x = x + 1;
-            buf.set_string(
-                explain_x,
-                current_y,
-                "(CapsLock/NumLock/ScrollLock indicators)",
-                label_style,
-            );
-            current_y += 1;
-        }
+        current_y = self.render_labeled_section(
+            buf, &lock_indicators, "Lock:", 7,
+            "(CapsLock/NumLock/ScrollLock indicators)",
+            inner, current_y, label_style,
+        );
 
-        // Mouse speed aliases with label
-        if !aliases.is_empty() && current_y < inner.y + inner.height {
-            buf.set_string(inner.x, current_y, "Mouse:", label_style);
-            let mut x = inner.x + 8;  // Extra space for pointer
-            for &idx in &aliases {
-                self.render_color(buf, x, current_y, idx);
-                x += KEY_CELL_WIDTH;
-            }
-            // Add explanation
-            let explain_x = x + 1;
-            buf.set_string(
-                explain_x,
-                current_y,
-                "(FST=Fast, WRP=Warp, SLO=Slow)",
-                label_style,
-            );
-            current_y += 1;
-        }
+        current_y = self.render_labeled_section(
+            buf, &aliases, "Mouse:", 8,
+            "(FST=Fast, WRP=Warp, SLO=Slow)",
+            inner, current_y, label_style,
+        );
 
         // Bottom: quick select hint
         if current_y < inner.y + inner.height {

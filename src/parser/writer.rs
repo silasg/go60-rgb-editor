@@ -29,95 +29,52 @@ pub fn write_config(config: &Config) -> String {
     output
 }
 
-fn write_layer(output: &mut String, layer: &crate::model::Layer) {
-    // Write #ifdef guard
-    output.push_str(&format!("      #ifdef {}\n", layer.macro_name));
+fn format_key_row(keys: &[String]) -> String {
+    keys.iter()
+        .map(|c| format!("{:>3}", c))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
 
-    // Write layer name block
+fn write_layer(output: &mut String, layer: &crate::model::Layer) {
     let display_name = layer
         .macro_name
         .strip_prefix("LAYER_")
         .unwrap_or(&layer.name);
+
+    output.push_str(&format!("      #ifdef {}\n", layer.macro_name));
     output.push_str(&format!("      {} {{\n", display_name));
     output.push_str("        bindings = <\n");
 
-    // Write main rows (0-3): 6 keys per half
     for row_idx in 0..4 {
         if row_idx < layer.left_half.len() && row_idx < layer.right_half.len() {
-            let left = &layer.left_half[row_idx];
-            let right = &layer.right_half[row_idx];
-
-            // Format with proper spacing
-            let left_str: String = left
-                .iter()
-                .map(|c| format!("{:>3}", c))
-                .collect::<Vec<_>>()
-                .join(" ");
-            let right_str: String = right
-                .iter()
-                .map(|c| format!("{:>3}", c))
-                .collect::<Vec<_>>()
-                .join(" ");
-
             output.push_str(&format!(
                 "          {}                                     {}\n",
-                left_str, right_str
+                format_key_row(&layer.left_half[row_idx]),
+                format_key_row(&layer.right_half[row_idx]),
             ));
         }
     }
 
-    // Write inner thumb row (row 4): 3 keys per half, indented
     if layer.left_half.len() > 4 && layer.right_half.len() > 4 {
-        let left = &layer.left_half[4];
-        let right = &layer.right_half[4];
-
-        let left_str: String = left
-            .iter()
-            .map(|c| format!("{:>3}", c))
-            .collect::<Vec<_>>()
-            .join(" ");
-        let right_str: String = right
-            .iter()
-            .map(|c| format!("{:>3}", c))
-            .collect::<Vec<_>>()
-            .join(" ");
-
         output.push_str(&format!(
             "                  {}                                             {} \n",
-            left_str, right_str
+            format_key_row(&layer.left_half[4]),
+            format_key_row(&layer.right_half[4]),
         ));
     }
 
-    // Write outer thumb row (row 5): 3 keys per half, centered with gap
     if layer.left_half.len() > 5 && layer.right_half.len() > 5 {
-        let left = &layer.left_half[5];
-        let right = &layer.right_half[5];
-
-        let left_str: String = left
-            .iter()
-            .map(|c| format!("{:>3}", c))
-            .collect::<Vec<_>>()
-            .join(" ");
-        let right_str: String = right
-            .iter()
-            .map(|c| format!("{:>3}", c))
-            .collect::<Vec<_>>()
-            .join(" ");
-
         output.push_str(&format!(
             "                                      {}     {} \n",
-            left_str, right_str
+            format_key_row(&layer.left_half[5]),
+            format_key_row(&layer.right_half[5]),
         ));
     }
 
-    // Close bindings
     output.push_str("        >;\n");
-
-    // Write layer-id and fade-delay
     output.push_str(&format!("        layer-id = <{}>;\n", layer.macro_name));
     output.push_str(&format!("        fade-delay = <{}>;\n", layer.fade_delay));
-
-    // Close layer block
     output.push_str("      };\n");
     output.push_str("      #endif\n\n");
 }
