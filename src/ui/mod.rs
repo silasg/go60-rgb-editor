@@ -94,11 +94,11 @@ fn render_modals(frame: &mut Frame, app: &App, area: Rect) {
         }
         Mode::ConfirmQuit => {
             let text = "You have unsaved changes.\n\nPress 'y' to quit, 'n' to cancel, 's' to save and quit";
-            render_modal(frame, text, " Confirm Quit ", None, area);
+            render_modal(frame, text, " Confirm Quit ", Some(Color::Red), area);
         }
         Mode::ConfirmCopy => {
             let text = "You have unsaved changes.\n\nPress 'y' to copy anyway, 'n' to cancel, 's' to save and copy";
-            render_modal(frame, text, " Copy to Clipboard ", None, area);
+            render_modal(frame, text, " Copy to Clipboard ", Some(Color::Red), area);
         }
         Mode::SaveAs => {
             let text = format!(
