@@ -10,15 +10,21 @@ src/
 ├── app.rs           # Application state & logic
 ├── event.rs         # Key event handling
 ├── tui.rs           # Terminal setup/teardown
+├── cursor.rs        # Cursor position for keyboard navigation
+├── geometry.rs      # Keyboard layout geometry definitions
+├── undo.rs          # Undo/redo history
 ├── model/           # Data models
+│   ├── mod.rs       # Re-exports
 │   ├── color.rs     # Color definitions, palette
 │   ├── layer.rs     # Layer structure
 │   └── config.rs    # Overall config
 ├── parser/          # Config file parsing
-│   ├── grammar.rs   # Main parser
-│   ├── lexer.rs     # Nom combinators (utility)
-│   └── writer.rs    # Serialize back to file
+│   ├── mod.rs       # Re-exports
+│   ├── reader.rs    # Main parser (nom combinators)
+│   ├── writer.rs    # Serialize back to file
+│   └── tests.rs     # Parser tests
 └── ui/              # UI widgets
+    ├── mod.rs       # Re-exports
     ├── keyboard.rs  # Keyboard layout widget
     ├── layer_list.rs
     ├── color_picker.rs
@@ -38,10 +44,19 @@ src/
 Uses [mise](https://mise.jdx.dev/) for task management. Run `mise tasks ls` for available tasks.
 
 ```bash
-mise install      # Install tools
-mise run setup    # One-time setup (rustup components)
-mise run test     # Run tests
-mise run coverage # Test coverage report
+mise install          # Install tools (cargo-llvm-cov, git-cliff, cargo-release)
+mise run setup        # One-time setup (rustup components)
+mise run build        # Build (debug)
+mise run build-release # Build (release)
+mise run test         # Run clippy + tests
+mise run lint         # Run clippy lints
+mise run coverage     # Test coverage report
+mise run coverage-html # Coverage report in browser
+mise run run          # Run editor with example config
+mise run changelog    # Preview unreleased changelog entries
+mise run release-patch # Release patch version
+mise run release-minor # Release minor version
+mise run release-major # Release major version
 ```
 
 ## Commits
