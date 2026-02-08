@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] - 2026-02-08
+
+### 🐛 Bug Fixes
+
+- Add Windows clipboard support (clip.exe)
+- **ci:** Add --execute to cargo-release mise tasks
+
+### 👷 CI/CD
+
+- Include version in release artifact filenames
+
+### 📚 Documentation
+
+- Update AGENTS.md with current project structure and mise tasks
+- Add documentation maintenance instructions to AGENTS.md
+
+### 🔧 Miscellaneous
+
+- Add local/ dir and .nvimlog to .gitignore
 ## [0.1.0] - 2026-02-08
 
 Initial release of the Go60 RGB Editor.

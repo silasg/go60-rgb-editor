@@ -1,6 +1,6 @@
 [package]
 name = "go60-rgb-editor"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "TUI RGB Underglow Editor for ZMK Keyboards"
 license = "MIT"
