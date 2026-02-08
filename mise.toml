@@ -1,0 +1,34 @@
+[tools]
+"cargo:cargo-llvm-cov" = "latest"
+
+[env]
+LLVM_COV = "{{env.HOME}}/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/bin/llvm-cov"
+LLVM_PROFDATA = "{{env.HOME}}/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/bin/llvm-profdata"
+
+[tasks.setup]
+description = "One-time setup for dev environment (installs rustup components)"
+run = "rustup component add llvm-tools-preview"
+
+[tasks.build]
+description = "Build the project"
+run = "cargo build"
+
+[tasks.release]
+description = "Build optimized release binary"
+run = "cargo build --release"
+
+[tasks.test]
+description = "Run all tests"
+run = "cargo test"
+
+[tasks.coverage]
+description = "Run tests with coverage report"
+run = "cargo llvm-cov"
+
+[tasks.coverage-html]
+description = "Generate HTML coverage report and open in browser"
+run = "cargo llvm-cov --html && open target/llvm-cov/html/index.html"
+
+[tasks.run]
+description = "Run the editor with the example config file"
+run = "cargo run -- 'Go60 TK Latest RGB scheme.txt'"

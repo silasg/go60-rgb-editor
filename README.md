@@ -63,17 +63,22 @@ The editor works with TailorKey RGB configuration files. For detailed documentat
 
 The included `Go60 TK Latest RGB scheme.txt` is an example configuration from TailorKey.
 
-## Building
+## Development
 
-Requires Rust 1.70 or later.
+Requires Rust 1.70+ and [mise](https://mise.jdx.dev/) for task management.
+
+### Setup
 
 ```bash
-# Development build
-cargo build
-
-# Release build (optimized)
-cargo build --release
-
-# Run tests
-cargo test
+# Install tools and dependencies
+mise install
+mise run setup
 ```
+
+### Available Tasks
+
+```bash
+mise tasks ls
+```
+
+This will show all available development tasks with descriptions (build, test, coverage, etc.).

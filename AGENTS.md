@@ -33,18 +33,15 @@ src/
 - Crossterm (terminal backend)
 - Nom (parser combinators)
 
-## Building & Testing
+## Development
+
+Uses [mise](https://mise.jdx.dev/) for task management. Run `mise tasks ls` for available tasks.
 
 ```bash
-cargo build           # Dev build
-cargo build --release # Release build
-cargo test            # Run tests
-```
-
-## Running
-
-```bash
-cargo run -- "Go60 TK Latest RGB scheme.txt"
+mise install      # Install tools
+mise run setup    # One-time setup (rustup components)
+mise run test     # Run tests
+mise run coverage # Test coverage report
 ```
 
 ## Config File Format
