@@ -9,7 +9,7 @@ use crate::undo::UndoHistory;
 const FADE_STEP_MS: u16 = 5;
 const STATUS_TIMEOUT_SECS: u64 = 3;
 
-/// Try platform clipboard commands: pbcopy (macOS), xclip (Linux), xsel (Linux)
+/// Try platform clipboard commands: pbcopy (macOS), xclip/xsel (Linux), clip (Windows)
 fn spawn_clipboard_process() -> std::io::Result<std::process::Child> {
     use std::process::{Command, Stdio};
 
@@ -25,6 +25,11 @@ fn spawn_clipboard_process() -> std::io::Result<std::process::Child> {
         .or_else(|_| {
             Command::new("xsel")
                 .args(["--clipboard", "--input"])
+                .stdin(Stdio::piped())
+                .spawn()
+        })
+        .or_else(|_| {
+            Command::new("clip")
                 .stdin(Stdio::piped())
                 .spawn()
         })
