@@ -98,6 +98,38 @@ pub fn draw(frame: &mut Frame, app: &App) {
             frame.render_widget(Clear, popup_area);
             frame.render_widget(popup, popup_area);
         }
+        Mode::SaveAs => {
+            let input = &app.filename_input;
+            // Show input with cursor indicator
+            let display_text = format!("Enter filename:\n\n{}▌\n\n[Enter] Save  [Esc] Cancel  [Ctrl+U] Clear", input);
+            
+            let popup = Paragraph::new(display_text)
+                .block(Block::default()
+                    .title(" Save As ")
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(Color::Yellow)))
+                .alignment(Alignment::Left);
+            
+            let popup_area = centered_rect_chars(65, 8, area);
+            frame.render_widget(Clear, popup_area);
+            frame.render_widget(popup, popup_area);
+        }
+        Mode::SaveAsConfirm => {
+            let text = format!(
+                "File already exists:\n{}\n\nOverwrite? [y] Yes  [n] Back  [Esc] Cancel",
+                &app.filename_input
+            );
+            let popup = Paragraph::new(text.as_str())
+                .block(Block::default()
+                    .title(" Confirm Overwrite ")
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(Color::Red)))
+                .alignment(Alignment::Center);
+            
+            let popup_area = centered_rect_chars(65, 8, area);
+            frame.render_widget(Clear, popup_area);
+            frame.render_widget(popup, popup_area);
+        }
         _ => {}
     }
 }

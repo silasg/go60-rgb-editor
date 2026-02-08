@@ -31,6 +31,8 @@ impl<'a> Widget for StatusBarWidget<'a> {
             crate::app::Mode::Help => "HELP  ",
             crate::app::Mode::ConfirmQuit => "QUIT?  ",
             crate::app::Mode::ConfirmCopy => "COPY?  ",
+            crate::app::Mode::SaveAs => "SAVE AS  ",
+            crate::app::Mode::SaveAsConfirm => "OVERWRITE?  ",
         };
         
         let right = format!(" {}?:help  q:quit  s:save ", mode_str);

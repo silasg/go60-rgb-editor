@@ -21,6 +21,8 @@ fn handle_key(app: &mut App, key: KeyEvent) {
         Mode::Help => handle_help_mode(app, key),
         Mode::ConfirmQuit => handle_confirm_quit_mode(app, key),
         Mode::ConfirmCopy => handle_confirm_copy_mode(app, key),
+        Mode::SaveAs => handle_save_as_mode(app, key),
+        Mode::SaveAsConfirm => handle_save_as_confirm_mode(app, key),
     }
 }
 
@@ -154,6 +156,57 @@ fn handle_confirm_copy_mode(app: &mut App, key: KeyEvent) {
             app.save();
             app.copy_to_clipboard();
             app.mode = Mode::Normal;
+        }
+        _ => {}
+    }
+}
+
+fn handle_save_as_mode(app: &mut App, key: KeyEvent) {
+    match key.code {
+        KeyCode::Esc => {
+            app.cancel_save_as();
+        }
+        KeyCode::Enter => {
+            app.try_save_as();
+        }
+        KeyCode::Backspace => {
+            app.filename_input.pop();
+        }
+        KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            // Clear entire input
+            app.filename_input.clear();
+        }
+        KeyCode::Char('w') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            // Delete last word
+            // First remove trailing spaces
+            while app.filename_input.chars().last().map_or(false, |c| c == ' ') {
+                app.filename_input.pop();
+            }
+            // Then remove non-space characters
+            while app.filename_input.chars().last().map_or(false, |c| c != ' ' && c != '/') {
+                app.filename_input.pop();
+            }
+        }
+        KeyCode::Char(c) => {
+            app.filename_input.push(c);
+        }
+        _ => {}
+    }
+}
+
+fn handle_save_as_confirm_mode(app: &mut App, key: KeyEvent) {
+    match key.code {
+        KeyCode::Char('y') | KeyCode::Char('Y') => {
+            // Overwrite the file
+            app.execute_save_as();
+        }
+        KeyCode::Char('n') | KeyCode::Char('N') => {
+            // Go back to filename input
+            app.mode = Mode::SaveAs;
+        }
+        KeyCode::Esc => {
+            // Cancel entirely
+            app.cancel_save_as();
         }
         _ => {}
     }

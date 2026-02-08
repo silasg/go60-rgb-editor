@@ -15,6 +15,10 @@ pub enum Mode {
     ConfirmQuit,
     /// Confirm copy to clipboard dialog
     ConfirmCopy,
+    /// Save As filename input
+    SaveAs,
+    /// Confirm overwrite existing file
+    SaveAsConfirm,
 }
 
 /// Cursor position on the keyboard
@@ -47,6 +51,7 @@ pub struct App {
     pub modified: bool,
     pub should_quit: bool,
     pub copied_color: Option<String>,
+    pub filename_input: String,
 }
 
 impl App {
@@ -63,6 +68,7 @@ impl App {
             modified: false,
             should_quit: false,
             copied_color: None,
+            filename_input: String::new(),
         }
     }
 
@@ -287,10 +293,54 @@ impl App {
         }
     }
 
-    /// Save as (placeholder - needs filename input UI)
+    /// Open Save As dialog
     pub fn save_as(&mut self) {
-        // TODO: Implement filename input mode
-        self.show_status("Save As: not yet implemented");
+        // Pre-populate with current filename
+        self.filename_input = self.config.file_path
+            .to_string_lossy()
+            .to_string();
+        self.mode = Mode::SaveAs;
+    }
+
+    /// Attempt to save to the entered filename (checks for existing file)
+    pub fn try_save_as(&mut self) {
+        if self.filename_input.is_empty() {
+            self.show_status("Filename cannot be empty");
+            return;
+        }
+
+        let path = std::path::PathBuf::from(&self.filename_input);
+        
+        // Check if file already exists (and is different from current file)
+        if path.exists() && path != self.config.file_path {
+            self.mode = Mode::SaveAsConfirm;
+        } else {
+            self.execute_save_as();
+        }
+    }
+
+    /// Execute the Save As operation
+    pub fn execute_save_as(&mut self) {
+        let path = std::path::PathBuf::from(&self.filename_input);
+        match self.config.save_as(&path) {
+            Ok(()) => {
+                self.config.file_path = path;
+                self.modified = false;
+                self.mode = Mode::Normal;
+                self.filename_input.clear();
+                self.show_status("Saved!");
+            }
+            Err(e) => {
+                self.show_status(&format!("Save failed: {}", e));
+                self.mode = Mode::SaveAs;
+            }
+        }
+    }
+
+    /// Cancel the Save As operation
+    pub fn cancel_save_as(&mut self) {
+        self.filename_input.clear();
+        self.mode = Mode::Normal;
     }
 
     /// Copy file contents to system clipboard
@@ -665,5 +715,149 @@ mod tests {
         assert!(app.status_message.is_some());
         let (msg, _) = app.status_message.as_ref().unwrap();
         assert!(msg.contains("Read failed"));
+    }
+
+    #[test]
+    fn test_save_as_opens_dialog_with_current_filename() {
+        let mut app = create_test_app();
+        assert_eq!(app.mode, Mode::Normal);
+        assert!(app.filename_input.is_empty());
+
+        app.save_as();
+
+        assert_eq!(app.mode, Mode::SaveAs);
+        assert_eq!(app.filename_input, "test.txt");
+    }
+
+    #[test]
+    fn test_cancel_save_as() {
+        let mut app = create_test_app();
+        app.save_as();
+        app.filename_input = "modified.txt".to_string();
+
+        app.cancel_save_as();
+
+        assert_eq!(app.mode, Mode::Normal);
+        assert!(app.filename_input.is_empty());
+    }
+
+    #[test]
+    fn test_try_save_as_empty_filename_shows_error() {
+        let mut app = create_test_app();
+        app.mode = Mode::SaveAs;
+        app.filename_input = String::new();
+
+        app.try_save_as();
+
+        assert_eq!(app.mode, Mode::SaveAs);
+        let (msg, _) = app.status_message.as_ref().unwrap();
+        assert!(msg.contains("empty"));
+    }
+
+    #[test]
+    fn test_try_save_as_existing_file_prompts_confirmation() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        // Create source file
+        let source_file = NamedTempFile::new().unwrap();
+        let mut config = crate::model::Config::new(source_file.path().to_path_buf());
+        config.palette = crate::model::ColorPalette::new();
+        let mut app = App::new(config);
+
+        // Create target file that already exists
+        let mut target_file = NamedTempFile::new().unwrap();
+        writeln!(target_file, "existing content").unwrap();
+
+        app.mode = Mode::SaveAs;
+        app.filename_input = target_file.path().to_string_lossy().to_string();
+
+        app.try_save_as();
+
+        // Should prompt for confirmation
+        assert_eq!(app.mode, Mode::SaveAsConfirm);
+    }
+
+    #[test]
+    fn test_try_save_as_same_file_no_confirmation() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        // Create a file
+        let mut temp_file = NamedTempFile::new().unwrap();
+        writeln!(temp_file, "content").unwrap();
+
+        let mut config = crate::model::Config::new(temp_file.path().to_path_buf());
+        config.palette = crate::model::ColorPalette::new();
+        let mut app = App::new(config);
+
+        app.mode = Mode::SaveAs;
+        // Same file as current - should not prompt
+        app.filename_input = temp_file.path().to_string_lossy().to_string();
+
+        app.try_save_as();
+
+        // Should execute save directly (mode goes to Normal on success)
+        assert_eq!(app.mode, Mode::Normal);
+    }
+
+    #[test]
+    fn test_try_save_as_new_file_no_confirmation() {
+        use tempfile::TempDir;
+
+        let temp_dir = TempDir::new().unwrap();
+        let source_path = temp_dir.path().join("source.txt");
+        std::fs::write(&source_path, "content").unwrap();
+
+        let mut config = crate::model::Config::new(source_path);
+        config.palette = crate::model::ColorPalette::new();
+        let mut app = App::new(config);
+
+        app.mode = Mode::SaveAs;
+        // New file that doesn't exist
+        app.filename_input = temp_dir.path().join("new_file.txt").to_string_lossy().to_string();
+
+        app.try_save_as();
+
+        // Should execute save directly
+        assert_eq!(app.mode, Mode::Normal);
+        assert!(!app.modified);
+    }
+
+    #[test]
+    fn test_execute_save_as_updates_file_path() {
+        use tempfile::TempDir;
+
+        let temp_dir = TempDir::new().unwrap();
+        let source_path = temp_dir.path().join("source.txt");
+        std::fs::write(&source_path, "content").unwrap();
+
+        let mut config = crate::model::Config::new(source_path.clone());
+        config.palette = crate::model::ColorPalette::new();
+        let mut app = App::new(config);
+        app.modified = true;
+
+        let new_path = temp_dir.path().join("new_file.txt");
+        app.filename_input = new_path.to_string_lossy().to_string();
+
+        app.execute_save_as();
+
+        assert_eq!(app.config.file_path, new_path);
+        assert!(!app.modified);
+        assert_eq!(app.mode, Mode::Normal);
+        assert!(app.filename_input.is_empty());
+    }
+
+    #[test]
+    fn test_execute_save_as_invalid_path_shows_error() {
+        let mut app = create_test_app();
+        app.filename_input = "/nonexistent/directory/file.txt".to_string();
+
+        app.execute_save_as();
+
+        // Should stay in SaveAs mode on error
+        assert_eq!(app.mode, Mode::SaveAs);
+        let (msg, _) = app.status_message.as_ref().unwrap();
+        assert!(msg.contains("Save failed"));
     }
 }
