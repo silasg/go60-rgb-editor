@@ -8,6 +8,14 @@ use crate::model::{ColorKind, ColorPalette, COLORS_PER_PICKER_ROW};
 const KEY_CELL_WIDTH: u16 = 4;
 const MAX_REGULAR_COLOR_ROWS: usize = 2;
 
+struct LabeledSection<'a> {
+    indices: &'a [usize],
+    label: &'a str,
+    label_width: u16,
+    explanation: &'a str,
+    style: Style,
+}
+
 /// Widget for the color palette picker
 pub struct ColorPickerWidget<'a> {
     palette: &'a ColorPalette,
@@ -24,22 +32,19 @@ impl<'a> ColorPickerWidget<'a> {
         }
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn render_labeled_section(
-        &self, buf: &mut Buffer, indices: &[usize],
-        label: &str, label_width: u16, explanation: &str,
-        inner: Rect, y: u16, label_style: Style,
+        &self, buf: &mut Buffer, section: &LabeledSection, inner: Rect, y: u16,
     ) -> u16 {
-        if indices.is_empty() || y >= inner.y + inner.height {
+        if section.indices.is_empty() || y >= inner.y + inner.height {
             return y;
         }
-        buf.set_string(inner.x, y, label, label_style);
-        let mut x = inner.x + label_width;
-        for &idx in indices {
+        buf.set_string(inner.x, y, section.label, section.style);
+        let mut x = inner.x + section.label_width;
+        for &idx in section.indices {
             self.render_color(buf, x, y, idx);
             x += KEY_CELL_WIDTH;
         }
-        buf.set_string(x + 1, y, explanation, label_style);
+        buf.set_string(x + 1, y, section.explanation, section.style);
         y + 1
     }
 
@@ -137,15 +142,27 @@ impl<'a> Widget for ColorPickerWidget<'a> {
         current_y += MAX_REGULAR_COLOR_ROWS as u16 + 1; // rows + 1 empty line
 
         current_y = self.render_labeled_section(
-            buf, &lock_indicators, "Lock:", 7,
-            "(CapsLock/NumLock/ScrollLock indicators)",
-            inner, current_y, label_style,
+            buf,
+            &LabeledSection {
+                indices: &lock_indicators,
+                label: "Lock:",
+                label_width: 7,
+                explanation: "(CapsLock/NumLock/ScrollLock indicators)",
+                style: label_style,
+            },
+            inner, current_y,
         );
 
         current_y = self.render_labeled_section(
-            buf, &aliases, "Mouse:", 8,
-            "(FST=Fast, WRP=Warp, SLO=Slow)",
-            inner, current_y, label_style,
+            buf,
+            &LabeledSection {
+                indices: &aliases,
+                label: "Mouse:",
+                label_width: 8,
+                explanation: "(FST=Fast, WRP=Warp, SLO=Slow)",
+                style: label_style,
+            },
+            inner, current_y,
         );
 
         // Bottom: quick select hint

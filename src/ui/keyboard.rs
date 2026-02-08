@@ -10,6 +10,14 @@ const HALF_GAP: u16 = 20;
 const MIN_TERMINAL_WIDTH: u16 = 50;
 const MIN_TERMINAL_HEIGHT: u16 = 8;
 
+struct HalfRowPos {
+    half: Half,
+    row: usize,
+    max_cols: usize,
+    x: u16,
+    y: u16,
+}
+
 /// Widget for rendering the keyboard layout with colors
 pub struct KeyboardWidget<'a> {
     layer: &'a Layer,
@@ -26,17 +34,15 @@ impl<'a> KeyboardWidget<'a> {
         }
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn render_half_row(
-        &self, buf: &mut Buffer, half_keys: &[Vec<String>],
-        row: usize, start_x: u16, y: u16, max_cols: usize, half: Half,
+        &self, buf: &mut Buffer, half_keys: &[Vec<String>], pos: &HalfRowPos,
     ) {
-        for (col, color) in half_keys[row].iter().enumerate().take(max_cols) {
-            let x = start_x + col as u16 * KEY_CELL_WIDTH;
-            let is_selected = self.cursor.half == half
-                && self.cursor.row == row
+        for (col, color) in half_keys[pos.row].iter().enumerate().take(pos.max_cols) {
+            let x = pos.x + col as u16 * KEY_CELL_WIDTH;
+            let is_selected = self.cursor.half == pos.half
+                && self.cursor.row == pos.row
                 && self.cursor.col == col;
-            self.render_key(buf, x, y, color, is_selected);
+            self.render_key(buf, x, pos.y, color, is_selected);
         }
     }
 
@@ -116,23 +122,23 @@ impl<'a> Widget for KeyboardWidget<'a> {
         // Main rows (0-3)
         for row in 0..4 {
             let y = start_y + row as u16;
-            self.render_half_row(buf, &self.layer.left_half, row, left_start_x, y, 6, Half::Left);
-            self.render_half_row(buf, &self.layer.right_half, row, right_start_x, y, 6, Half::Right);
+            self.render_half_row(buf, &self.layer.left_half, &HalfRowPos { half: Half::Left, row, max_cols: 6, x: left_start_x, y });
+            self.render_half_row(buf, &self.layer.right_half, &HalfRowPos { half: Half::Right, row, max_cols: 6, x: right_start_x, y });
         }
 
         // Row 4 (inner thumb keys)
         let row4_y = start_y + 4;
         let left_row4_x = left_start_x + center_shift;
         let right_row4_x = right_start_x + 3 * KEY_CELL_WIDTH - center_shift;
-        self.render_half_row(buf, &self.layer.left_half, 4, left_row4_x, row4_y, 3, Half::Left);
-        self.render_half_row(buf, &self.layer.right_half, 4, right_row4_x, row4_y, 3, Half::Right);
+        self.render_half_row(buf, &self.layer.left_half, &HalfRowPos { half: Half::Left, row: 4, max_cols: 3, x: left_row4_x, y: row4_y });
+        self.render_half_row(buf, &self.layer.right_half, &HalfRowPos { half: Half::Right, row: 4, max_cols: 3, x: right_row4_x, y: row4_y });
 
         // Row 5 (outer thumb keys)
         let thumb_y = start_y + 5;
         let left_thumb_x = left_row4_x + 3 * KEY_CELL_WIDTH;
         let right_thumb_x = right_start_x - center_shift;
-        self.render_half_row(buf, &self.layer.left_half, 5, left_thumb_x, thumb_y, 3, Half::Left);
-        self.render_half_row(buf, &self.layer.right_half, 5, right_thumb_x, thumb_y, 3, Half::Right);
+        self.render_half_row(buf, &self.layer.left_half, &HalfRowPos { half: Half::Left, row: 5, max_cols: 3, x: left_thumb_x, y: thumb_y });
+        self.render_half_row(buf, &self.layer.right_half, &HalfRowPos { half: Half::Right, row: 5, max_cols: 3, x: right_thumb_x, y: thumb_y });
 
         // Selection info
         if inner.height > 8 {

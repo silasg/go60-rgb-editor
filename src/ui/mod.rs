@@ -17,6 +17,15 @@ use ratatui::{
 
 use crate::app::{App, Mode};
 
+const MODAL_WIDTH: u16 = 65;
+const MODAL_HEIGHT: u16 = 8;
+
+struct ModalStyle<'a> {
+    title: &'a str,
+    border_color: Color,
+    alignment: Alignment,
+}
+
 /// Main UI drawing function
 pub fn draw(frame: &mut Frame, app: &App) {
     let area = frame.area();
@@ -96,14 +105,14 @@ fn render_modals(frame: &mut Frame, app: &App, area: Rect) {
                 "Enter filename:\n\n{}▌\n\n[Enter] Save  [Esc] Cancel  [Ctrl+U] Clear",
                 &app.filename_input
             );
-            render_fixed_modal(frame, &text, " Save As ", Color::Yellow, Alignment::Left, 65, 8, area);
+            render_fixed_modal(frame, &text, &ModalStyle { title: " Save As ", border_color: Color::Yellow, alignment: Alignment::Left }, area);
         }
         Mode::SaveAsConfirm => {
             let text = format!(
                 "File already exists:\n{}\n\nOverwrite? [y] Yes  [n] Back  [Esc] Cancel",
                 &app.filename_input
             );
-            render_fixed_modal(frame, &text, " Confirm Overwrite ", Color::Red, Alignment::Center, 65, 8, area);
+            render_fixed_modal(frame, &text, &ModalStyle { title: " Confirm Overwrite ", border_color: Color::Red, alignment: Alignment::Center }, area);
         }
         _ => {}
     }
@@ -122,19 +131,14 @@ fn render_modal(frame: &mut Frame, text: &str, title: &str, border_color: Option
     frame.render_widget(popup, popup_area);
 }
 
-#[allow(clippy::too_many_arguments)]
-fn render_fixed_modal(
-    frame: &mut Frame, text: &str, title: &str,
-    border_color: Color, alignment: Alignment,
-    width: u16, height: u16, area: Rect,
-) {
+fn render_fixed_modal(frame: &mut Frame, text: &str, style: &ModalStyle, area: Rect) {
     let popup = Paragraph::new(text)
         .block(Block::default()
-            .title(title)
+            .title(style.title)
             .borders(Borders::ALL)
-            .border_style(Style::default().fg(border_color)))
-        .alignment(alignment);
-    let popup_area = centered_rect_chars(width, height, area);
+            .border_style(Style::default().fg(style.border_color)))
+        .alignment(style.alignment);
+    let popup_area = centered_rect_chars(MODAL_WIDTH, MODAL_HEIGHT, area);
     frame.render_widget(Clear, popup_area);
     frame.render_widget(popup, popup_area);
 }
