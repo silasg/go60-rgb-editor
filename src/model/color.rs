@@ -277,4 +277,170 @@ mod tests {
         assert!(palette.get("GRN").is_some());
         assert!(palette.get("BLU").is_none());
     }
+
+    #[test]
+    fn test_get_effective_rgb_for_regular_color() {
+        // Arrange
+        let mut palette = ColorPalette::new();
+        let red_rgb = RgbColor::new(255, 0, 0);
+        palette.add(ColorDef::new("RED".to_string(), "RED_RGB".to_string(), red_rgb.clone()));
+
+        // Act
+        let effective_rgb = palette.get_effective_rgb("RED");
+
+        // Assert
+        assert_eq!(
+            effective_rgb, Some(&red_rgb),
+            "effective RGB for a regular color should be its own RGB value"
+        );
+    }
+
+    #[test]
+    fn test_get_effective_rgb_for_alias_resolves_to_target() {
+        // Arrange
+        let mut palette = ColorPalette::new();
+        let gold_rgb = RgbColor::new(255, 215, 0);
+        palette.add(ColorDef::new("GOL".to_string(), "GOL_RGB".to_string(), gold_rgb.clone()));
+        let alias = ColorDef::new("FST".to_string(), String::new(), RgbColor::default())
+            .with_kind(ColorKind::Alias { target: "GOL".to_string() });
+        palette.add(alias);
+
+        // Act
+        let effective_rgb = palette.get_effective_rgb("FST");
+
+        // Assert
+        assert_eq!(
+            effective_rgb, Some(&gold_rgb),
+            "effective RGB for an alias should resolve to the target's RGB value"
+        );
+    }
+
+    #[test]
+    fn test_get_effective_rgb_for_lock_indicator_returns_on_color() {
+        // Arrange
+        let mut palette = ColorPalette::new();
+        let red_rgb = RgbColor::new(255, 0, 0);
+        palette.add(ColorDef::new("RED".to_string(), "RED_RGB".to_string(), red_rgb.clone()));
+        let black_rgb = RgbColor::new(0, 0, 0);
+        palette.add(ColorDef::new("BLK".to_string(), "BLK_RGB".to_string(), black_rgb));
+        let lock_indicator = ColorDef::new("BSL".to_string(), "RED_RGB".to_string(), red_rgb.clone())
+            .with_kind(ColorKind::LockIndicator {
+                off_color: "BLK".to_string(),
+                on_color: "RED".to_string(),
+            });
+        palette.add(lock_indicator);
+
+        // Act
+        let effective_rgb = palette.get_effective_rgb("BSL");
+
+        // Assert
+        assert_eq!(
+            effective_rgb, Some(&red_rgb),
+            "effective RGB for a lock indicator should be the 'on' color's RGB"
+        );
+    }
+
+    #[test]
+    fn test_get_effective_rgb_for_unknown_abbreviation_returns_none() {
+        // Arrange
+        let palette = ColorPalette::new();
+
+        // Act
+        let effective_rgb = palette.get_effective_rgb("NONEXISTENT");
+
+        // Assert
+        assert_eq!(
+            effective_rgb, None,
+            "effective RGB for an unknown abbreviation should return None"
+        );
+    }
+
+    #[test]
+    fn test_regular_colors_excludes_special_colors() {
+        // Arrange
+        let mut palette = ColorPalette::new();
+        let red = ColorDef::new("RED".to_string(), "RED_RGB".to_string(), RgbColor::new(255, 0, 0));
+        let alias = ColorDef::new("FST".to_string(), String::new(), RgbColor::default())
+            .with_kind(ColorKind::Alias { target: "RED".to_string() });
+        let lock = ColorDef::new("BSL".to_string(), "RED_RGB".to_string(), RgbColor::new(255, 0, 0))
+            .with_kind(ColorKind::LockIndicator {
+                off_color: "BLK".to_string(),
+                on_color: "RED".to_string(),
+            });
+        palette.add(red);
+        palette.add(alias);
+        palette.add(lock);
+
+        // Act
+        let regular_colors = palette.regular_colors();
+
+        // Assert
+        assert_eq!(
+            regular_colors.len(), 1,
+            "regular_colors should only include regular colors, not aliases or lock indicators"
+        );
+        assert_eq!(regular_colors[0].abbrev, "RED");
+    }
+
+    #[test]
+    fn test_rgb_from_hex_invalid_length_returns_error() {
+        // Arrange
+        let too_short_hex = "FF00";
+
+        // Act
+        let result = RgbColor::from_hex(too_short_hex);
+
+        // Assert
+        assert!(result.is_err(), "from_hex should fail for hex strings that are not 6 characters");
+        let error_message = result.unwrap_err();
+        assert!(
+            error_message.contains("Invalid hex color length"),
+            "error should mention invalid length, got: '{}'", error_message
+        );
+    }
+
+    #[test]
+    fn test_rgb_from_hex_invalid_characters_returns_error() {
+        // Arrange
+        let non_hex_input = "ZZZZZZ";
+
+        // Act
+        let result = RgbColor::from_hex(non_hex_input);
+
+        // Assert
+        assert!(result.is_err(), "from_hex should fail for non-hex characters");
+    }
+
+    #[test]
+    fn test_color_def_is_special() {
+        // Arrange
+        let regular = ColorDef::new("RED".to_string(), "RED_RGB".to_string(), RgbColor::new(255, 0, 0));
+        let alias = ColorDef::new("FST".to_string(), String::new(), RgbColor::default())
+            .with_kind(ColorKind::Alias { target: "RED".to_string() });
+        let lock = ColorDef::new("BSL".to_string(), "RED_RGB".to_string(), RgbColor::default())
+            .with_kind(ColorKind::LockIndicator {
+                off_color: "BLK".to_string(),
+                on_color: "RED".to_string(),
+            });
+
+        // Act & Assert
+        assert!(!regular.is_special(), "regular color should not be special");
+        assert!(alias.is_special(), "alias should be special");
+        assert!(lock.is_special(), "lock indicator should be special");
+    }
+
+    #[test]
+    fn test_color_def_with_comment() {
+        // Arrange
+        let color = ColorDef::new("RED".to_string(), "RED_RGB".to_string(), RgbColor::new(255, 0, 0));
+
+        // Act
+        let color_with_comment = color.with_comment("Bright red".to_string());
+
+        // Assert
+        assert_eq!(
+            color_with_comment.comment, Some("Bright red".to_string()),
+            "with_comment should store the comment"
+        );
+    }
 }

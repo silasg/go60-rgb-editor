@@ -203,4 +203,161 @@ mod tests {
         // Assert
         assert_eq!(layer_macro_name, "LAYER_Cursor");
     }
+
+    #[test]
+    fn test_identifier_parses_alphanumeric_and_underscores() {
+        // Arrange
+        let input_with_trailing = "RED_RGB rest";
+
+        // Act
+        let (remaining, parsed_ident) = identifier(input_with_trailing).unwrap();
+
+        // Assert
+        assert_eq!(parsed_ident, "RED_RGB", "should parse up to first non-ident character");
+        assert_eq!(remaining, " rest", "should leave the rest of the input");
+    }
+
+    #[test]
+    fn test_line_comment_extracts_comment_text() {
+        // Arrange
+        let input_with_comment = "  // This is a comment";
+
+        // Act
+        let (_, comment_text) = line_comment(input_with_comment).unwrap();
+
+        // Assert
+        assert_eq!(comment_text, " This is a comment");
+    }
+
+    #[test]
+    fn test_opt_line_comment_returns_none_when_absent() {
+        // Arrange
+        let input_without_comment = "   ";
+
+        // Act
+        let (_, comment) = opt_line_comment(input_without_comment).unwrap();
+
+        // Assert
+        assert_eq!(comment, None, "should return None when no comment is present");
+    }
+
+    #[test]
+    fn test_ws_skips_whitespace_and_newlines() {
+        // Arrange
+        let input_with_whitespace = "  \n\t remaining";
+
+        // Act
+        let (remaining, skipped) = ws(input_with_whitespace).unwrap();
+
+        // Assert
+        assert_eq!(skipped, "  \n\t ", "should consume all whitespace characters");
+        assert_eq!(remaining, "remaining");
+    }
+
+    #[test]
+    fn test_define_alias_parses_simple_alias() {
+        // Arrange
+        let alias_line = "#define FST GOL // fast color";
+
+        // Act
+        let (_, (alias_name, target_name)) = define_alias(alias_line).unwrap();
+
+        // Assert
+        assert_eq!(alias_name, "FST", "should parse the alias name");
+        assert_eq!(target_name, "GOL", "should parse the target name");
+    }
+
+    #[test]
+    fn test_define_alias_rejects_underglow_binding() {
+        // Arrange
+        let underglow_line = "#define RED &ug RED_RGB";
+
+        // Act
+        let result = define_alias(underglow_line);
+
+        // Assert
+        assert!(result.is_err(), "define_alias should reject lines that start with &ug");
+    }
+
+    #[test]
+    fn test_endif_parses_endif_directive() {
+        // Arrange
+        let endif_line = "  #endif";
+
+        // Act
+        let result = endif(endif_line);
+
+        // Assert
+        assert!(result.is_ok(), "should parse #endif with leading whitespace");
+    }
+
+    #[test]
+    fn test_layer_id_parses_layer_identifier() {
+        // Arrange
+        let layer_id_line = "        layer-id = <LAYER_Cursor>;";
+
+        // Act
+        let (_, parsed_layer_id) = layer_id(layer_id_line).unwrap();
+
+        // Assert
+        assert_eq!(parsed_layer_id, "LAYER_Cursor");
+    }
+
+    #[test]
+    fn test_fade_delay_parses_numeric_value() {
+        // Arrange
+        let fade_delay_line = "        fade-delay = <30>;";
+
+        // Act
+        let (_, parsed_delay) = fade_delay(fade_delay_line).unwrap();
+
+        // Assert
+        assert_eq!(parsed_delay, 30, "should parse the fade delay value as u16");
+    }
+
+    #[test]
+    fn test_define_rgb_without_comment() {
+        // Arrange
+        let rgb_line_no_comment = "#define GRN_RGB 0x00FF00";
+
+        // Act
+        let (_, (name, hex, comment)) = define_rgb(rgb_line_no_comment).unwrap();
+
+        // Assert
+        assert_eq!(name, "GRN_RGB");
+        assert_eq!(hex, "0x00FF00");
+        assert_eq!(comment, None, "should return None when no comment is present");
+    }
+
+    #[test]
+    fn test_define_lock_indicator_numlock_variant() {
+        // Arrange
+        let numlock_line = "#define BNL &ug_nl BLK_RGB GRN_RGB";
+
+        // Act
+        let (_, (name, indicator_type, off_color, on_color)) =
+            define_lock_indicator(numlock_line).unwrap();
+
+        // Assert
+        assert_eq!(name, "BNL");
+        assert_eq!(indicator_type, "&ug_nl", "should parse &ug_nl variant");
+        assert_eq!(off_color, "BLK_RGB");
+        assert_eq!(on_color, "GRN_RGB");
+    }
+
+    #[test]
+    fn test_define_lock_indicator_capslock_variant() {
+        // Arrange
+        let capslock_line = "#define BCL &ug_cl BLK_RGB BLU_RGB";
+
+        // Act
+        let (_, (name, indicator_type, off_color, on_color)) =
+            define_lock_indicator(capslock_line).unwrap();
+
+        // Assert
+        assert_eq!(name, "BCL");
+        assert_eq!(indicator_type, "&ug_cl", "should parse &ug_cl variant");
+        assert_eq!(off_color, "BLK_RGB");
+        assert_eq!(on_color, "BLU_RGB");
+    }
 }

@@ -145,4 +145,69 @@ mod tests {
         assert_eq!(inner_thumb_row_cols, thumb_row_col_count);
         assert_eq!(outer_thumb_row_cols, thumb_row_col_count);
     }
+
+    #[test]
+    fn test_is_valid_pos_for_main_rows() {
+        // Act & Assert
+        assert!(Layer::is_valid_pos(0, 0), "row 0 col 0 should be valid");
+        assert!(Layer::is_valid_pos(0, 5), "row 0 col 5 should be valid");
+        assert!(!Layer::is_valid_pos(0, 6), "row 0 col 6 should be out of bounds");
+        assert!(Layer::is_valid_pos(3, 5), "row 3 col 5 should be valid");
+        assert!(!Layer::is_valid_pos(3, 6), "row 3 col 6 should be out of bounds");
+    }
+
+    #[test]
+    fn test_is_valid_pos_for_thumb_rows() {
+        // Act & Assert
+        assert!(Layer::is_valid_pos(4, 0), "row 4 col 0 should be valid");
+        assert!(Layer::is_valid_pos(4, 2), "row 4 col 2 should be valid");
+        assert!(!Layer::is_valid_pos(4, 3), "row 4 col 3 should be out of bounds");
+        assert!(Layer::is_valid_pos(5, 2), "row 5 col 2 should be valid");
+        assert!(!Layer::is_valid_pos(5, 3), "row 5 col 3 should be out of bounds");
+    }
+
+    #[test]
+    fn test_is_valid_pos_for_out_of_bounds_row() {
+        // Act & Assert
+        assert!(!Layer::is_valid_pos(6, 0), "row 6 should be out of bounds");
+        assert!(!Layer::is_valid_pos(100, 0), "row 100 should be out of bounds");
+    }
+
+    #[test]
+    fn test_get_color_out_of_bounds_returns_none() {
+        // Arrange
+        let layer = Layer::new("Test".to_string(), "LAYER_Test".to_string());
+
+        // Act & Assert
+        assert_eq!(
+            layer.get_color(10, 0, true), None,
+            "getting color at an out-of-bounds row should return None"
+        );
+        assert_eq!(
+            layer.get_color(0, 20, true), None,
+            "getting color at an out-of-bounds column should return None"
+        );
+    }
+
+    #[test]
+    fn test_set_color_out_of_bounds_does_not_panic() {
+        // Arrange
+        let mut layer = Layer::new("Test".to_string(), "LAYER_Test".to_string());
+
+        // Act & Assert (should not panic)
+        layer.set_color(10, 0, true, "RED".to_string());
+        layer.set_color(0, 20, true, "RED".to_string());
+    }
+
+    #[test]
+    fn test_default_fade_delay() {
+        // Act
+        let layer = Layer::new("Test".to_string(), "LAYER_Test".to_string());
+
+        // Assert
+        assert_eq!(
+            layer.fade_delay, 30,
+            "default fade delay should be 30ms"
+        );
+    }
 }
