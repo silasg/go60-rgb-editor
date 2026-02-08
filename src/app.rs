@@ -570,118 +570,181 @@ mod tests {
 
     #[test]
     fn test_visual_col_mapping_left_half() {
+        // Arrange
         let mut app = create_test_app();
         app.cursor.is_left = true;
 
-        // Row 0-3: visual = data
-        assert_eq!(app.to_visual_col(0, 0), 0);
-        assert_eq!(app.to_visual_col(3, 5), 5);
+        // Act - main rows (0-3) have no offset
+        let main_row_first_col_visual = app.to_visual_col(0, 0);
+        let main_row_last_col_visual = app.to_visual_col(3, 5);
 
-        // Row 4: visual = data + 2
-        assert_eq!(app.to_visual_col(4, 0), 2);
-        assert_eq!(app.to_visual_col(4, 1), 3);
-        assert_eq!(app.to_visual_col(4, 2), 4);
+        // Assert
+        assert_eq!(main_row_first_col_visual, 0);
+        assert_eq!(main_row_last_col_visual, 5);
 
-        // Row 5: visual = data + 5
-        assert_eq!(app.to_visual_col(5, 0), 5);
-        assert_eq!(app.to_visual_col(5, 1), 6);
-        assert_eq!(app.to_visual_col(5, 2), 7);
+        // Act - row 4 (inner thumb) is offset by 2 toward center
+        let inner_thumb_col0_visual = app.to_visual_col(4, 0);
+        let inner_thumb_col1_visual = app.to_visual_col(4, 1);
+        let inner_thumb_col2_visual = app.to_visual_col(4, 2);
+
+        // Assert
+        let inner_thumb_offset = 2;
+        assert_eq!(inner_thumb_col0_visual, 0 + inner_thumb_offset);
+        assert_eq!(inner_thumb_col1_visual, 1 + inner_thumb_offset);
+        assert_eq!(inner_thumb_col2_visual, 2 + inner_thumb_offset);
+
+        // Act - row 5 (outer thumb) is offset by 5 toward center
+        let outer_thumb_col0_visual = app.to_visual_col(5, 0);
+        let outer_thumb_col1_visual = app.to_visual_col(5, 1);
+        let outer_thumb_col2_visual = app.to_visual_col(5, 2);
+
+        // Assert
+        let outer_thumb_offset = 5;
+        assert_eq!(outer_thumb_col0_visual, 0 + outer_thumb_offset);
+        assert_eq!(outer_thumb_col1_visual, 1 + outer_thumb_offset);
+        assert_eq!(outer_thumb_col2_visual, 2 + outer_thumb_offset);
     }
 
     #[test]
     fn test_from_visual_col_left_half() {
+        // Arrange
         let mut app = create_test_app();
         app.cursor.is_left = true;
+        let inner_thumb_offset = 2;
+        let outer_thumb_offset = 5;
 
-        // Row 0-3: data = visual
-        assert_eq!(app.from_visual_col(3, 0), 0);
-        assert_eq!(app.from_visual_col(3, 5), 5);
+        // Act - main rows (0-3) have no offset
+        let main_row_first_col_data = app.from_visual_col(3, 0);
+        let main_row_last_col_data = app.from_visual_col(3, 5);
 
-        // Row 4: data = visual - 2, clamped to 0-2
-        assert_eq!(app.from_visual_col(4, 2), 0);
-        assert_eq!(app.from_visual_col(4, 3), 1);
-        assert_eq!(app.from_visual_col(4, 4), 2);
-        assert_eq!(app.from_visual_col(4, 0), 0);  // Clamped
+        // Assert
+        assert_eq!(main_row_first_col_data, 0);
+        assert_eq!(main_row_last_col_data, 5);
 
-        // Row 5: data = visual - 5, clamped to 0-2
-        assert_eq!(app.from_visual_col(5, 5), 0);
-        assert_eq!(app.from_visual_col(5, 6), 1);
-        assert_eq!(app.from_visual_col(5, 7), 2);
+        // Act - row 4 (inner thumb) visual col minus offset, clamped to 0-2
+        let inner_thumb_visual2_data = app.from_visual_col(4, inner_thumb_offset + 0);
+        let inner_thumb_visual3_data = app.from_visual_col(4, inner_thumb_offset + 1);
+        let inner_thumb_visual4_data = app.from_visual_col(4, inner_thumb_offset + 2);
+        let inner_thumb_clamped_data = app.from_visual_col(4, 0);
+
+        // Assert
+        assert_eq!(inner_thumb_visual2_data, 0);
+        assert_eq!(inner_thumb_visual3_data, 1);
+        assert_eq!(inner_thumb_visual4_data, 2);
+        assert_eq!(inner_thumb_clamped_data, 0);
+
+        // Act - row 5 (outer thumb) visual col minus offset, clamped to 0-2
+        let outer_thumb_visual5_data = app.from_visual_col(5, outer_thumb_offset + 0);
+        let outer_thumb_visual6_data = app.from_visual_col(5, outer_thumb_offset + 1);
+        let outer_thumb_visual7_data = app.from_visual_col(5, outer_thumb_offset + 2);
+
+        // Assert
+        assert_eq!(outer_thumb_visual5_data, 0);
+        assert_eq!(outer_thumb_visual6_data, 1);
+        assert_eq!(outer_thumb_visual7_data, 2);
     }
 
     #[test]
     fn test_navigation_down_from_row3_to_row4_left() {
+        // Arrange
         let mut app = create_test_app();
         app.cursor.is_left = true;
+        let main_row = 3;
+        let inner_thumb_row = 4;
+        let inner_thumb_first_aligned_main_col = 2;
+        let inner_thumb_max_col = 2;
 
-        // r3,2 -> r4,0 (visual col 2 maps to data col 0 in row 4)
-        app.cursor.row = 3;
-        app.cursor.col = 2;
+        // Arrange
+        app.cursor.row = main_row;
+        app.cursor.col = inner_thumb_first_aligned_main_col;
+        // Act
         app.move_cursor(Direction::Down);
-        assert_eq!(app.cursor.row, 4);
+        // Assert
+        assert_eq!(app.cursor.row, inner_thumb_row);
         assert_eq!(app.cursor.col, 0);
 
-        // r3,3 -> r4,1
-        app.cursor.row = 3;
-        app.cursor.col = 3;
+        // Arrange
+        app.cursor.row = main_row;
+        app.cursor.col = inner_thumb_first_aligned_main_col + 1;
+        // Act
         app.move_cursor(Direction::Down);
-        assert_eq!(app.cursor.row, 4);
+        // Assert
+        assert_eq!(app.cursor.row, inner_thumb_row);
         assert_eq!(app.cursor.col, 1);
 
-        // r3,4 -> r4,2
-        app.cursor.row = 3;
-        app.cursor.col = 4;
+        // Arrange
+        app.cursor.row = main_row;
+        app.cursor.col = inner_thumb_first_aligned_main_col + 2;
+        // Act
         app.move_cursor(Direction::Down);
-        assert_eq!(app.cursor.row, 4);
+        // Assert
+        assert_eq!(app.cursor.row, inner_thumb_row);
         assert_eq!(app.cursor.col, 2);
 
-        // r3,5 -> r5,0 (visual col 5 maps to data col 0 in row 5)
-        app.cursor.row = 3;
+        // Arrange
+        app.cursor.row = main_row;
         app.cursor.col = 5;
+        // Act
         app.move_cursor(Direction::Down);
-        assert_eq!(app.cursor.row, 4);
-        // visual col 5 in row 4 would be data col 3, clamped to 2
-        assert_eq!(app.cursor.col, 2);
+        // Assert
+        assert_eq!(app.cursor.row, inner_thumb_row);
+        assert_eq!(app.cursor.col, inner_thumb_max_col);
     }
 
     #[test]
     fn test_navigation_up_from_row4_to_row3_left() {
+        // Arrange
         let mut app = create_test_app();
         app.cursor.is_left = true;
+        let inner_thumb_row = 4;
+        let main_row = 3;
+        let inner_thumb_offset = 2;
 
-        // r4,0 -> r3,2 (visual col 2)
-        app.cursor.row = 4;
+        // Arrange
+        app.cursor.row = inner_thumb_row;
         app.cursor.col = 0;
+        // Act
         app.move_cursor(Direction::Up);
-        assert_eq!(app.cursor.row, 3);
-        assert_eq!(app.cursor.col, 2);
+        // Assert
+        assert_eq!(app.cursor.row, main_row);
+        assert_eq!(app.cursor.col, 0 + inner_thumb_offset);
 
-        // r4,1 -> r3,3 (visual col 3)
-        app.cursor.row = 4;
+        // Arrange
+        app.cursor.row = inner_thumb_row;
         app.cursor.col = 1;
+        // Act
         app.move_cursor(Direction::Up);
-        assert_eq!(app.cursor.row, 3);
-        assert_eq!(app.cursor.col, 3);
+        // Assert
+        assert_eq!(app.cursor.row, main_row);
+        assert_eq!(app.cursor.col, 1 + inner_thumb_offset);
 
-        // r4,2 -> r3,4 (visual col 4)
-        app.cursor.row = 4;
+        // Arrange
+        app.cursor.row = inner_thumb_row;
         app.cursor.col = 2;
+        // Act
         app.move_cursor(Direction::Up);
-        assert_eq!(app.cursor.row, 3);
-        assert_eq!(app.cursor.col, 4);
+        // Assert
+        assert_eq!(app.cursor.row, main_row);
+        assert_eq!(app.cursor.col, 2 + inner_thumb_offset);
     }
 
     #[test]
     fn test_navigation_up_from_row5_to_row4_left() {
+        // Arrange
         let mut app = create_test_app();
         app.cursor.is_left = true;
+        let outer_thumb_row = 5;
+        let inner_thumb_row = 4;
+        let inner_thumb_max_col = 2;
 
-        // r5,0 -> r4,2 (visual col 5, closest in row 4 is col 2 at visual 4)
-        app.cursor.row = 5;
+        // Arrange
+        app.cursor.row = outer_thumb_row;
         app.cursor.col = 0;
+        // Act
         app.move_cursor(Direction::Up);
-        assert_eq!(app.cursor.row, 4);
-        assert_eq!(app.cursor.col, 2);  // visual 5 - 2 = 3, but row 4 max is 2
+        // Assert
+        assert_eq!(app.cursor.row, inner_thumb_row);
+        assert_eq!(app.cursor.col, inner_thumb_max_col);
     }
 
     #[test]
@@ -689,29 +752,34 @@ mod tests {
         use std::io::Write;
         use tempfile::NamedTempFile;
 
-        // Create a temporary file with content
+        // Arrange
         let mut temp_file = NamedTempFile::new().unwrap();
         writeln!(temp_file, "test content").unwrap();
-        
         let mut config = crate::model::Config::new(temp_file.path().to_path_buf());
         config.palette = crate::model::ColorPalette::new();
         let mut app = App::new(config);
-        
-        // Should not panic, and should set a status message
+
+        // Act
         app.copy_to_clipboard();
+
+        // Assert
         assert!(app.status_message.is_some());
     }
 
     #[test]
     fn test_copy_to_clipboard_with_nonexistent_file() {
         use std::path::PathBuf;
-        
-        let mut config = crate::model::Config::new(PathBuf::from("/nonexistent/path/file.txt"));
+
+        // Arrange
+        let nonexistent_path = PathBuf::from("/nonexistent/path/file.txt");
+        let mut config = crate::model::Config::new(nonexistent_path);
         config.palette = crate::model::ColorPalette::new();
         let mut app = App::new(config);
-        
-        // Should not panic, should show error status
+
+        // Act
         app.copy_to_clipboard();
+
+        // Assert
         assert!(app.status_message.is_some());
         let (msg, _) = app.status_message.as_ref().unwrap();
         assert!(msg.contains("Read failed"));
@@ -719,36 +787,45 @@ mod tests {
 
     #[test]
     fn test_save_as_opens_dialog_with_current_filename() {
+        // Arrange
         let mut app = create_test_app();
         assert_eq!(app.mode, Mode::Normal);
         assert!(app.filename_input.is_empty());
 
+        // Act
         app.save_as();
 
+        // Assert
         assert_eq!(app.mode, Mode::SaveAs);
         assert_eq!(app.filename_input, "test.txt");
     }
 
     #[test]
     fn test_cancel_save_as() {
+        // Arrange
         let mut app = create_test_app();
         app.save_as();
         app.filename_input = "modified.txt".to_string();
 
+        // Act
         app.cancel_save_as();
 
+        // Assert
         assert_eq!(app.mode, Mode::Normal);
         assert!(app.filename_input.is_empty());
     }
 
     #[test]
     fn test_try_save_as_empty_filename_shows_error() {
+        // Arrange
         let mut app = create_test_app();
         app.mode = Mode::SaveAs;
         app.filename_input = String::new();
 
+        // Act
         app.try_save_as();
 
+        // Assert
         assert_eq!(app.mode, Mode::SaveAs);
         let (msg, _) = app.status_message.as_ref().unwrap();
         assert!(msg.contains("empty"));
@@ -759,22 +836,20 @@ mod tests {
         use std::io::Write;
         use tempfile::NamedTempFile;
 
-        // Create source file
+        // Arrange
         let source_file = NamedTempFile::new().unwrap();
         let mut config = crate::model::Config::new(source_file.path().to_path_buf());
         config.palette = crate::model::ColorPalette::new();
         let mut app = App::new(config);
-
-        // Create target file that already exists
-        let mut target_file = NamedTempFile::new().unwrap();
-        writeln!(target_file, "existing content").unwrap();
-
+        let mut existing_target_file = NamedTempFile::new().unwrap();
+        writeln!(existing_target_file, "existing content").unwrap();
         app.mode = Mode::SaveAs;
-        app.filename_input = target_file.path().to_string_lossy().to_string();
+        app.filename_input = existing_target_file.path().to_string_lossy().to_string();
 
+        // Act
         app.try_save_as();
 
-        // Should prompt for confirmation
+        // Assert
         assert_eq!(app.mode, Mode::SaveAsConfirm);
     }
 
@@ -783,21 +858,19 @@ mod tests {
         use std::io::Write;
         use tempfile::NamedTempFile;
 
-        // Create a file
+        // Arrange
         let mut temp_file = NamedTempFile::new().unwrap();
         writeln!(temp_file, "content").unwrap();
-
         let mut config = crate::model::Config::new(temp_file.path().to_path_buf());
         config.palette = crate::model::ColorPalette::new();
         let mut app = App::new(config);
-
         app.mode = Mode::SaveAs;
-        // Same file as current - should not prompt
         app.filename_input = temp_file.path().to_string_lossy().to_string();
 
+        // Act
         app.try_save_as();
 
-        // Should execute save directly (mode goes to Normal on success)
+        // Assert
         assert_eq!(app.mode, Mode::Normal);
     }
 
@@ -805,21 +878,21 @@ mod tests {
     fn test_try_save_as_new_file_no_confirmation() {
         use tempfile::TempDir;
 
+        // Arrange
         let temp_dir = TempDir::new().unwrap();
         let source_path = temp_dir.path().join("source.txt");
         std::fs::write(&source_path, "content").unwrap();
-
         let mut config = crate::model::Config::new(source_path);
         config.palette = crate::model::ColorPalette::new();
         let mut app = App::new(config);
-
         app.mode = Mode::SaveAs;
-        // New file that doesn't exist
-        app.filename_input = temp_dir.path().join("new_file.txt").to_string_lossy().to_string();
+        let new_file_path = temp_dir.path().join("new_file.txt");
+        app.filename_input = new_file_path.to_string_lossy().to_string();
 
+        // Act
         app.try_save_as();
 
-        // Should execute save directly
+        // Assert
         assert_eq!(app.mode, Mode::Normal);
         assert!(!app.modified);
     }
@@ -828,20 +901,21 @@ mod tests {
     fn test_execute_save_as_updates_file_path() {
         use tempfile::TempDir;
 
+        // Arrange
         let temp_dir = TempDir::new().unwrap();
         let source_path = temp_dir.path().join("source.txt");
         std::fs::write(&source_path, "content").unwrap();
-
         let mut config = crate::model::Config::new(source_path.clone());
         config.palette = crate::model::ColorPalette::new();
         let mut app = App::new(config);
         app.modified = true;
-
         let new_path = temp_dir.path().join("new_file.txt");
         app.filename_input = new_path.to_string_lossy().to_string();
 
+        // Act
         app.execute_save_as();
 
+        // Assert
         assert_eq!(app.config.file_path, new_path);
         assert!(!app.modified);
         assert_eq!(app.mode, Mode::Normal);
@@ -850,12 +924,15 @@ mod tests {
 
     #[test]
     fn test_execute_save_as_invalid_path_shows_error() {
+        // Arrange
         let mut app = create_test_app();
-        app.filename_input = "/nonexistent/directory/file.txt".to_string();
+        let invalid_path = "/nonexistent/directory/file.txt";
+        app.filename_input = invalid_path.to_string();
 
+        // Act
         app.execute_save_as();
 
-        // Should stay in SaveAs mode on error
+        // Assert
         assert_eq!(app.mode, Mode::SaveAs);
         let (msg, _) = app.status_message.as_ref().unwrap();
         assert!(msg.contains("Save failed"));

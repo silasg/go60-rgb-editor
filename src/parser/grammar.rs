@@ -284,8 +284,13 @@ mod tests {
 
     #[test]
     fn test_parse_rgb_define() {
-        let line = "#define RED_RGB 0xFF0000 // Red color";
-        let result = parse_rgb_define(line);
+        // Arrange
+        let rgb_define_line = "#define RED_RGB 0xFF0000 // Red color";
+
+        // Act
+        let result = parse_rgb_define(rgb_define_line);
+
+        // Assert
         assert!(result.is_some());
         let (name, rgb, comment) = result.unwrap();
         assert_eq!(name, "RED_RGB");
@@ -295,7 +300,8 @@ mod tests {
 
     #[test]
     fn test_parse_bindings() {
-        let content = r#"
+        // Arrange
+        let bindings_content = r#"
           ___ ___ BCL BNL BSL ___                                     ___ ___ ___ ___ ___ ___
           ___ ___ ___ ___ ___ ___                                     ___ ___ ___ ___ ___ ___
           ___ MAJ CYN CHU YLW ___                                     ___ YLW CHU CYN MAJ ___
@@ -303,12 +309,15 @@ mod tests {
                   ___ ___ ___                                             ___ ___ ___ 
                                        ___ ___ ___     ___ ___ ___ 
         "#;
-
         let mut layer = Layer::new("Test".to_string(), "LAYER_Test".to_string());
-        parse_bindings(content, &mut layer).unwrap();
 
-        assert_eq!(layer.left_half.len(), 6);
-        assert_eq!(layer.right_half.len(), 6);
+        // Act
+        parse_bindings(bindings_content, &mut layer).unwrap();
+
+        // Assert
+        let expected_row_count = 6;
+        assert_eq!(layer.left_half.len(), expected_row_count);
+        assert_eq!(layer.right_half.len(), expected_row_count);
         assert_eq!(layer.left_half[0][2], "BCL");
         assert_eq!(layer.left_half[2][1], "MAJ");
         assert_eq!(layer.right_half[2][4], "MAJ");

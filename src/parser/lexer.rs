@@ -138,14 +138,26 @@ mod tests {
 
     #[test]
     fn test_hex_number() {
-        let (rest, hex) = hex_number("0xFF0000").unwrap();
-        assert_eq!(hex, "0xFF0000");
-        assert_eq!(rest, "");
+        // Arrange
+        let hex_color_input = "0xFF0000";
+
+        // Act
+        let (remaining_input, parsed_hex) = hex_number(hex_color_input).unwrap();
+
+        // Assert
+        assert_eq!(parsed_hex, "0xFF0000");
+        assert_eq!(remaining_input, "");
     }
 
     #[test]
     fn test_define_rgb() {
-        let (_, (name, hex, comment)) = define_rgb("#define RED_RGB 0xFF0000 // Red color").unwrap();
+        // Arrange
+        let rgb_define_line = "#define RED_RGB 0xFF0000 // Red color";
+
+        // Act
+        let (_, (name, hex, comment)) = define_rgb(rgb_define_line).unwrap();
+
+        // Assert
         assert_eq!(name, "RED_RGB");
         assert_eq!(hex, "0xFF0000");
         assert_eq!(comment, Some(" Red color"));
@@ -153,23 +165,42 @@ mod tests {
 
     #[test]
     fn test_define_underglow() {
-        let (_, (name, rgb)) = define_underglow("  #define RED &ug RED_RGB").unwrap();
-        assert_eq!(name, "RED");
-        assert_eq!(rgb, "RED_RGB");
+        // Arrange
+        let underglow_define_line = "  #define RED &ug RED_RGB";
+
+        // Act
+        let (_, (color_name, rgb_reference)) = define_underglow(underglow_define_line).unwrap();
+
+        // Assert
+        assert_eq!(color_name, "RED");
+        assert_eq!(rgb_reference, "RED_RGB");
     }
 
     #[test]
     fn test_define_lock_indicator() {
-        let (_, (name, ug_type, off, on)) = define_lock_indicator("#define BSL &ug_sl BLK_RGB RED_RGB // comment").unwrap();
+        // Arrange
+        let lock_indicator_line = "#define BSL &ug_sl BLK_RGB RED_RGB // comment";
+
+        // Act
+        let (_, (name, indicator_type, off_color, on_color)) =
+            define_lock_indicator(lock_indicator_line).unwrap();
+
+        // Assert
         assert_eq!(name, "BSL");
-        assert_eq!(ug_type, "&ug_sl");
-        assert_eq!(off, "BLK_RGB");
-        assert_eq!(on, "RED_RGB");
+        assert_eq!(indicator_type, "&ug_sl");
+        assert_eq!(off_color, "BLK_RGB");
+        assert_eq!(on_color, "RED_RGB");
     }
 
     #[test]
     fn test_ifdef_layer() {
-        let (_, name) = ifdef_layer("      #ifdef LAYER_Cursor").unwrap();
-        assert_eq!(name, "LAYER_Cursor");
+        // Arrange
+        let ifdef_line = "      #ifdef LAYER_Cursor";
+
+        // Act
+        let (_, layer_macro_name) = ifdef_layer(ifdef_line).unwrap();
+
+        // Assert
+        assert_eq!(layer_macro_name, "LAYER_Cursor");
     }
 }

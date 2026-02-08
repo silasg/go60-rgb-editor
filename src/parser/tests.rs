@@ -8,40 +8,31 @@ mod integration_tests {
 
     #[test]
     fn test_parse_sample_config() {
+        // Act
         let config = parse_config(SAMPLE_CONFIG).expect("Failed to parse config");
 
-        // Check that we have layers
+        // Assert
         assert!(!config.layers.is_empty(), "Should have parsed layers");
-
-        // Check that we have colors
         assert!(!config.palette.colors.is_empty(), "Should have parsed colors");
-
-        // Check for specific known colors
         assert!(config.palette.get("RED").is_some(), "Should have RED color");
         assert!(config.palette.get("___").is_some(), "Should have ___ (off) color");
         assert!(config.palette.get("CYN").is_some(), "Should have CYN color");
-
-        // Check for lock indicators
         assert!(config.palette.get("BSL").is_some(), "Should have BSL lock indicator");
-
-        // Check for aliases
         assert!(config.palette.get("FST").is_some(), "Should have FST alias");
     }
 
     #[test]
     fn test_parse_layers() {
+        // Act
         let config = parse_config(SAMPLE_CONFIG).expect("Failed to parse config");
-
-        // Check we have the expected number of layers
-        assert!(config.layers.len() > 5, "Should have multiple layers");
-
-        // Find the Cursor layer
         let cursor_layer = config
             .layers
             .iter()
             .find(|l| l.name == "Cursor")
             .expect("Should have Cursor layer");
 
+        // Assert
+        assert!(config.layers.len() > 5, "Should have multiple layers");
         assert_eq!(cursor_layer.macro_name, "LAYER_Cursor");
         assert_eq!(cursor_layer.fade_delay, 5);
         assert_eq!(cursor_layer.left_half.len(), 6, "Should have 6 rows");
@@ -50,25 +41,21 @@ mod integration_tests {
 
     #[test]
     fn test_roundtrip() {
+        // Act
         let config = parse_config(SAMPLE_CONFIG).expect("Failed to parse config");
         let output = write_config(&config);
-
-        // Parse the output again
         let reparsed = parse_config(&output).expect("Failed to reparse config");
 
-        // Check layers match
+        // Assert
         assert_eq!(
             config.layers.len(),
             reparsed.layers.len(),
             "Layer count should match"
         );
-
         for (orig, new) in config.layers.iter().zip(reparsed.layers.iter()) {
             assert_eq!(orig.name, new.name, "Layer names should match");
             assert_eq!(orig.macro_name, new.macro_name, "Macro names should match");
             assert_eq!(orig.fade_delay, new.fade_delay, "Fade delays should match");
-
-            // Check all key positions
             for row in 0..orig.left_half.len() {
                 for col in 0..orig.left_half[row].len() {
                     assert_eq!(
@@ -92,31 +79,24 @@ mod integration_tests {
 
     #[test]
     fn test_special_colors() {
+        // Act
         let config = parse_config(SAMPLE_CONFIG).expect("Failed to parse config");
+        let lock_indicator_bsl = config.palette.get("BSL").expect("Should have BSL");
+        let alias_fst = config.palette.get("FST").expect("Should have FST");
+        let regular_color_red = config.palette.get("RED").expect("Should have RED");
 
-        // Check lock indicators are marked as special
-        let bsl = config.palette.get("BSL").expect("Should have BSL");
-        assert!(bsl.is_special(), "BSL should be marked as special");
-
-        // Check aliases are marked as special
-        let fst = config.palette.get("FST").expect("Should have FST");
-        assert!(fst.is_special(), "FST should be marked as special");
-
-        // Check regular colors are not special
-        let red = config.palette.get("RED").expect("Should have RED");
-        assert!(!red.is_special(), "RED should not be marked as special");
+        // Assert
+        assert!(lock_indicator_bsl.is_special(), "BSL should be marked as special");
+        assert!(alias_fst.is_special(), "FST should be marked as special");
+        assert!(!regular_color_red.is_special(), "RED should not be marked as special");
     }
 
     #[test]
-    fn test_serialize_two_layers() {
-        // Create a config with HRM_WinLinx and Cursor layers from scratch
+    fn test_serialize_complete_config_with_layers_to_zmk_format() {
+        // Arrange
         let mut config = Config::new(PathBuf::from("test.txt"));
-
-        // Set up minimal header and footer
         config.raw_header = "// Test header\n".to_string();
         config.raw_footer = "// Test footer\n".to_string();
-
-        // Create palette with colors used in these layers
         let mut palette = ColorPalette::new();
         for (abbrev, hex) in [
             ("___", "000000"),
@@ -185,11 +165,6 @@ mod integration_tests {
             vec!["CYN", "CYN", "CYN"].iter().map(|s| s.to_string()).collect(),
         ];
         config.layers.push(cursor);
-
-        // Serialize
-        let output = write_config(&config);
-
-        // Expected output
         let expected = r#"// Test header
 // ==== PER-KEY-RGB <section begins> ====
   / {
@@ -232,6 +207,10 @@ mod integration_tests {
 // Test footer
 "#;
 
+        // Act
+        let output = write_config(&config);
+
+        // Assert
         assert_eq!(output, expected, "Serialized output doesn't match expected");
     }
 }

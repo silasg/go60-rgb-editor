@@ -129,6 +129,7 @@ mod tests {
 
     #[test]
     fn test_write_layer() {
+        // Arrange
         let mut layer = Layer::new("Cursor".to_string(), "LAYER_Cursor".to_string());
         layer.fade_delay = 5;
         layer.left_half[0] = vec![
@@ -139,10 +140,12 @@ mod tests {
             "ORN".to_string(),
             "___".to_string(),
         ];
-
         let mut output = String::new();
+
+        // Act
         write_layer(&mut output, &layer);
 
+        // Assert
         assert!(output.contains("#ifdef LAYER_Cursor"));
         assert!(output.contains("ORN"));
         assert!(output.contains("fade-delay = <5>"));

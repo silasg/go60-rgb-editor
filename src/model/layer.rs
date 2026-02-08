@@ -98,26 +98,51 @@ mod tests {
 
     #[test]
     fn test_layer_new() {
+        // Act
         let layer = Layer::new("Test".to_string(), "LAYER_Test".to_string());
-        assert_eq!(layer.left_half.len(), 6);
-        assert_eq!(layer.right_half.len(), 6);
-        assert_eq!(layer.left_half[0].len(), 6);
-        assert_eq!(layer.left_half[4].len(), 3);
+
+        // Assert
+        let expected_row_count = 6;
+        let expected_main_row_cols = 6;
+        let expected_thumb_row_cols = 3;
+        assert_eq!(layer.left_half.len(), expected_row_count);
+        assert_eq!(layer.right_half.len(), expected_row_count);
+        assert_eq!(layer.left_half[0].len(), expected_main_row_cols);
+        assert_eq!(layer.left_half[4].len(), expected_thumb_row_cols);
     }
 
     #[test]
     fn test_get_set_color() {
+        // Arrange
         let mut layer = Layer::new("Test".to_string(), "LAYER_Test".to_string());
-        layer.set_color(0, 0, true, "RED".to_string());
-        assert_eq!(layer.get_color(0, 0, true), Some("RED"));
-        assert_eq!(layer.get_color(0, 0, false), Some("___"));
+        let row = 0;
+        let col = 0;
+        let is_left_half = true;
+        let default_color = "___";
+
+        // Act
+        layer.set_color(row, col, is_left_half, "RED".to_string());
+
+        // Assert
+        assert_eq!(layer.get_color(row, col, is_left_half), Some("RED"));
+        assert_eq!(layer.get_color(row, col, !is_left_half), Some(default_color));
     }
 
     #[test]
     fn test_cols_for_row() {
-        assert_eq!(Layer::cols_for_row(0), 6);
-        assert_eq!(Layer::cols_for_row(3), 6);
-        assert_eq!(Layer::cols_for_row(4), 3);
-        assert_eq!(Layer::cols_for_row(5), 3);
+        let main_row_col_count = 6;
+        let thumb_row_col_count = 3;
+
+        // Act
+        let first_main_row_cols = Layer::cols_for_row(0);
+        let last_main_row_cols = Layer::cols_for_row(3);
+        let inner_thumb_row_cols = Layer::cols_for_row(4);
+        let outer_thumb_row_cols = Layer::cols_for_row(5);
+
+        // Assert
+        assert_eq!(first_main_row_cols, main_row_col_count);
+        assert_eq!(last_main_row_cols, main_row_col_count);
+        assert_eq!(inner_thumb_row_cols, thumb_row_col_count);
+        assert_eq!(outer_thumb_row_cols, thumb_row_col_count);
     }
 }

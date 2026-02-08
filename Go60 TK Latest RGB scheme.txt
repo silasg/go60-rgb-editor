@@ -135,7 +135,7 @@
         bindings = <
           ___ ___ BCL BNL BSL ___                                     ___ ___ ___ ___ ___ ___
           ___ ___ ___ ___ ___ ___                                     ___ ___ ___ ___ ___ ___
-          ___ CHU CYN MAJ YLW ___                                     ___ YLW MAJ CYN CHU ___
+          ___ MAJ CHU YLW CYN ___                                     ___ CYN YLW CHU MAJ ___
           ___ ___ ___ ___ ___ ___                                     ___ ___ ___ ___ ___ ___
                   ___ ___ ___                                             ___ ___ ___ 
                                       ___ ___ ___     ___ ___ ___ 
@@ -149,11 +149,11 @@
       Keypad {
         bindings = <
           ___ WHT WHT WHT WHT WHT                                     WHT WHT WHT WHT WHT WHT
-          WHT ___ GRN GRN GRN GRN                                     WHT WHT WHT WHT WHT WHT
-          WHT YLW GRN GRN GRN GRN                                     WHT WHT WHT WHT WHT ORN
-          ___ YLW YLW YLW YLW YLW                                     WHT WHT WHT WHT WHT ___
-                  ___ WHT WHT                                             WHT WHT WHT 
-                                      WHT WHT WHT     WHT WHT WHT 
+          ORN ___ GRN GRN GRN GRN                                     TEA ___ TEA MAJ MAJ WHT
+          ORN MAJ GRN GRN GRN GRN                                     ___ TEA ___ MAJ MAJ ORN
+          ___ MAJ YLW YLW YLW YLW                                     TEA ___ TEA WHT MAJ ___
+                  ___ WHT WHT                                             TEA WHT WHT 
+                                      WHT WHT WHT     WHT WHT TEA 
         >;
         layer-id = <LAYER_Keypad>;
         fade-delay = <15>;
@@ -299,9 +299,9 @@
       Cursor {
         bindings = <
           ___ ORN ORN ORN ORN ___                                     ___ ___ ___ ___ ___ ___
-          ___ ORN MAJ MAJ ORN YLW                                     YLW ORN PNK PNK ORN ___
-          WHT WHT WHT WHT WHT YLW                                     YLW GRN GRN GRN GRN WHT
-          MAJ CYN CYN CYN MAJ YLW                                     YLW GRN GRN GRN GRN MAJ
+          ___ ORN CYN CYN ORN YLW                                     ORN PNK PNK ORN YLW ___
+          WHT WHT WHT WHT WHT YLW                                     GRN GRN GRN GRN YLW WHT
+          MAJ CYN CYN CYN MAJ YLW                                     GRN ___ ___ GRN YLW MAJ
                   ___ MAJ MAJ                                             MAJ MAJ MAJ 
                                       ___ DUG ___     CYN CYN CYN 
         >;
@@ -344,11 +344,11 @@
       Mouse {
         bindings = <
           ___ ___ ___ ___ ___ ___                                     ___ ___ ___ ___ ___ ___
-          ___ ___ LAC AZU LAC ___                                     ___ WHT WHT WHT WHT ___
-          ___ TEA AZU AZU AZU ___                                     ___ FST WRP SLO YLW PNK
-          ___ TEA SLO WRP FST ___                                     ___ LAC AZU LAC ORN PNK
+          ___ ___ LAC AZU LAC ___                                     ___ ORN ORN ORN ORN ___
+          ___ TEA AZU AZU AZU ___                                     ___ FST WRP SLO WHT PNK
+          ___ TEA SLO WRP FST ___                                     ___ LAC AZU LAC RED PNK
                   YLW YLW YLW                                             AZU AZU AZU 
-                                      YLW ORN PNK     ___ DUG ___ 
+                                      WHT ___ RED     WHT ___ RED 
         >;
         layer-id = <LAYER_Mouse>;
         fade-delay = <5>;
@@ -363,7 +363,7 @@
           ___ FST FST FST FST ___                                     ___ FST WRP SLO ___ ___
           ___ FST SLO WRP FST ___                                     ___ FST FST FST FST ___
                   ___ ___ ___                                             YLW ORN MAJ 
-                                      YLW ORN PNK     ___ DUG ___ 
+                                      WHT ___ RED     WHT ___ RED 
         >;
         layer-id = <LAYER_MouseFast>;
         fade-delay = <5>;
@@ -378,7 +378,7 @@
           ___ WRP WRP WRP WRP ___                                     ___ FST WRP SLO ___ ___
           ___ WRP SLO WRP FST ___                                     ___ WRP WRP WRP WRP ___
                   ___ ___ ___                                             YLW ORN MAJ 
-                                      YLW ORN PNK     ___ DUG ___ 
+                                      WHT ___ RED     WHT ___ RED 
         >;
         layer-id = <LAYER_MouseWarp>;
         fade-delay = <5>;
@@ -393,7 +393,7 @@
           ___ SLO SLO SLO SLO ___                                     ___ FST WRP SLO ___ ___
           ___ SLO SLO WRP FST ___                                     ___ SLO SLO SLO SLO ___
                   ___ ___ ___                                             YLW ORN MAJ 
-                                      YLW ORN PNK     ___ DUG ___ 
+                                      WHT ___ RED     WHT ___ RED 
         >;
         layer-id = <LAYER_MouseSlow>;
         fade-delay = <5>;
