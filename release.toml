@@ -1,0 +1,9 @@
+# cargo-release configuration
+# https://github.com/crate-ci/cargo-release
+
+publish = false  # Don't publish to crates.io
+push = false     # Don't auto-push; push manually after review
+pre-release-commit-message = "chore: release v{{version}}"
+tag-prefix = "v"
+tag-message = "v{{version}}"
+pre-release-hook = ["git", "cliff", "--tag", "v{{version}}", "-o", "CHANGELOG.md"]

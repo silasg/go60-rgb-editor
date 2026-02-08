@@ -1,5 +1,7 @@
 [tools]
 "cargo:cargo-llvm-cov" = "latest"
+"cargo:git-cliff" = "latest"
+"cargo:cargo-release" = "latest"
 
 [tasks.setup]
 description = "One-time setup for dev environment (installs rustup components)"
@@ -9,7 +11,7 @@ run = "rustup component add llvm-tools-preview"
 description = "Build the project"
 run = "cargo build"
 
-[tasks.release]
+[tasks.build-release]
 description = "Build optimized release binary"
 run = "cargo build --release"
 
@@ -44,3 +46,19 @@ cargo llvm-cov --html && open target/llvm-cov/html/index.html
 [tasks.run]
 description = "Run the editor with the example config file"
 run = "cargo run -- 'Go60 TK Latest RGB scheme.txt'"
+
+[tasks.changelog]
+description = "Generate/preview changelog from conventional commits"
+run = "git cliff -o CHANGELOG.md"
+
+[tasks.release-patch]
+description = "Release a patch version (bug fixes)"
+run = "cargo release patch"
+
+[tasks.release-minor]
+description = "Release a minor version (new features)"
+run = "cargo release minor"
+
+[tasks.release-major]
+description = "Release a major version (breaking changes)"
+run = "cargo release major"

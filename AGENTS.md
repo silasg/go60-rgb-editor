@@ -44,6 +44,45 @@ mise run test     # Run tests
 mise run coverage # Test coverage report
 ```
 
+## Commits
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/). All commit messages **must** follow this format:
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+**Types:**
+- `feat:` — new feature (bumps minor version)
+- `fix:` — bug fix (bumps patch version)
+- `docs:` — documentation only
+- `style:` — formatting, no code change
+- `refactor:` — code restructuring, no behavior change
+- `perf:` — performance improvement
+- `test:` — adding/updating tests
+- `ci:` — CI/CD changes
+- `chore:` — maintenance tasks
+- `build:` — build system changes
+
+**Breaking changes:** Add `!` after the type (e.g., `feat!: redesign config format`) or add a `BREAKING CHANGE:` footer. This bumps the major version.
+
+## Releases
+
+Releases are managed with `cargo-release` and `git-cliff` (changelog generation). Both are installed via mise.
+
+```bash
+mise run changelog        # Preview/generate CHANGELOG.md
+mise run release-patch    # Release patch version (bug fixes)
+mise run release-minor    # Release minor version (features)
+mise run release-major    # Release major version (breaking)
+```
+
+`cargo-release` bumps the version in `Cargo.toml`, generates the changelog via `git-cliff`, commits, and tags. Push the tag manually to trigger the GitHub Actions release workflow which builds binaries for all platforms.
+
 ## Config File Format
 
 The editor parses TailorKey RGB config files. See:
