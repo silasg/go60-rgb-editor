@@ -1,11 +1,10 @@
 use std::time::Instant;
 
-use crate::model::{Config, Half, Layer, RgbPos, ROW_COUNT};
+use crate::model::{Config, Half, Layer, RgbPos, ROW_COUNT, COLORS_PER_PICKER_ROW};
 
 const MAX_UNDO_HISTORY: usize = 50;
 const FADE_STEP_MS: u16 = 5;
 const STATUS_TIMEOUT_SECS: u64 = 3;
-const COLORS_PER_PICKER_ROW: usize = 17;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
@@ -106,7 +105,7 @@ impl App {
 
     /// Convert visual column to data column for a given row
     /// Returns the closest valid data column
-    fn from_visual_col(&self, row: usize, visual_col: usize) -> usize {
+    fn visual_to_data_col(&self, row: usize, visual_col: usize) -> usize {
         let max_col = Layer::cols_for_row(row);
         
         let data_col = if self.cursor.half.is_left() {
@@ -134,14 +133,14 @@ impl App {
                 if self.cursor.row > 0 {
                     let visual_col = self.to_visual_col(self.cursor.row, self.cursor.col);
                     self.cursor.row -= 1;
-                    self.cursor.col = self.from_visual_col(self.cursor.row, visual_col);
+                    self.cursor.col = self.visual_to_data_col(self.cursor.row, visual_col);
                 }
             }
             Direction::Down => {
                 if self.cursor.row < ROW_COUNT - 1 {
                     let visual_col = self.to_visual_col(self.cursor.row, self.cursor.col);
                     self.cursor.row += 1;
-                    self.cursor.col = self.from_visual_col(self.cursor.row, visual_col);
+                    self.cursor.col = self.visual_to_data_col(self.cursor.row, visual_col);
                 }
             }
             Direction::Left => {
@@ -341,7 +340,7 @@ impl App {
                     if let Some(mut stdin) = child.stdin.take() {
                         stdin.write_all(content.as_bytes())
                     } else {
-                        Err(std::io::Error::new(std::io::ErrorKind::Other, "no stdin"))
+                        Err(std::io::Error::other("no stdin"))
                     }
                 };
                 // stdin is now dropped/closed, so pbcopy will complete
@@ -541,7 +540,7 @@ mod tests {
     }
 
     #[test]
-    fn test_from_visual_col_left_half() {
+    fn test_visual_to_data_col_left_half() {
         // Arrange
         let mut app = create_test_app();
         app.cursor.half = Half::Left;
@@ -549,18 +548,18 @@ mod tests {
         let outer_thumb_offset = 5;
 
         // Act - main rows (0-3) have no offset
-        let main_row_first_col_data = app.from_visual_col(3, 0);
-        let main_row_last_col_data = app.from_visual_col(3, 5);
+        let main_row_first_col_data = app.visual_to_data_col(3, 0);
+        let main_row_last_col_data = app.visual_to_data_col(3, 5);
 
         // Assert
         assert_eq!(main_row_first_col_data, 0);
         assert_eq!(main_row_last_col_data, 5);
 
         // Act - row 4 (inner thumb) visual col minus offset, clamped to 0-2
-        let inner_thumb_visual2_data = app.from_visual_col(4, inner_thumb_offset + 0);
-        let inner_thumb_visual3_data = app.from_visual_col(4, inner_thumb_offset + 1);
-        let inner_thumb_visual4_data = app.from_visual_col(4, inner_thumb_offset + 2);
-        let inner_thumb_clamped_data = app.from_visual_col(4, 0);
+        let inner_thumb_visual2_data = app.visual_to_data_col(4, inner_thumb_offset + 0);
+        let inner_thumb_visual3_data = app.visual_to_data_col(4, inner_thumb_offset + 1);
+        let inner_thumb_visual4_data = app.visual_to_data_col(4, inner_thumb_offset + 2);
+        let inner_thumb_clamped_data = app.visual_to_data_col(4, 0);
 
         // Assert
         assert_eq!(inner_thumb_visual2_data, 0);
@@ -569,9 +568,9 @@ mod tests {
         assert_eq!(inner_thumb_clamped_data, 0);
 
         // Act - row 5 (outer thumb) visual col minus offset, clamped to 0-2
-        let outer_thumb_visual5_data = app.from_visual_col(5, outer_thumb_offset + 0);
-        let outer_thumb_visual6_data = app.from_visual_col(5, outer_thumb_offset + 1);
-        let outer_thumb_visual7_data = app.from_visual_col(5, outer_thumb_offset + 2);
+        let outer_thumb_visual5_data = app.visual_to_data_col(5, outer_thumb_offset + 0);
+        let outer_thumb_visual6_data = app.visual_to_data_col(5, outer_thumb_offset + 1);
+        let outer_thumb_visual7_data = app.visual_to_data_col(5, outer_thumb_offset + 2);
 
         // Assert
         assert_eq!(outer_thumb_visual5_data, 0);
@@ -1348,20 +1347,20 @@ mod tests {
     }
 
     #[test]
-    fn test_from_visual_col_right_half() {
+    fn test_visual_to_data_col_right_half() {
         // Arrange
         let mut app = create_test_app();
         app.cursor.half = Half::Right;
 
         // Act & Assert: main rows have no offset
-        assert_eq!(app.from_visual_col(0, 3), 3, "right half main row visual 3 should map to data 3");
+        assert_eq!(app.visual_to_data_col(0, 3), 3, "right half main row visual 3 should map to data 3");
 
         // Act & Assert: row 4 subtracts 1
-        assert_eq!(app.from_visual_col(4, 1), 0, "right half row 4 visual 1 should map to data 0");
-        assert_eq!(app.from_visual_col(4, 3), 2, "right half row 4 visual 3 should map to data 2");
+        assert_eq!(app.visual_to_data_col(4, 1), 0, "right half row 4 visual 1 should map to data 0");
+        assert_eq!(app.visual_to_data_col(4, 3), 2, "right half row 4 visual 3 should map to data 2");
 
         // Act & Assert: row 5 adds 2, clamped
-        assert_eq!(app.from_visual_col(5, 0), 2, "right half row 5 visual 0 should map to data 2");
+        assert_eq!(app.visual_to_data_col(5, 0), 2, "right half row 5 visual 0 should map to data 2");
     }
 
     // --- Quick color selection ---

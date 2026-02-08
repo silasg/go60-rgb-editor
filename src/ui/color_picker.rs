@@ -3,10 +3,10 @@ use ratatui::{
     widgets::{Block, Borders, Widget},
 };
 
-use crate::model::{ColorKind, ColorPalette};
+use crate::model::{ColorKind, ColorPalette, COLORS_PER_PICKER_ROW};
 
 const KEY_CELL_WIDTH: u16 = 4;
-const COLORS_PER_PICKER_ROW: usize = 17;
+const MAX_REGULAR_COLOR_ROWS: usize = 2;
 
 /// Widget for the color palette picker
 pub struct ColorPickerWidget<'a> {
@@ -125,15 +125,15 @@ impl<'a> Widget for ColorPickerWidget<'a> {
             let row = i / max_cols;
             let col = i % max_cols;
 
-            if row > 1 {
-                break; // Limit to 2 rows of regular colors
+            if row >= MAX_REGULAR_COLOR_ROWS {
+                break;
             }
 
             let x = color_start_x + col as u16 * KEY_CELL_WIDTH;
             let y = current_y + row as u16;
             self.render_color(buf, x, y, idx);
         }
-        current_y += 3; // 2 rows + 1 empty line
+        current_y += MAX_REGULAR_COLOR_ROWS as u16 + 1; // rows + 1 empty line
 
         current_y = self.render_labeled_section(
             buf, &lock_indicators, "Lock:", 7,

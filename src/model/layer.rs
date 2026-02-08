@@ -6,6 +6,8 @@ pub const THUMB_ROW_COLS: usize = 3;
 pub const ROW_COUNT: usize = 6;
 /// First thumb row index
 pub const THUMB_START_ROW: usize = 4;
+/// Number of colors per row in the color picker
+pub const COLORS_PER_PICKER_ROW: usize = 17;
 
 /// Represents a single keyboard layer with RGB color assignments
 #[derive(Debug, Clone)]

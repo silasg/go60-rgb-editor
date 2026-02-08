@@ -179,11 +179,11 @@ fn handle_save_as_mode(app: &mut App, key: KeyEvent) {
         KeyCode::Char('w') if key.modifiers.contains(KeyModifiers::CONTROL) => {
             // Delete last word
             // First remove trailing spaces
-            while app.filename_input.chars().last().map_or(false, |c| c == ' ') {
+            while app.filename_input.ends_with(' ') {
                 app.filename_input.pop();
             }
             // Then remove non-space characters
-            while app.filename_input.chars().last().map_or(false, |c| c != ' ' && c != '/') {
+            while app.filename_input.chars().last().is_some_and(|c| c != ' ' && c != '/') {
                 app.filename_input.pop();
             }
         }

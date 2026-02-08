@@ -3,7 +3,7 @@ pub mod layer;
 pub mod config;
 
 pub use color::{RgbColor, ColorDef, ColorPalette, ColorKind};
-pub use layer::{Layer, ROW_COUNT};
+pub use layer::{Layer, ROW_COUNT, COLORS_PER_PICKER_ROW};
 pub use config::Config;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

@@ -51,7 +51,7 @@ fn parse_colors(header: &str) -> Result<ColorPalette, String> {
 
         // Try to parse RGB definition: #define NAME_RGB 0xNNNNNN // comment
         if let Some(rgb_def) = parse_rgb_define(line) {
-            rgb_colors.insert(rgb_def.0.to_string(), (rgb_def.1, rgb_def.2));
+            rgb_colors.insert(rgb_def.name.to_string(), (rgb_def.rgb, rgb_def.comment));
         }
     }
 
@@ -128,8 +128,15 @@ fn parse_colors(header: &str) -> Result<ColorPalette, String> {
     Ok(palette)
 }
 
+/// A parsed `#define NAME_RGB 0xNNNNNN // comment` line
+struct RgbDefinition<'a> {
+    name: &'a str,
+    rgb: RgbColor,
+    comment: Option<String>,
+}
+
 /// Parse a single RGB #define line
-fn parse_rgb_define(line: &str) -> Option<(&str, RgbColor, Option<String>)> {
+fn parse_rgb_define(line: &str) -> Option<RgbDefinition<'_>> {
     let parts: Vec<&str> = line.splitn(4, ' ').collect();
     if parts.len() < 3 || parts[0] != "#define" {
         return None;
@@ -145,16 +152,12 @@ fn parse_rgb_define(line: &str) -> Option<(&str, RgbColor, Option<String>)> {
 
     let comment = if parts.len() > 3 {
         let rest = parts[3];
-        if let Some(pos) = rest.find("//") {
-            Some(rest[pos + 2..].trim().to_string())
-        } else {
-            None
-        }
+        rest.find("//").map(|pos| rest[pos + 2..].trim().to_string())
     } else {
         None
     };
 
-    Some((name, rgb, comment))
+    Some(RgbDefinition { name, rgb, comment })
 }
 
 /// Parse layers from the underglow-layer section
@@ -292,10 +295,10 @@ mod tests {
 
         // Assert
         assert!(result.is_some());
-        let (name, rgb, comment) = result.unwrap();
-        assert_eq!(name, "RED_RGB");
-        assert_eq!(rgb, RgbColor::new(255, 0, 0));
-        assert_eq!(comment, Some("Red color".to_string()));
+        let def = result.unwrap();
+        assert_eq!(def.name, "RED_RGB");
+        assert_eq!(def.rgb, RgbColor::new(255, 0, 0));
+        assert_eq!(def.comment, Some("Red color".to_string()));
     }
 
     #[test]
