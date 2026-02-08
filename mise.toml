@@ -1,10 +1,6 @@
 [tools]
 "cargo:cargo-llvm-cov" = "latest"
 
-[env]
-LLVM_COV = "{{env.HOME}}/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/bin/llvm-cov"
-LLVM_PROFDATA = "{{env.HOME}}/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/bin/llvm-profdata"
-
 [tasks.setup]
 description = "One-time setup for dev environment (installs rustup components)"
 run = "rustup component add llvm-tools-preview"
@@ -27,11 +23,23 @@ run = "cargo clippy -- -D warnings"
 
 [tasks.coverage]
 description = "Run tests with coverage report"
-run = "cargo llvm-cov"
+run = """
+SYSROOT=$(rustup run stable rustc --print sysroot)
+HOST=$(rustup run stable rustc -vV | sed -n 's/host: //p')
+export LLVM_COV="$SYSROOT/lib/rustlib/$HOST/bin/llvm-cov"
+export LLVM_PROFDATA="$SYSROOT/lib/rustlib/$HOST/bin/llvm-profdata"
+cargo llvm-cov
+"""
 
 [tasks.coverage-html]
 description = "Generate HTML coverage report and open in browser"
-run = "cargo llvm-cov --html && open target/llvm-cov/html/index.html"
+run = """
+SYSROOT=$(rustup run stable rustc --print sysroot)
+HOST=$(rustup run stable rustc -vV | sed -n 's/host: //p')
+export LLVM_COV="$SYSROOT/lib/rustlib/$HOST/bin/llvm-cov"
+export LLVM_PROFDATA="$SYSROOT/lib/rustlib/$HOST/bin/llvm-profdata"
+cargo llvm-cov --html && open target/llvm-cov/html/index.html
+"""
 
 [tasks.run]
 description = "Run the editor with the example config file"

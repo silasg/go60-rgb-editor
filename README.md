@@ -36,8 +36,8 @@ Press `?` in the editor to see all key bindings.
 ### From source
 
 ```bash
-git clone <repo-url>
-cd Go60
+git clone https://github.com/silasg/go60-rgb-editor.git
+cd go60-rgb-editor
 cargo build --release
 ```
 
