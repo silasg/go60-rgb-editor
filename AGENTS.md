@@ -102,3 +102,9 @@ mise run release-major    # Release major version (breaking)
 
 The editor parses TailorKey RGB config files. See:
 https://sites.google.com/view/tailorkey/how-to/rgb
+
+## Documentation Maintenance
+
+When making changes, keep documentation in sync:
+- **AGENTS.md** — update project structure when adding/removing/renaming source files; update mise tasks when adding/removing tasks
+- **README.md** — update features, usage, or installation instructions when user-facing behavior changes
