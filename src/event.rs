@@ -3,7 +3,6 @@ use std::time::Duration;
 
 use crate::app::{App, Direction, Mode};
 
-/// Handle events and return whether the app should continue
 pub fn handle_events(app: &mut App, timeout: Duration) -> std::io::Result<bool> {
     if event::poll(timeout)? {
         if let Event::Key(key) = event::read()? {
@@ -13,7 +12,6 @@ pub fn handle_events(app: &mut App, timeout: Duration) -> std::io::Result<bool> 
     Ok(!app.should_quit)
 }
 
-/// Handle a key event
 fn handle_key(app: &mut App, key: KeyEvent) {
     match app.mode {
         Mode::Normal => handle_normal_mode(app, key),

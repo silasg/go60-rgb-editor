@@ -3,7 +3,6 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Widget, Wrap},
 };
 
-/// Widget for the help popup
 pub struct HelpWidget;
 
 impl HelpWidget {

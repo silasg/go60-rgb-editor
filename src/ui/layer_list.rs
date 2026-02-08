@@ -5,7 +5,6 @@ use ratatui::{
 
 use crate::model::Layer;
 
-/// Widget for displaying the layer list
 pub struct LayerListWidget<'a> {
     layers: &'a [Layer],
     selected: usize,

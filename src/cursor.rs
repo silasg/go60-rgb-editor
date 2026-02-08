@@ -8,8 +8,7 @@ pub enum Direction {
     Right,
 }
 
-/// Convert data column to visual column for a given row.
-/// Visual columns account for the shifted positions of rows 4 and 5.
+/// Convert data column to visual column, accounting for thumb row offsets.
 pub fn to_visual_col(half: Half, row: usize, col: usize) -> usize {
     if half.is_left() {
         match row {
@@ -28,8 +27,7 @@ pub fn to_visual_col(half: Half, row: usize, col: usize) -> usize {
     }
 }
 
-/// Convert visual column to data column for a given row.
-/// Returns the closest valid data column.
+/// Convert visual column back to data column, clamped to the valid range.
 pub fn visual_to_data_col(half: Half, row: usize, visual_col: usize) -> usize {
     let max_col = Layer::cols_for_row(row);
 
@@ -52,7 +50,6 @@ pub fn visual_to_data_col(half: Half, row: usize, visual_col: usize) -> usize {
     data_col.min(max_col - 1)
 }
 
-/// Move the cursor one step in the given direction, wrapping between halves on left/right.
 pub fn move_cursor(cursor: &mut RgbPos, direction: Direction) {
     match direction {
         Direction::Up => {
@@ -90,7 +87,6 @@ pub fn move_cursor(cursor: &mut RgbPos, direction: Direction) {
     }
 }
 
-/// Switch the cursor to the opposite keyboard half, clamping the column if needed.
 pub fn switch_half(cursor: &mut RgbPos) {
     cursor.half = cursor.half.opposite();
     clamp_col(cursor);

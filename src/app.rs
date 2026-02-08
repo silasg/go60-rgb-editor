@@ -8,7 +8,7 @@ use crate::undo::UndoHistory;
 const FADE_STEP_MS: u16 = 5;
 const STATUS_TIMEOUT_SECS: u64 = 3;
 
-/// Try platform clipboard commands in order: pbcopy (macOS), xclip (Linux), xsel (Linux)
+/// Try platform clipboard commands: pbcopy (macOS), xclip (Linux), xsel (Linux)
 fn spawn_clipboard_process() -> std::io::Result<std::process::Child> {
     use std::process::{Command, Stdio};
 
@@ -40,13 +40,6 @@ pub enum Mode {
     SaveAsConfirm,
 }
 
-#[derive(Default)]
-struct ColorCategories {
-    regular: Vec<usize>,
-    locks: Vec<usize>,
-    aliases: Vec<usize>,
-}
-
 fn move_within_section(section: &[usize], pos: usize, delta: isize) -> usize {
     let new_pos = pos as isize + delta;
     if new_pos >= 0 && (new_pos as usize) < section.len() {
@@ -66,7 +59,7 @@ pub struct App {
     pub status_message: Option<(String, Instant)>,
     pub modified: bool,
     pub should_quit: bool,
-    pub copied_color_abbrev: Option<String>,
+    pub yanked_color: Option<String>,
     pub filename_input: String,
 }
 
@@ -82,7 +75,7 @@ impl App {
             status_message: None,
             modified: false,
             should_quit: false,
-            copied_color_abbrev: None,
+            yanked_color: None,
             filename_input: String::new(),
         }
     }
@@ -284,12 +277,12 @@ impl App {
         let color = self.get_current_color().map(|s| s.to_string());
         if let Some(c) = color {
             self.show_status(&format!("Copied: {}", c));
-            self.copied_color_abbrev = Some(c);
+            self.yanked_color = Some(c);
         }
     }
 
     pub fn paste_color(&mut self) {
-        if let Some(color) = self.copied_color_abbrev.clone() {
+        if let Some(color) = self.yanked_color.clone() {
             self.set_current_key_color(&color);
             self.show_status(&format!("Pasted: {}", color));
         } else {
@@ -303,11 +296,10 @@ impl App {
     }
 
     pub fn move_color_selection(&mut self, direction: Direction) {
-        let categories = self.categorize_palette_colors();
+        let categories = self.config.palette.categorize();
         let current = self.selected_color;
         let cols = COLORS_PER_PICKER_ROW;
 
-        // Ordered top-to-bottom as they appear in the picker
         let sections = [&categories.regular, &categories.locks, &categories.aliases];
 
         let (section_idx, pos) = match sections.iter().enumerate()
@@ -326,54 +318,49 @@ impl App {
                 self.selected_color = move_within_section(section, pos, 1);
             }
             Direction::Up => {
-                if section_idx == 0 {
-                    // Within regular: move up one row
-                    if pos >= cols {
-                        self.selected_color = section[pos - cols];
-                    }
-                } else {
-                    // Jump to previous section
-                    let target = sections[section_idx - 1];
-                    if !target.is_empty() {
-                        let target_pos = if section_idx - 1 == 0 {
-                            // Jumping into regular: land on last row at same column
-                            let last_row_start = (target.len() - 1) / cols * cols;
-                            last_row_start + pos
-                        } else {
-                            pos
-                        };
-                        self.selected_color = target[target_pos.min(target.len() - 1)];
-                    }
-                }
+                self.selected_color = self.jump_to_prev_section(sections, section_idx, pos, cols);
             }
             Direction::Down => {
-                if section_idx == 0 && pos + cols < section.len() {
-                    // Within regular: move down one row
-                    self.selected_color = section[pos + cols];
-                } else if section_idx + 1 < sections.len() {
-                    // Jump to next section
-                    let target = sections[section_idx + 1];
-                    if !target.is_empty() {
-                        let target_pos = if section_idx == 0 { pos % cols } else { pos };
-                        self.selected_color = target[target_pos.min(target.len() - 1)];
-                    }
-                }
+                self.selected_color = self.jump_to_next_section(sections, section_idx, pos, cols);
             }
         }
     }
 
-    fn categorize_palette_colors(&self) -> ColorCategories {
-        use crate::model::ColorKind;
-
-        let mut categories = ColorCategories::default();
-        for (i, color) in self.config.palette.colors.iter().enumerate() {
-            match &color.kind {
-                ColorKind::Regular => categories.regular.push(i),
-                ColorKind::LockIndicator { .. } => categories.locks.push(i),
-                ColorKind::Alias { .. } => categories.aliases.push(i),
-            }
+    fn jump_to_prev_section(
+        &self, sections: [&Vec<usize>; 3], section_idx: usize, pos: usize, cols: usize,
+    ) -> usize {
+        if section_idx == 0 {
+            // Within regular: move up one row
+            if pos >= cols { return sections[0][pos - cols]; }
+            return self.selected_color;
         }
-        categories
+        let target = sections[section_idx - 1];
+        if target.is_empty() { return self.selected_color; }
+
+        let target_pos = if section_idx - 1 == 0 {
+            // Jumping into regular: land on last row at same column
+            let last_row_start = (target.len() - 1) / cols * cols;
+            last_row_start + pos
+        } else {
+            pos
+        };
+        target[target_pos.min(target.len() - 1)]
+    }
+
+    fn jump_to_next_section(
+        &self, sections: [&Vec<usize>; 3], section_idx: usize, pos: usize, cols: usize,
+    ) -> usize {
+        if section_idx == 0 && pos + cols < sections[0].len() {
+            // Within regular: move down one row
+            return sections[0][pos + cols];
+        }
+        if section_idx + 1 >= sections.len() { return self.selected_color; }
+
+        let target = sections[section_idx + 1];
+        if target.is_empty() { return self.selected_color; }
+
+        let target_pos = if section_idx == 0 { pos % cols } else { pos };
+        target[target_pos.min(target.len() - 1)]
     }
 
     pub fn apply_selected_color(&mut self) {
@@ -812,13 +799,13 @@ mod tests {
 
         // Assert
         assert_eq!(
-            app.copied_color_abbrev.as_deref(), Some("RED"),
+            app.yanked_color.as_deref(), Some("RED"),
             "copied color should match the current key's color"
         );
     }
 
     #[test]
-    fn test_paste_color_applies_copied_color_abbrev_to_cursor_position() {
+    fn test_paste_color_applies_yanked_color_to_cursor_position() {
         // Arrange
         let mut app = create_test_app();
         app.cursor.row = 0;
@@ -840,7 +827,7 @@ mod tests {
     fn test_paste_without_copy_shows_nothing_to_paste() {
         // Arrange
         let mut app = create_test_app();
-        assert!(app.copied_color_abbrev.is_none());
+        assert!(app.yanked_color.is_none());
 
         // Act
         app.paste_color();

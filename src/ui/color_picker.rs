@@ -3,9 +3,11 @@ use ratatui::{
     widgets::{Block, Borders, Widget},
 };
 
-use crate::model::{ColorKind, ColorPalette, COLORS_PER_PICKER_ROW};
+use crate::model::{ColorPalette, COLORS_PER_PICKER_ROW};
+use super::render_color_cell;
 
 const KEY_CELL_WIDTH: u16 = 4;
+/// Maximum rows of regular colors shown before the lock/alias sections
 const MAX_REGULAR_COLOR_ROWS: usize = 2;
 
 struct LabeledSection<'a> {
@@ -16,7 +18,6 @@ struct LabeledSection<'a> {
     style: Style,
 }
 
-/// Widget for the color palette picker
 pub struct ColorPickerWidget<'a> {
     palette: &'a ColorPalette,
     selected: usize,
@@ -25,11 +26,7 @@ pub struct ColorPickerWidget<'a> {
 
 impl<'a> ColorPickerWidget<'a> {
     pub fn new(palette: &'a ColorPalette, selected: usize, focused: bool) -> Self {
-        Self {
-            palette,
-            selected,
-            focused,
-        }
+        Self { palette, selected, focused }
     }
 
     fn render_labeled_section(
@@ -41,46 +38,13 @@ impl<'a> ColorPickerWidget<'a> {
         buf.set_string(inner.x, y, section.label, section.style);
         let mut x = inner.x + section.label_width;
         for &idx in section.indices {
-            self.render_color(buf, x, y, idx);
+            let is_selected = idx == self.selected;
+            let abbrev = &self.palette.colors[idx].abbrev;
+            render_color_cell(buf, x, y, abbrev, is_selected, self.palette);
             x += KEY_CELL_WIDTH;
         }
         buf.set_string(x + 1, y, section.explanation, section.style);
         y + 1
-    }
-
-    fn render_color(&self, buf: &mut Buffer, x: u16, y: u16, idx: usize) {
-        let color = &self.palette.colors[idx];
-
-        // Get the effective RGB (resolving aliases)
-        let effective_rgb = self.palette.get_effective_rgb(&color.abbrev);
-
-        let style = if let Some(rgb) = effective_rgb {
-            Style::default()
-                .bg(rgb.to_ratatui_color())
-                .fg(rgb.contrasting_fg())
-        } else {
-            Style::default()
-                .bg(Color::DarkGray)
-                .fg(Color::White)
-        };
-
-        // Add bold for selected color
-        let style = if idx == self.selected {
-            style.add_modifier(Modifier::BOLD)
-        } else {
-            style
-        };
-
-        // Always show the abbreviation (max 3 chars)
-        let display = format!("{:^3}", &color.abbrev[..color.abbrev.len().min(3)]);
-        buf.set_string(x, y, &display, style);
-
-        // Draw selection pointers around selected color
-        if idx == self.selected {
-            let pointer_style = Style::default().fg(Color::Yellow);
-            buf.set_string(x.saturating_sub(1), y, "▶", pointer_style);
-            buf.set_string(x + 3, y, "◀", pointer_style);
-        }
     }
 }
 
@@ -111,23 +75,12 @@ impl<'a> Widget for ColorPickerWidget<'a> {
         let color_start_x = inner.x + 1;
         let label_style = Style::default().fg(Color::DarkGray);
 
-        // Separate colors by type
-        let mut regular_colors: Vec<usize> = Vec::new();
-        let mut lock_indicators: Vec<usize> = Vec::new();
-        let mut aliases: Vec<usize> = Vec::new();
-
-        for (i, color) in self.palette.colors.iter().enumerate() {
-            match &color.kind {
-                ColorKind::Regular => regular_colors.push(i),
-                ColorKind::LockIndicator { .. } => lock_indicators.push(i),
-                ColorKind::Alias { .. } => aliases.push(i),
-            }
-        }
+        let categories = self.palette.categorize();
 
         let mut current_y = inner.y;
 
         let max_cols = COLORS_PER_PICKER_ROW;
-        for (i, &idx) in regular_colors.iter().enumerate() {
+        for (i, &idx) in categories.regular.iter().enumerate() {
             let row = i / max_cols;
             let col = i % max_cols;
 
@@ -137,14 +90,16 @@ impl<'a> Widget for ColorPickerWidget<'a> {
 
             let x = color_start_x + col as u16 * KEY_CELL_WIDTH;
             let y = current_y + row as u16;
-            self.render_color(buf, x, y, idx);
+            let is_selected = idx == self.selected;
+            let abbrev = &self.palette.colors[idx].abbrev;
+            render_color_cell(buf, x, y, abbrev, is_selected, self.palette);
         }
-        current_y += MAX_REGULAR_COLOR_ROWS as u16 + 1; // rows + 1 empty line
+        current_y += MAX_REGULAR_COLOR_ROWS as u16 + 1;
 
         current_y = self.render_labeled_section(
             buf,
             &LabeledSection {
-                indices: &lock_indicators,
+                indices: &categories.locks,
                 label: "Lock:",
                 label_width: 7,
                 explanation: "(CapsLock/NumLock/ScrollLock indicators)",
@@ -156,7 +111,7 @@ impl<'a> Widget for ColorPickerWidget<'a> {
         current_y = self.render_labeled_section(
             buf,
             &LabeledSection {
-                indices: &aliases,
+                indices: &categories.aliases,
                 label: "Mouse:",
                 label_width: 8,
                 explanation: "(FST=Fast, WRP=Warp, SLO=Slow)",
@@ -165,7 +120,6 @@ impl<'a> Widget for ColorPickerWidget<'a> {
             inner, current_y,
         );
 
-        // Bottom: quick select hint
         if current_y < inner.y + inner.height {
             buf.set_string(
                 inner.x,

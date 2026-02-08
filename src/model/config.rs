@@ -3,18 +3,14 @@ use std::fs;
 
 use super::{ColorPalette, Layer};
 
-/// Complete configuration for the RGB editor
 #[derive(Debug, Clone)]
 pub struct Config {
-    /// All layers in order
     pub layers: Vec<Layer>,
-    /// Color palette with all defined colors
     pub palette: ColorPalette,
-    /// Path to the config file
     pub file_path: PathBuf,
-    /// Raw header content (everything before underglow-layer section)
+    /// Everything before the underglow-layer section
     pub raw_header: String,
-    /// Raw footer content (everything after underglow-layer section, including #undef)
+    /// Everything after the underglow-layer section (including #undef)
     pub raw_footer: String,
 }
 

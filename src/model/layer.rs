@@ -9,21 +9,20 @@ pub const THUMB_START_ROW: usize = 4;
 /// Number of colors per row in the color picker
 pub const COLORS_PER_PICKER_ROW: usize = 17;
 
-/// Represents a single keyboard layer with RGB color assignments
+/// A keyboard layer with per-key RGB color assignments.
+///
+/// Each half has 6 rows: rows 0-3 are main keys (6 cols), rows 4-5 are thumb keys (3 cols).
+/// Colors are stored as abbreviations (e.g., "RED", "CYN", "___" for off).
 #[derive(Debug, Clone)]
 pub struct Layer {
-    /// Display name (e.g., "Cursor", "Symbol")
+    /// e.g., "Cursor", "Symbol"
     pub name: String,
-    /// Macro name used in #ifdef (e.g., "LAYER_Cursor")
+    /// #ifdef guard name, e.g., "LAYER_Cursor"
     pub macro_name: String,
-    /// Fade delay in ms
     pub fade_delay: u16,
-    /// Left half colors: [row][col] = color abbreviation
-    /// Rows 0-3: main keys (6 cols each)
-    /// Row 4: inner thumb keys (3 keys, indices 0-2)
-    /// Row 5: outer thumb keys (3 keys, indices 0-2)
+    /// [row][col] = color abbreviation
     pub left_half: Vec<Vec<String>>,
-    /// Right half colors: same structure as left
+    /// [row][col] = color abbreviation
     pub right_half: Vec<Vec<String>>,
 }
 

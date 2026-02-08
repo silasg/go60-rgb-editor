@@ -5,7 +5,6 @@ use ratatui::{
 
 use crate::app::App;
 
-/// Widget for the status bar
 pub struct StatusBarWidget<'a> {
     app: &'a App,
 }

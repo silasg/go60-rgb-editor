@@ -1,17 +1,15 @@
 use std::collections::HashMap;
 
-/// The kind of color definition
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ColorKind {
-    /// Regular RGB color (e.g., RED, CYN, ___)
+    /// e.g., RED, CYN, ___
     Regular,
-    /// Lock indicator color (e.g., BSL, BNL, BCL) - has off/on states
+    /// Lock indicator with off/on states, e.g., BSL, BNL, BCL
     LockIndicator { off_color: String, on_color: String },
-    /// Alias to another color (e.g., FST -> GOL)
+    /// Alias to another color, e.g., FST -> GOL
     Alias { target: String },
 }
 
-/// RGB color value
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct RgbColor {
     pub r: u8,
@@ -25,7 +23,7 @@ impl RgbColor {
         Self { r, g, b }
     }
 
-    /// Parse hex color string like "0xFF0000" or "FF0000"
+    /// Parse "0xFF0000", "#FF0000", or "FF0000".
     pub fn from_hex(hex: &str) -> Result<Self, String> {
         let hex = hex.trim_start_matches("0x").trim_start_matches('#');
         if hex.len() != 6 {
@@ -46,12 +44,10 @@ impl RgbColor {
         ratatui::style::Color::Rgb(self.r, self.g, self.b)
     }
 
-    /// Calculate perceived luminance (0-255)
     pub fn luminance(&self) -> f64 {
         0.299 * self.r as f64 + 0.587 * self.g as f64 + 0.114 * self.b as f64
     }
 
-    /// Get a contrasting foreground color (black or white)
     pub fn contrasting_fg(&self) -> ratatui::style::Color {
         if self.luminance() > 128.0 {
             ratatui::style::Color::Rgb(0, 0, 0)  // True black
@@ -60,23 +56,18 @@ impl RgbColor {
         }
     }
 
-    /// Format as hex string for output
     #[cfg(test)]
     pub fn to_hex(&self) -> String {
         format!("0x{:02X}{:02X}{:02X}", self.r, self.g, self.b)
     }
 }
 
-/// A color definition with abbreviation, name, and RGB value
 #[derive(Debug, Clone)]
 pub struct ColorDef {
-    /// Short abbreviation (e.g., "RED", "CYN", "___")
+    /// e.g., "RED", "CYN", "___"
     pub abbrev: String,
-    /// The RGB color value
     pub rgb: RgbColor,
-    /// Optional comment from the original file
     pub comment: Option<String>,
-    /// The kind of color (regular, lock indicator, or alias)
     pub kind: ColorKind,
 }
 
@@ -102,12 +93,9 @@ impl ColorDef {
 
 }
 
-/// Collection of color definitions with lookup by abbreviation
 #[derive(Debug, Clone, Default)]
 pub struct ColorPalette {
-    /// All color definitions in order
     pub colors: Vec<ColorDef>,
-    /// Lookup index by abbreviation
     pub by_abbrev: HashMap<String, usize>,
 }
 
@@ -126,7 +114,7 @@ impl ColorPalette {
         self.by_abbrev.get(abbrev).map(|&idx| &self.colors[idx])
     }
 
-    /// Get the effective RGB color for an abbreviation, resolving aliases
+    /// Resolve aliases and lock indicators to their effective RGB value.
     pub fn get_effective_rgb(&self, abbrev: &str) -> Option<&RgbColor> {
         let color = self.get(abbrev)?;
         match &color.kind {
@@ -139,6 +127,19 @@ impl ColorPalette {
         }
     }
 
+    /// Categorize palette colors by kind, returning indices into `self.colors`.
+    pub fn categorize(&self) -> CategorizedColors {
+        let mut categories = CategorizedColors::default();
+        for (i, color) in self.colors.iter().enumerate() {
+            match &color.kind {
+                ColorKind::Regular => categories.regular.push(i),
+                ColorKind::LockIndicator { .. } => categories.locks.push(i),
+                ColorKind::Alias { .. } => categories.aliases.push(i),
+            }
+        }
+        categories
+    }
+
     #[cfg(test)]
     pub fn regular_colors(&self) -> Vec<&ColorDef> {
         self.colors
@@ -146,6 +147,14 @@ impl ColorPalette {
             .filter(|c| matches!(c.kind, ColorKind::Regular))
             .collect()
     }
+}
+
+/// Color indices grouped by kind.
+#[derive(Default)]
+pub struct CategorizedColors {
+    pub regular: Vec<usize>,
+    pub locks: Vec<usize>,
+    pub aliases: Vec<usize>,
 }
 
 #[cfg(test)]

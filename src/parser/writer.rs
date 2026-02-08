@@ -1,29 +1,23 @@
 use crate::model::Config;
 
-/// Write the config back to the original file format
 pub fn write_config(config: &Config) -> String {
     let mut output = String::new();
 
-    // Write header (contains color definitions, etc.)
     output.push_str(&config.raw_header);
 
-    // Write section start marker
     output.push_str("// ==== PER-KEY-RGB <section begins> ====\n");
     output.push_str("  / {\n");
     output.push_str("    underglow-layer {\n");
     output.push_str("      compatible = \"zmk,underglow-layer\";\n\n");
 
-    // Write each layer
     for layer in &config.layers {
         write_layer(&mut output, layer);
     }
 
-    // Close the underglow-layer section
     output.push_str("    };\n");
     output.push_str("  };\n");
     output.push_str("  // ==== PER-KEY-RGB <section ends> =====\n");
 
-    // Write footer (contains #undef statements)
     output.push_str(&config.raw_footer);
 
     output
@@ -86,23 +80,16 @@ mod tests {
 
     #[test]
     fn test_write_layer() {
-        // Arrange
         let mut layer = Layer::new("Cursor".to_string(), "LAYER_Cursor".to_string());
         layer.fade_delay = 5;
         layer.left_half[0] = vec![
-            "___".to_string(),
-            "ORN".to_string(),
-            "ORN".to_string(),
-            "ORN".to_string(),
-            "ORN".to_string(),
-            "___".to_string(),
+            "___".to_string(), "ORN".to_string(), "ORN".to_string(),
+            "ORN".to_string(), "ORN".to_string(), "___".to_string(),
         ];
         let mut output = String::new();
 
-        // Act
         write_layer(&mut output, &layer);
 
-        // Assert
         assert!(output.contains("#ifdef LAYER_Cursor"));
         assert!(output.contains("ORN"));
         assert!(output.contains("fade-delay = <5>"));
