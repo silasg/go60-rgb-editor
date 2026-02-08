@@ -1,4 +1,6 @@
 /target
 /plans
+/local
 *.bak
+.nvimlog
 CODE_REVIEW.md
