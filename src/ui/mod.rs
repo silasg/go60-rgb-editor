@@ -85,7 +85,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
             let popup = Paragraph::new(text)
                 .block(Block::default().title(" Confirm Quit ").borders(Borders::ALL))
                 .alignment(Alignment::Center);
-            let popup_area = centered_rect_fixed(text, area);
+            let popup_area = centered_rect_for_text(text, area);
             frame.render_widget(Clear, popup_area);
             frame.render_widget(popup, popup_area);
         }
@@ -94,7 +94,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
             let popup = Paragraph::new(text)
                 .block(Block::default().title(" Copy to Clipboard ").borders(Borders::ALL))
                 .alignment(Alignment::Center);
-            let popup_area = centered_rect_fixed(text, area);
+            let popup_area = centered_rect_for_text(text, area);
             frame.render_widget(Clear, popup_area);
             frame.render_widget(popup, popup_area);
         }
@@ -144,7 +144,7 @@ fn centered_rect_chars(width: u16, height: u16, area: Rect) -> Rect {
 }
 
 /// Create a centered rectangle sized to fit the text content
-fn centered_rect_fixed(text: &str, area: Rect) -> Rect {
+fn centered_rect_for_text(text: &str, area: Rect) -> Rect {
     let lines: Vec<&str> = text.lines().collect();
     let max_line_width = lines.iter().map(|l| l.len()).max().unwrap_or(20);
     let height = lines.len();
@@ -159,24 +159,4 @@ fn centered_rect_fixed(text: &str, area: Rect) -> Rect {
     Rect::new(x, y, width, height)
 }
 
-/// Create a centered rectangle within the given area (percentage based)
-#[allow(dead_code)]
-fn centered_rect(percent_x: u16, percent_y: u16, area: Rect) -> Rect {
-    let popup_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage((100 - percent_y) / 2),
-            Constraint::Percentage(percent_y),
-            Constraint::Percentage((100 - percent_y) / 2),
-        ])
-        .split(area);
 
-    Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage((100 - percent_x) / 2),
-            Constraint::Percentage(percent_x),
-            Constraint::Percentage((100 - percent_x) / 2),
-        ])
-        .split(popup_layout[1])[1]
-}

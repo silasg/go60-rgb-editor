@@ -64,7 +64,7 @@ fn handle_normal_mode(app: &mut App, key: KeyEvent) {
         // Quick color selection (0-9)
         KeyCode::Char(c) if c.is_ascii_digit() => {
             let idx = c.to_digit(10).unwrap() as usize;
-            app.quick_color(idx);
+            app.apply_quick_color(idx);
         }
 
         // Copy/paste (vim-style)

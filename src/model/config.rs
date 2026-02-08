@@ -29,7 +29,6 @@ impl Config {
         }
     }
 
-    /// Load config from a file path
     pub fn load(path: &Path) -> Result<Self, String> {
         let content = fs::read_to_string(path)
             .map_err(|e| format!("Failed to read file: {}", e))?;
@@ -39,12 +38,10 @@ impl Config {
         Ok(config)
     }
 
-    /// Save config to its original file path
     pub fn save(&self) -> Result<(), String> {
         self.save_as(&self.file_path)
     }
 
-    /// Save config to a specific path
     pub fn save_as(&self, path: &Path) -> Result<(), String> {
         let content = crate::parser::write_config(self);
         
@@ -61,7 +58,6 @@ impl Config {
         Ok(())
     }
 
-    /// Get the display name for the file
     pub fn file_name(&self) -> &str {
         self.file_path
             .file_name()

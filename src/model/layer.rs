@@ -1,3 +1,12 @@
+/// Number of columns in the main key rows (rows 0–3)
+pub const MAIN_ROW_COLS: usize = 6;
+/// Number of columns in the thumb rows (rows 4–5)
+pub const THUMB_ROW_COLS: usize = 3;
+/// Total number of key rows per half (4 main + 2 thumb)
+pub const ROW_COUNT: usize = 6;
+/// First thumb row index
+pub const THUMB_START_ROW: usize = 4;
+
 /// Represents a single keyboard layer with RGB color assignments
 #[derive(Debug, Clone)]
 pub struct Layer {
@@ -18,9 +27,8 @@ pub struct Layer {
 
 impl Layer {
     pub fn new(name: String, macro_name: String) -> Self {
-        // Initialize with 6 rows, appropriate columns per row
-        let main_row = vec!["___".to_string(); 6];
-        let thumb_row = vec!["___".to_string(); 3];
+        let main_row = vec!["___".to_string(); MAIN_ROW_COLS];
+        let thumb_row = vec!["___".to_string(); THUMB_ROW_COLS];
 
         Self {
             name,
@@ -45,7 +53,6 @@ impl Layer {
         }
     }
 
-    /// Get the color at a specific position
     pub fn get_color(&self, row: usize, col: usize, is_left: bool) -> Option<&str> {
         let half = if is_left {
             &self.left_half
@@ -55,7 +62,6 @@ impl Layer {
         half.get(row).and_then(|r| r.get(col)).map(|s| s.as_str())
     }
 
-    /// Set the color at a specific position
     pub fn set_color(&mut self, row: usize, col: usize, is_left: bool, color: String) {
         let half = if is_left {
             &mut self.left_half
@@ -69,23 +75,20 @@ impl Layer {
         }
     }
 
-    /// Get the number of columns for a given row
-    #[allow(dead_code)]
     pub fn cols_for_row(row: usize) -> usize {
-        if row < 4 {
-            6 // Main rows
+        if row < THUMB_START_ROW {
+            MAIN_ROW_COLS
         } else {
-            3 // Thumb rows
+            THUMB_ROW_COLS
         }
     }
 
-    /// Check if a position is valid
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub fn is_valid_pos(row: usize, col: usize) -> bool {
-        if row < 4 {
-            col < 6
-        } else if row < 6 {
-            col < 3
+        if row < THUMB_START_ROW {
+            col < MAIN_ROW_COLS
+        } else if row < ROW_COUNT {
+            col < THUMB_ROW_COLS
         } else {
             false
         }

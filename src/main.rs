@@ -14,6 +14,8 @@ use color_eyre::Result;
 use app::App;
 use model::Config;
 
+const TICK_RATE_MS: u64 = 250;
+
 #[derive(Parser, Debug)]
 #[command(name = "go60-rgb-editor")]
 #[command(author, version, about = "TUI RGB Underglow Editor for ZMK Keyboards", long_about = None)]
@@ -44,7 +46,7 @@ fn main() -> Result<()> {
     tui.enter()?;
 
     // Main event loop
-    let tick_rate = Duration::from_millis(250);
+    let tick_rate = Duration::from_millis(TICK_RATE_MS);
 
     loop {
         // Draw UI
@@ -56,7 +58,7 @@ fn main() -> Result<()> {
         }
 
         // Tick for status message timeout
-        app.tick();
+        app.clear_expired_status();
     }
 
     // Cleanup

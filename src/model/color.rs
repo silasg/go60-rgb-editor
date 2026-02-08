@@ -20,7 +20,7 @@ pub struct RgbColor {
 }
 
 impl RgbColor {
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub fn new(r: u8, g: u8, b: u8) -> Self {
         Self { r, g, b }
     }
@@ -42,7 +42,6 @@ impl RgbColor {
         Ok(Self { r, g, b })
     }
 
-    /// Convert to ratatui Color
     pub fn to_ratatui_color(&self) -> ratatui::style::Color {
         ratatui::style::Color::Rgb(self.r, self.g, self.b)
     }
@@ -62,7 +61,7 @@ impl RgbColor {
     }
 
     /// Format as hex string for output
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub fn to_hex(&self) -> String {
         format!("0x{:02X}{:02X}{:02X}", self.r, self.g, self.b)
     }
@@ -73,9 +72,6 @@ impl RgbColor {
 pub struct ColorDef {
     /// Short abbreviation (e.g., "RED", "CYN", "___")
     pub abbrev: String,
-    /// RGB suffix name (e.g., "RED_RGB")
-    #[allow(dead_code)]
-    pub rgb_name: String,
     /// The RGB color value
     pub rgb: RgbColor,
     /// Optional comment from the original file
@@ -85,10 +81,9 @@ pub struct ColorDef {
 }
 
 impl ColorDef {
-    pub fn new(abbrev: String, rgb_name: String, rgb: RgbColor) -> Self {
+    pub fn new(abbrev: String, rgb: RgbColor) -> Self {
         Self {
             abbrev,
-            rgb_name,
             rgb,
             comment: None,
             kind: ColorKind::Regular,
@@ -105,11 +100,6 @@ impl ColorDef {
         self
     }
 
-    /// Check if this is a special color (lock indicator or alias)
-    #[allow(dead_code)]
-    pub fn is_special(&self) -> bool {
-        !matches!(self.kind, ColorKind::Regular)
-    }
 }
 
 /// Collection of color definitions with lookup by abbreviation
@@ -149,8 +139,7 @@ impl ColorPalette {
         }
     }
 
-    /// Get all regular (non-special) colors for the picker
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub fn regular_colors(&self) -> Vec<&ColorDef> {
         self.colors
             .iter()
@@ -265,8 +254,8 @@ mod tests {
     fn test_palette() {
         // Arrange
         let mut palette = ColorPalette::new();
-        let red_color = ColorDef::new("RED".to_string(), "RED_RGB".to_string(), RgbColor::new(255, 0, 0));
-        let green_color = ColorDef::new("GRN".to_string(), "GRN_RGB".to_string(), RgbColor::new(0, 255, 0));
+        let red_color = ColorDef::new("RED".to_string(), RgbColor::new(255, 0, 0));
+        let green_color = ColorDef::new("GRN".to_string(), RgbColor::new(0, 255, 0));
 
         // Act
         palette.add(red_color);
@@ -283,7 +272,7 @@ mod tests {
         // Arrange
         let mut palette = ColorPalette::new();
         let red_rgb = RgbColor::new(255, 0, 0);
-        palette.add(ColorDef::new("RED".to_string(), "RED_RGB".to_string(), red_rgb.clone()));
+        palette.add(ColorDef::new("RED".to_string(), red_rgb.clone()));
 
         // Act
         let effective_rgb = palette.get_effective_rgb("RED");
@@ -300,8 +289,8 @@ mod tests {
         // Arrange
         let mut palette = ColorPalette::new();
         let gold_rgb = RgbColor::new(255, 215, 0);
-        palette.add(ColorDef::new("GOL".to_string(), "GOL_RGB".to_string(), gold_rgb.clone()));
-        let alias = ColorDef::new("FST".to_string(), String::new(), RgbColor::default())
+        palette.add(ColorDef::new("GOL".to_string(), gold_rgb.clone()));
+        let alias = ColorDef::new("FST".to_string(), RgbColor::default())
             .with_kind(ColorKind::Alias { target: "GOL".to_string() });
         palette.add(alias);
 
@@ -320,10 +309,10 @@ mod tests {
         // Arrange
         let mut palette = ColorPalette::new();
         let red_rgb = RgbColor::new(255, 0, 0);
-        palette.add(ColorDef::new("RED".to_string(), "RED_RGB".to_string(), red_rgb.clone()));
+        palette.add(ColorDef::new("RED".to_string(), red_rgb.clone()));
         let black_rgb = RgbColor::new(0, 0, 0);
-        palette.add(ColorDef::new("BLK".to_string(), "BLK_RGB".to_string(), black_rgb));
-        let lock_indicator = ColorDef::new("BSL".to_string(), "RED_RGB".to_string(), red_rgb.clone())
+        palette.add(ColorDef::new("BLK".to_string(), black_rgb));
+        let lock_indicator = ColorDef::new("BSL".to_string(), red_rgb.clone())
             .with_kind(ColorKind::LockIndicator {
                 off_color: "BLK".to_string(),
                 on_color: "RED".to_string(),
@@ -359,10 +348,10 @@ mod tests {
     fn test_regular_colors_excludes_special_colors() {
         // Arrange
         let mut palette = ColorPalette::new();
-        let red = ColorDef::new("RED".to_string(), "RED_RGB".to_string(), RgbColor::new(255, 0, 0));
-        let alias = ColorDef::new("FST".to_string(), String::new(), RgbColor::default())
+        let red = ColorDef::new("RED".to_string(), RgbColor::new(255, 0, 0));
+        let alias = ColorDef::new("FST".to_string(), RgbColor::default())
             .with_kind(ColorKind::Alias { target: "RED".to_string() });
-        let lock = ColorDef::new("BSL".to_string(), "RED_RGB".to_string(), RgbColor::new(255, 0, 0))
+        let lock = ColorDef::new("BSL".to_string(), RgbColor::new(255, 0, 0))
             .with_kind(ColorKind::LockIndicator {
                 off_color: "BLK".to_string(),
                 on_color: "RED".to_string(),
@@ -412,27 +401,9 @@ mod tests {
     }
 
     #[test]
-    fn test_color_def_is_special() {
-        // Arrange
-        let regular = ColorDef::new("RED".to_string(), "RED_RGB".to_string(), RgbColor::new(255, 0, 0));
-        let alias = ColorDef::new("FST".to_string(), String::new(), RgbColor::default())
-            .with_kind(ColorKind::Alias { target: "RED".to_string() });
-        let lock = ColorDef::new("BSL".to_string(), "RED_RGB".to_string(), RgbColor::default())
-            .with_kind(ColorKind::LockIndicator {
-                off_color: "BLK".to_string(),
-                on_color: "RED".to_string(),
-            });
-
-        // Act & Assert
-        assert!(!regular.is_special(), "regular color should not be special");
-        assert!(alias.is_special(), "alias should be special");
-        assert!(lock.is_special(), "lock indicator should be special");
-    }
-
-    #[test]
     fn test_color_def_with_comment() {
         // Arrange
-        let color = ColorDef::new("RED".to_string(), "RED_RGB".to_string(), RgbColor::new(255, 0, 0));
+        let color = ColorDef::new("RED".to_string(), RgbColor::new(255, 0, 0));
 
         // Act
         let color_with_comment = color.with_comment("Bright red".to_string());

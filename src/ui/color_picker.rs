@@ -5,6 +5,9 @@ use ratatui::{
 
 use crate::model::{ColorKind, ColorPalette};
 
+const KEY_CELL_WIDTH: u16 = 4;
+const COLORS_PER_PICKER_ROW: usize = 17;
+
 /// Widget for the color palette picker
 pub struct ColorPickerWidget<'a> {
     palette: &'a ColorPalette,
@@ -81,8 +84,7 @@ impl<'a> Widget for ColorPickerWidget<'a> {
             return;
         }
 
-        let key_width: u16 = 4;
-        let color_start_x = inner.x + 1;  // Leading space for pointer
+        let color_start_x = inner.x + 1;
         let label_style = Style::default().fg(Color::DarkGray);
 
         // Separate colors by type
@@ -100,8 +102,7 @@ impl<'a> Widget for ColorPickerWidget<'a> {
 
         let mut current_y = inner.y;
 
-        // Row 1-2: Regular colors (17 per row: RED to PNK, then WHT to LAC)
-        let max_cols = 17;
+        let max_cols = COLORS_PER_PICKER_ROW;
         for (i, &idx) in regular_colors.iter().enumerate() {
             let row = i / max_cols;
             let col = i % max_cols;
@@ -110,7 +111,7 @@ impl<'a> Widget for ColorPickerWidget<'a> {
                 break; // Limit to 2 rows of regular colors
             }
 
-            let x = color_start_x + col as u16 * key_width;
+            let x = color_start_x + col as u16 * KEY_CELL_WIDTH;
             let y = current_y + row as u16;
             self.render_color(buf, x, y, idx);
         }
@@ -122,7 +123,7 @@ impl<'a> Widget for ColorPickerWidget<'a> {
             let mut x = inner.x + 7;  // Extra space for pointer
             for &idx in &lock_indicators {
                 self.render_color(buf, x, current_y, idx);
-                x += key_width;
+                x += KEY_CELL_WIDTH;
             }
             // Add explanation
             let explain_x = x + 1;
@@ -141,7 +142,7 @@ impl<'a> Widget for ColorPickerWidget<'a> {
             let mut x = inner.x + 8;  // Extra space for pointer
             for &idx in &aliases {
                 self.render_color(buf, x, current_y, idx);
-                x += key_width;
+                x += KEY_CELL_WIDTH;
             }
             // Add explanation
             let explain_x = x + 1;

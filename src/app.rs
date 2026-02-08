@@ -1,27 +1,23 @@
 use std::time::Instant;
 
-use crate::model::Config;
+use crate::model::{Config, Layer, ROW_COUNT};
 
-/// Application mode
+const MAX_UNDO_HISTORY: usize = 50;
+const FADE_STEP_MS: u16 = 5;
+const STATUS_TIMEOUT_SECS: u64 = 3;
+const COLORS_PER_PICKER_ROW: usize = 17;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
-    /// Normal navigation mode
     Normal,
-    /// Color picker mode
     ColorPick,
-    /// Help popup
     Help,
-    /// Confirm quit dialog
     ConfirmQuit,
-    /// Confirm copy to clipboard dialog
     ConfirmCopy,
-    /// Save As filename input
     SaveAs,
-    /// Confirm overwrite existing file
     SaveAsConfirm,
 }
 
-/// Cursor position on the keyboard
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Cursor {
     pub row: usize,
@@ -29,7 +25,6 @@ pub struct Cursor {
     pub is_left: bool,
 }
 
-/// Direction for cursor movement
 #[derive(Debug, Clone, Copy)]
 pub enum Direction {
     Up,
@@ -38,7 +33,6 @@ pub enum Direction {
     Right,
 }
 
-/// Main application state
 pub struct App {
     pub config: Config,
     pub mode: Mode,
@@ -50,7 +44,7 @@ pub struct App {
     pub status_message: Option<(String, Instant)>,
     pub modified: bool,
     pub should_quit: bool,
-    pub copied_color: Option<String>,
+    pub copied_color_abbrev: Option<String>,
     pub filename_input: String,
 }
 
@@ -67,17 +61,15 @@ impl App {
             status_message: None,
             modified: false,
             should_quit: false,
-            copied_color: None,
+            copied_color_abbrev: None,
             filename_input: String::new(),
         }
     }
 
-    /// Get the current layer
     pub fn current_layer(&self) -> Option<&crate::model::Layer> {
         self.config.layers.get(self.current_layer)
     }
 
-    /// Get the current layer mutably
     pub fn current_layer_mut(&mut self) -> Option<&mut crate::model::Layer> {
         self.config.layers.get_mut(self.current_layer)
     }
@@ -106,7 +98,7 @@ impl App {
     /// Convert visual column to data column for a given row
     /// Returns the closest valid data column
     fn from_visual_col(&self, row: usize, visual_col: usize) -> usize {
-        let max_col = if row < 4 { 6 } else { 3 };
+        let max_col = Layer::cols_for_row(row);
         
         let data_col = if self.cursor.is_left {
             match row {
@@ -127,7 +119,6 @@ impl App {
         data_col.min(max_col - 1)
     }
 
-    /// Move cursor in a direction
     pub fn move_cursor(&mut self, direction: Direction) {
         match direction {
             Direction::Up => {
@@ -138,7 +129,7 @@ impl App {
                 }
             }
             Direction::Down => {
-                if self.cursor.row < 5 {
+                if self.cursor.row < ROW_COUNT - 1 {
                     let visual_col = self.to_visual_col(self.cursor.row, self.cursor.col);
                     self.cursor.row += 1;
                     self.cursor.col = self.from_visual_col(self.cursor.row, visual_col);
@@ -167,7 +158,6 @@ impl App {
         }
     }
 
-    /// Clamp cursor column to valid range for current row
     fn clamp_cursor_col(&mut self) {
         let max_col = self.max_col_for_row();
         if self.cursor.col >= max_col {
@@ -175,29 +165,21 @@ impl App {
         }
     }
 
-    /// Get max column for current row
     fn max_col_for_row(&self) -> usize {
-        if self.cursor.row < 4 {
-            6
-        } else {
-            3
-        }
+        Layer::cols_for_row(self.cursor.row)
     }
 
-    /// Switch between left and right half
     pub fn switch_half(&mut self) {
         self.cursor.is_left = !self.cursor.is_left;
         self.clamp_cursor_col();
     }
 
-    /// Go to next layer
     pub fn next_layer(&mut self) {
         if !self.config.layers.is_empty() {
             self.current_layer = (self.current_layer + 1) % self.config.layers.len();
         }
     }
 
-    /// Go to previous layer
     pub fn prev_layer(&mut self) {
         if !self.config.layers.is_empty() {
             if self.current_layer == 0 {
@@ -208,12 +190,11 @@ impl App {
         }
     }
 
-    /// Increase fade duration by 5ms
     pub fn increase_fade(&mut self) {
         if self.current_layer().is_some() {
             self.push_undo();
             if let Some(layer) = self.current_layer_mut() {
-                layer.fade_delay += 5;
+                layer.fade_delay += FADE_STEP_MS;
                 let fade = layer.fade_delay;
                 self.modified = true;
                 self.show_status(&format!("Fade: {}ms", fade));
@@ -221,12 +202,11 @@ impl App {
         }
     }
 
-    /// Decrease fade duration by 5ms (minimum 0)
     pub fn decrease_fade(&mut self) {
         if self.current_layer().is_some() {
             self.push_undo();
             if let Some(layer) = self.current_layer_mut() {
-                layer.fade_delay = layer.fade_delay.saturating_sub(5);
+                layer.fade_delay = layer.fade_delay.saturating_sub(FADE_STEP_MS);
                 let fade = layer.fade_delay;
                 self.modified = true;
                 self.show_status(&format!("Fade: {}ms", fade));
@@ -234,7 +214,6 @@ impl App {
         }
     }
 
-    /// Set the color at current cursor position
     pub fn set_current_key_color(&mut self, color: &str) {
         self.push_undo();
         let row = self.cursor.row;
@@ -246,17 +225,14 @@ impl App {
         }
     }
 
-    /// Push current state to undo stack
     pub fn push_undo(&mut self) {
         self.undo_stack.push(self.config.clone());
         self.redo_stack.clear();
-        // Limit stack size
-        if self.undo_stack.len() > 50 {
+        if self.undo_stack.len() > MAX_UNDO_HISTORY {
             self.undo_stack.remove(0);
         }
     }
 
-    /// Undo last change
     pub fn undo(&mut self) {
         if let Some(prev_config) = self.undo_stack.pop() {
             self.redo_stack.push(self.config.clone());
@@ -268,7 +244,6 @@ impl App {
         }
     }
 
-    /// Redo last undone change
     pub fn redo(&mut self) {
         if let Some(next_config) = self.redo_stack.pop() {
             self.undo_stack.push(self.config.clone());
@@ -280,7 +255,6 @@ impl App {
         }
     }
 
-    /// Save the config
     pub fn save(&mut self) {
         match self.config.save() {
             Ok(()) => {
@@ -293,7 +267,6 @@ impl App {
         }
     }
 
-    /// Open Save As dialog
     pub fn save_as(&mut self) {
         // Pre-populate with current filename
         self.filename_input = self.config.file_path
@@ -302,7 +275,6 @@ impl App {
         self.mode = Mode::SaveAs;
     }
 
-    /// Attempt to save to the entered filename (checks for existing file)
     pub fn try_save_as(&mut self) {
         if self.filename_input.is_empty() {
             self.show_status("Filename cannot be empty");
@@ -319,7 +291,6 @@ impl App {
         }
     }
 
-    /// Execute the Save As operation
     pub fn execute_save_as(&mut self) {
         let path = std::path::PathBuf::from(&self.filename_input);
         match self.config.save_as(&path) {
@@ -337,13 +308,11 @@ impl App {
         }
     }
 
-    /// Cancel the Save As operation
     pub fn cancel_save_as(&mut self) {
         self.filename_input.clear();
         self.mode = Mode::Normal;
     }
 
-    /// Copy file contents to system clipboard
     pub fn copy_to_clipboard(&mut self) {
         use std::process::{Command, Stdio};
         use std::io::Write;
@@ -389,38 +358,33 @@ impl App {
         }
     }
 
-    /// Show a status message
     pub fn show_status(&mut self, message: &str) {
         self.status_message = Some((message.to_string(), Instant::now()));
     }
 
-    /// Clear expired status messages
-    pub fn tick(&mut self) {
+    pub fn clear_expired_status(&mut self) {
         if let Some((_, time)) = &self.status_message {
-            if time.elapsed().as_secs() >= 3 {
+            if time.elapsed().as_secs() >= STATUS_TIMEOUT_SECS {
                 self.status_message = None;
             }
         }
     }
 
-    /// Get the color at current cursor position
     pub fn get_current_color(&self) -> Option<&str> {
         let layer = self.current_layer()?;
         layer.get_color(self.cursor.row, self.cursor.col, self.cursor.is_left)
     }
 
-    /// Copy color at cursor
     pub fn copy_color(&mut self) {
         let color = self.get_current_color().map(|s| s.to_string());
         if let Some(c) = color {
             self.show_status(&format!("Copied: {}", c));
-            self.copied_color = Some(c);
+            self.copied_color_abbrev = Some(c);
         }
     }
 
-    /// Paste copied color at cursor
     pub fn paste_color(&mut self) {
-        if let Some(color) = self.copied_color.clone() {
+        if let Some(color) = self.copied_color_abbrev.clone() {
             self.set_current_key_color(&color);
             self.show_status(&format!("Pasted: {}", color));
         } else {
@@ -428,13 +392,11 @@ impl App {
         }
     }
 
-    /// Clear color at cursor (set to black ___)
     pub fn clear_color(&mut self) {
         self.set_current_key_color("___");
         self.show_status("Cleared");
     }
 
-    /// Move selection in color picker
     pub fn move_color_selection(&mut self, direction: Direction) {
         use crate::model::ColorKind;
         
@@ -451,7 +413,7 @@ impl App {
             }
         }
         
-        let cols = 17; // Colors per row in regular section (RED to PNK)
+        let cols = COLORS_PER_PICKER_ROW;
         let current = self.selected_color;
         
         // Determine which section we're in
@@ -535,7 +497,6 @@ impl App {
         }
     }
 
-    /// Apply selected color from picker
     pub fn apply_selected_color(&mut self) {
         if let Some(color) = self.config.palette.colors.get(self.selected_color) {
             let abbrev = color.abbrev.clone();
@@ -544,8 +505,7 @@ impl App {
         }
     }
 
-    /// Quick select color by index (0-9)
-    pub fn quick_color(&mut self, index: usize) {
+    pub fn apply_quick_color(&mut self, index: usize) {
         if let Some(color) = self.config.palette.colors.get(index) {
             let abbrev = color.abbrev.clone();
             self.set_current_key_color(&abbrev);
@@ -1036,24 +996,23 @@ mod tests {
     }
 
     #[test]
-    fn test_undo_stack_limited_to_50_entries() {
+    fn test_undo_stack_limited_to_max_entries() {
         // Arrange
         let mut app = create_test_app();
         app.cursor.row = 0;
         app.cursor.col = 0;
         app.cursor.is_left = true;
-        let max_undo_size = 50;
 
         // Act
-        for i in 0..=max_undo_size + 10 {
+        for i in 0..=MAX_UNDO_HISTORY + 10 {
             app.set_current_key_color(&format!("C{:02}", i % 100));
         }
 
         // Assert
         assert!(
-            app.undo_stack.len() <= max_undo_size,
+            app.undo_stack.len() <= MAX_UNDO_HISTORY,
             "undo stack should be limited to {} entries, got {}",
-            max_undo_size, app.undo_stack.len()
+            MAX_UNDO_HISTORY, app.undo_stack.len()
         );
     }
 
@@ -1073,13 +1032,13 @@ mod tests {
 
         // Assert
         assert_eq!(
-            app.copied_color.as_deref(), Some("RED"),
+            app.copied_color_abbrev.as_deref(), Some("RED"),
             "copied color should match the current key's color"
         );
     }
 
     #[test]
-    fn test_paste_color_applies_copied_color_to_cursor_position() {
+    fn test_paste_color_applies_copied_color_abbrev_to_cursor_position() {
         // Arrange
         let mut app = create_test_app();
         app.cursor.row = 0;
@@ -1101,7 +1060,7 @@ mod tests {
     fn test_paste_without_copy_shows_nothing_to_paste() {
         // Arrange
         let mut app = create_test_app();
-        assert!(app.copied_color.is_none());
+        assert!(app.copied_color_abbrev.is_none());
 
         // Act
         app.paste_color();
@@ -1140,7 +1099,7 @@ mod tests {
     // --- Fade duration ---
 
     #[test]
-    fn test_increase_fade_adds_5ms() {
+    fn test_increase_fade_adds_one_step() {
         // Arrange
         let mut app = create_test_app();
         let initial_fade = app.current_layer().unwrap().fade_delay;
@@ -1151,18 +1110,18 @@ mod tests {
         // Assert
         let increased_fade = app.current_layer().unwrap().fade_delay;
         assert_eq!(
-            increased_fade, initial_fade + 5,
-            "increase_fade should add 5ms: expected {}, got {}", initial_fade + 5, increased_fade
+            increased_fade, initial_fade + FADE_STEP_MS,
+            "increase_fade should add {}ms: expected {}, got {}", FADE_STEP_MS, initial_fade + FADE_STEP_MS, increased_fade
         );
         assert!(app.modified, "increase_fade should mark the app as modified");
     }
 
     #[test]
-    fn test_decrease_fade_subtracts_5ms() {
+    fn test_decrease_fade_subtracts_one_step() {
         // Arrange
         let mut app = create_test_app();
         let initial_fade = app.current_layer().unwrap().fade_delay;
-        assert!(initial_fade >= 5, "test requires initial fade >= 5ms");
+        assert!(initial_fade >= FADE_STEP_MS, "test requires initial fade >= {}ms", FADE_STEP_MS);
 
         // Act
         app.decrease_fade();
@@ -1170,8 +1129,8 @@ mod tests {
         // Assert
         let decreased_fade = app.current_layer().unwrap().fade_delay;
         assert_eq!(
-            decreased_fade, initial_fade - 5,
-            "decrease_fade should subtract 5ms: expected {}, got {}", initial_fade - 5, decreased_fade
+            decreased_fade, initial_fade - FADE_STEP_MS,
+            "decrease_fade should subtract {}ms: expected {}, got {}", FADE_STEP_MS, initial_fade - FADE_STEP_MS, decreased_fade
         );
     }
 
@@ -1434,11 +1393,11 @@ mod tests {
     // --- Quick color selection ---
 
     #[test]
-    fn test_quick_color_applies_palette_color_by_index() {
+    fn test_apply_quick_color_applies_palette_color_by_index() {
         // Arrange
         let mut app = create_test_app();
-        let red = crate::model::ColorDef::new("RED".to_string(), "RED_RGB".to_string(), crate::model::RgbColor::new(255, 0, 0));
-        let grn = crate::model::ColorDef::new("GRN".to_string(), "GRN_RGB".to_string(), crate::model::RgbColor::new(0, 255, 0));
+        let red = crate::model::ColorDef::new("RED".to_string(), crate::model::RgbColor::new(255, 0, 0));
+        let grn = crate::model::ColorDef::new("GRN".to_string(), crate::model::RgbColor::new(0, 255, 0));
         app.config.palette.add(red);
         app.config.palette.add(grn);
         app.cursor.row = 0;
@@ -1447,18 +1406,18 @@ mod tests {
 
         // Act
         let green_palette_index = 1;
-        app.quick_color(green_palette_index);
+        app.apply_quick_color(green_palette_index);
 
         // Assert
         let applied_color = app.current_layer().unwrap().get_color(0, 0, true).unwrap();
         assert_eq!(
             applied_color, "GRN",
-            "quick_color(1) should apply the second palette color ('GRN'), got '{}'", applied_color
+            "apply_quick_color(1) should apply the second palette color ('GRN'), got '{}'", applied_color
         );
     }
 
     #[test]
-    fn test_quick_color_with_out_of_range_index_does_nothing() {
+    fn test_apply_quick_color_with_out_of_range_index_does_nothing() {
         // Arrange
         let mut app = create_test_app();
         app.cursor.row = 0;
@@ -1468,13 +1427,13 @@ mod tests {
         let out_of_range_index = 99;
 
         // Act
-        app.quick_color(out_of_range_index);
+        app.apply_quick_color(out_of_range_index);
 
         // Assert
         let color_after = app.current_layer().unwrap().get_color(0, 0, true).unwrap();
         assert_eq!(
             color_after, color_before,
-            "quick_color with out-of-range index should not change the color"
+            "apply_quick_color with out-of-range index should not change the color"
         );
     }
 
@@ -1484,7 +1443,7 @@ mod tests {
     fn test_apply_selected_color_sets_key_and_returns_to_normal_mode() {
         // Arrange
         let mut app = create_test_app();
-        let cyan = crate::model::ColorDef::new("CYN".to_string(), "CYN_RGB".to_string(), crate::model::RgbColor::new(0, 255, 255));
+        let cyan = crate::model::ColorDef::new("CYN".to_string(), crate::model::RgbColor::new(0, 255, 255));
         app.config.palette.add(cyan);
         app.cursor.row = 0;
         app.cursor.col = 0;
@@ -1511,12 +1470,12 @@ mod tests {
         app.status_message = Some(("old message".to_string(), expired_time));
 
         // Act
-        app.tick();
+        app.clear_expired_status();
 
         // Assert
         assert!(
             app.status_message.is_none(),
-            "tick should clear status messages older than 3 seconds"
+            "clear_expired_status should clear messages older than {} seconds", STATUS_TIMEOUT_SECS
         );
     }
 
@@ -1527,12 +1486,12 @@ mod tests {
         app.show_status("fresh message");
 
         // Act
-        app.tick();
+        app.clear_expired_status();
 
         // Assert
         assert!(
             app.status_message.is_some(),
-            "tick should keep status messages that are less than 3 seconds old"
+            "clear_expired_status should keep messages that are less than {} seconds old", STATUS_TIMEOUT_SECS
         );
     }
 

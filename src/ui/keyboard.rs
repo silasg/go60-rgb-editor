@@ -6,6 +6,11 @@ use ratatui::{
 use crate::app::Cursor;
 use crate::model::{ColorPalette, Layer};
 
+const KEY_CELL_WIDTH: u16 = 4;
+const HALF_GAP: u16 = 20;
+const MIN_TERMINAL_WIDTH: u16 = 50;
+const MIN_TERMINAL_HEIGHT: u16 = 8;
+
 /// Widget for rendering the keyboard layout with colors
 pub struct KeyboardWidget<'a> {
     layer: &'a Layer,
@@ -64,18 +69,16 @@ impl<'a> Widget for KeyboardWidget<'a> {
         let inner = block.inner(area);
         block.render(area, buf);
 
-        if inner.width < 50 || inner.height < 8 {
+        if inner.width < MIN_TERMINAL_WIDTH || inner.height < MIN_TERMINAL_HEIGHT {
             buf.set_string(inner.x, inner.y, "Terminal too small", Style::default());
             return;
         }
 
-        let key_width: u16 = 4;  // 3 chars + 1 space
-        let half_width = 6 * key_width;
-        let gap = 20;  // Gap between halves (wider to accommodate last row shift)
+        let half_width = 6 * KEY_CELL_WIDTH;
 
         // Calculate starting positions
         let left_start_x = inner.x + 2;
-        let right_start_x = left_start_x + half_width + gap;
+        let right_start_x = left_start_x + half_width + HALF_GAP;
         let start_y = inner.y + 1;
 
         // Render main rows (0-3)
@@ -85,7 +88,7 @@ impl<'a> Widget for KeyboardWidget<'a> {
             // Left half
             if row < self.layer.left_half.len() {
                 for col in 0..self.layer.left_half[row].len().min(6) {
-                    let x = left_start_x + col as u16 * key_width;
+                    let x = left_start_x + col as u16 * KEY_CELL_WIDTH;
                     let color = &self.layer.left_half[row][col];
                     let is_selected = self.cursor.is_left
                         && self.cursor.row == row
@@ -97,7 +100,7 @@ impl<'a> Widget for KeyboardWidget<'a> {
             // Right half
             if row < self.layer.right_half.len() {
                 for col in 0..self.layer.right_half[row].len().min(6) {
-                    let x = right_start_x + col as u16 * key_width;
+                    let x = right_start_x + col as u16 * KEY_CELL_WIDTH;
                     let color = &self.layer.right_half[row][col];
                     let is_selected = !self.cursor.is_left
                         && self.cursor.row == row
@@ -109,14 +112,14 @@ impl<'a> Widget for KeyboardWidget<'a> {
 
         // Render row 4 (outer 3 keys) - directly below main rows
         let row4_y = start_y + 4;
-        let center_shift = 2 * key_width;  // Shift toward center
+        let center_shift = 2 * KEY_CELL_WIDTH;  // Shift toward center
         
         // Left half row 4: shifted right toward center
         let left_row4_x = left_start_x + center_shift;
 
         if self.layer.left_half.len() > 4 {
             for col in 0..self.layer.left_half[4].len().min(3) {
-                let x = left_row4_x + col as u16 * key_width;
+                let x = left_row4_x + col as u16 * KEY_CELL_WIDTH;
                 let color = &self.layer.left_half[4][col];
                 let is_selected = self.cursor.is_left && self.cursor.row == 4 && self.cursor.col == col;
                 self.render_key(buf, x, row4_y, color, is_selected);
@@ -124,11 +127,11 @@ impl<'a> Widget for KeyboardWidget<'a> {
         }
 
         // Right half row 4: shifted left toward center (symmetric)
-        let right_row4_x = right_start_x + 3 * key_width - center_shift;
+        let right_row4_x = right_start_x + 3 * KEY_CELL_WIDTH - center_shift;
 
         if self.layer.right_half.len() > 4 {
             for col in 0..self.layer.right_half[4].len().min(3) {
-                let x = right_row4_x + col as u16 * key_width;
+                let x = right_row4_x + col as u16 * KEY_CELL_WIDTH;
                 let color = &self.layer.right_half[4][col];
                 let is_selected = !self.cursor.is_left && self.cursor.row == 4 && self.cursor.col == col;
                 self.render_key(buf, x, row4_y, color, is_selected);
@@ -139,11 +142,11 @@ impl<'a> Widget for KeyboardWidget<'a> {
         let thumb_y = start_y + 5;
         
         // Left half thumbs: after row4 position
-        let left_thumb_x = left_row4_x + 3 * key_width;
+        let left_thumb_x = left_row4_x + 3 * KEY_CELL_WIDTH;
 
         if self.layer.left_half.len() > 5 {
             for col in 0..self.layer.left_half[5].len().min(3) {
-                let x = left_thumb_x + col as u16 * key_width;
+                let x = left_thumb_x + col as u16 * KEY_CELL_WIDTH;
                 let color = &self.layer.left_half[5][col];
                 let is_selected = self.cursor.is_left && self.cursor.row == 5 && self.cursor.col == col;
                 self.render_key(buf, x, thumb_y, color, is_selected);
@@ -155,7 +158,7 @@ impl<'a> Widget for KeyboardWidget<'a> {
 
         if self.layer.right_half.len() > 5 {
             for col in 0..self.layer.right_half[5].len().min(3) {
-                let x = right_thumb_x + col as u16 * key_width;
+                let x = right_thumb_x + col as u16 * KEY_CELL_WIDTH;
                 let color = &self.layer.right_half[5][col];
                 let is_selected = !self.cursor.is_left && self.cursor.row == 5 && self.cursor.col == col;
                 self.render_key(buf, x, thumb_y, color, is_selected);

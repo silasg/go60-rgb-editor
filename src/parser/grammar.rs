@@ -76,7 +76,7 @@ fn parse_colors(header: &str) -> Result<ColorPalette, String> {
         if parts.len() >= 4 && parts[2] == "&ug" {
             let rgb_name = parts[3];
             if let Some((rgb, comment)) = rgb_colors.get(rgb_name) {
-                let mut color_def = ColorDef::new(name.to_string(), rgb_name.to_string(), rgb.clone());
+                let mut color_def = ColorDef::new(name.to_string(), rgb.clone());
                 if let Some(c) = comment {
                     color_def = color_def.with_comment(c.clone());
                 }
@@ -100,7 +100,7 @@ fn parse_colors(header: &str) -> Result<ColorPalette, String> {
             let off_abbrev = off_rgb.trim_end_matches("_RGB").to_string();
             let on_abbrev = on_rgb.trim_end_matches("_RGB").to_string();
 
-            let color_def = ColorDef::new(name.to_string(), on_rgb.to_string(), rgb).with_kind(
+            let color_def = ColorDef::new(name.to_string(), rgb).with_kind(
                 ColorKind::LockIndicator {
                     off_color: off_abbrev,
                     on_color: on_abbrev,
@@ -117,7 +117,7 @@ fn parse_colors(header: &str) -> Result<ColorPalette, String> {
                 .map(|c| c.rgb.clone())
                 .unwrap_or_default();
 
-            let color_def = ColorDef::new(name.to_string(), String::new(), rgb)
+            let color_def = ColorDef::new(name.to_string(), rgb)
                 .with_kind(ColorKind::Alias {
                     target: target.to_string(),
                 });

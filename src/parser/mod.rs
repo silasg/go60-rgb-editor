@@ -1,4 +1,3 @@
-mod lexer;
 mod grammar;
 mod writer;
 

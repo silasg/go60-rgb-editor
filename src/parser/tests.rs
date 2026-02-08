@@ -86,9 +86,18 @@ mod integration_tests {
         let regular_color_red = config.palette.get("RED").expect("Should have RED");
 
         // Assert
-        assert!(lock_indicator_bsl.is_special(), "BSL should be marked as special");
-        assert!(alias_fst.is_special(), "FST should be marked as special");
-        assert!(!regular_color_red.is_special(), "RED should not be marked as special");
+        assert!(
+            matches!(lock_indicator_bsl.kind, ColorKind::LockIndicator { .. }),
+            "BSL should be a lock indicator"
+        );
+        assert!(
+            matches!(alias_fst.kind, ColorKind::Alias { .. }),
+            "FST should be an alias"
+        );
+        assert!(
+            matches!(regular_color_red.kind, ColorKind::Regular),
+            "RED should be a regular color"
+        );
     }
 
     #[test]
@@ -115,7 +124,6 @@ mod integration_tests {
         ] {
             palette.colors.push(ColorDef {
                 abbrev: abbrev.to_string(),
-                rgb_name: format!("{}_RGB", abbrev),
                 rgb: RgbColor::from_hex(hex).unwrap(),
                 kind: ColorKind::Regular,
                 comment: None,
