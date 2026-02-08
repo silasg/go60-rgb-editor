@@ -35,6 +35,10 @@ Press `?` in the editor to see all key bindings.
 
 ## Installation
 
+### Prebuilt binaries
+
+Download the latest release for your platform from the [GitHub Releases](https://github.com/silasg/go60-rgb-editor/releases) page. Binaries are available for Linux (x86_64, aarch64), macOS (Intel, Apple Silicon), and Windows.
+
 ### From source
 
 ```bash
@@ -84,3 +88,7 @@ mise tasks ls
 ```
 
 This will show all available development tasks with descriptions (build, test, coverage, etc.).
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a list of all changes.
