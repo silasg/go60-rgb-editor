@@ -115,7 +115,6 @@
     underglow-layer {
       compatible = "zmk,underglow-layer";
 
-   
       #ifdef LAYER_HRM_WinLinx
       HRM_WinLinx {
         bindings = <
@@ -124,7 +123,7 @@
           ___ MAJ CYN CHU YLW ___                                     ___ YLW CHU CYN MAJ ___
           ___ ___ ___ ___ ___ ___                                     ___ ___ ___ ___ ___ ___
                   ___ ___ ___                                             ___ ___ ___ 
-                                       ___ ___ ___     ___ ___ ___ 
+                                      ___ ___ ___     ___ ___ ___ 
         >;
         layer-id = <LAYER_HRM_WinLinx>;
         fade-delay = <30>;
@@ -139,7 +138,7 @@
           ___ CHU CYN MAJ YLW ___                                     ___ YLW MAJ CYN CHU ___
           ___ ___ ___ ___ ___ ___                                     ___ ___ ___ ___ ___ ___
                   ___ ___ ___                                             ___ ___ ___ 
-                                       ___ ___ ___     ___ ___ ___ 
+                                      ___ ___ ___     ___ ___ ___ 
         >;
         layer-id = <LAYER_HRM_macOS>;
         fade-delay = <30>;
@@ -149,277 +148,272 @@
       #ifdef LAYER_Keypad
       Keypad {
         bindings = <
-          ___ WHT WHT WHT WHT WHT                                     WHT WHT WHT WHT WHT WHT 
-          WHT ___ GRN GRN GRN GRN                                     WHT WHT WHT WHT WHT WHT 
+          ___ WHT WHT WHT WHT WHT                                     WHT WHT WHT WHT WHT WHT
+          WHT ___ GRN GRN GRN GRN                                     WHT WHT WHT WHT WHT WHT
           WHT YLW GRN GRN GRN GRN                                     WHT WHT WHT WHT WHT ORN
           ___ YLW YLW YLW YLW YLW                                     WHT WHT WHT WHT WHT ___
                   ___ WHT WHT                                             WHT WHT WHT 
-                                       WHT WHT WHT     WHT WHT WHT 
+                                      WHT WHT WHT     WHT WHT WHT 
         >;
         layer-id = <LAYER_Keypad>;
         fade-delay = <15>;
       };
       #endif
 
-  #ifdef LAYER_Autoshift
-  Autoshift {
-    bindings = <
+      #ifdef LAYER_Autoshift
+      Autoshift {
+        bindings = <
           YLW YLW YLW YLW YLW YLW                                     YLW YLW YLW YLW YLW YLW
           ___ YLW YLW YLW YLW YLW                                     YLW YLW YLW YLW YLW YLW
           ___ YLW YLW YLW YLW YLW                                     YLW YLW YLW YLW YLW YLW
           YLW YLW YLW YLW YLW YLW                                     YLW YLW YLW YLW YLW ___
                   ___ ___ ___                                             ___ ___ ___ 
-                                      ___ ___ ___     ___ ___ ___  
-    >;
-    layer-id = <LAYER_Autoshift>;
-    fade-delay = <180>;
-  };
-  #endif
-
- #ifdef LAYER_LeftPinky
-  LeftPinky {
-    bindings = <
-          ___ ___ BCL BNL BSL ___                                     ___ ___ ___ ___ ___ ___
-          ___ MAJ ___ ___ ___ ___                                     ___ ___ ___ ___ ___ ___
-          ___ MAJ ___ ___ ___ ___                                     ___ ___ ___ ___ ___ ___
-          ___ MAJ ___ ___ ___ ___                                     ___ ___ ___ ___ ___ ___
-                  ___ ___ ___                                             ___ ___ ___ 
-                                       ___ ___ ___     ___ ___ ___ 
+                                      ___ ___ ___     ___ ___ ___ 
         >;
-    layer-id = <LAYER_LeftPinky>;
-    fade-delay = <15>;
-  };
-  #endif
+        layer-id = <LAYER_Autoshift>;
+        fade-delay = <180>;
+      };
+      #endif
 
-  #ifdef LAYER_LeftRingy
-  LeftRingy {
-    bindings = <
+      #ifdef LAYER_LeftPinky
+      LeftPinky {
+        bindings = <
+          ___ ___ BCL BNL BSL ___                                     ___ ___ ___ ___ ___ ___
+          ___ MAJ ___ ___ ___ ___                                     ___ ___ ___ ___ ___ ___
+          ___ MAJ ___ ___ ___ ___                                     ___ ___ ___ ___ ___ ___
+          ___ MAJ ___ ___ ___ ___                                     ___ ___ ___ ___ ___ ___
+                  ___ ___ ___                                             ___ ___ ___ 
+                                      ___ ___ ___     ___ ___ ___ 
+        >;
+        layer-id = <LAYER_LeftPinky>;
+        fade-delay = <15>;
+      };
+      #endif
+
+      #ifdef LAYER_LeftRingy
+      LeftRingy {
+        bindings = <
           ___ ___ BCL BNL BSL ___                                     ___ ___ ___ ___ ___ ___
           ___ ___ CYN ___ ___ ___                                     ___ ___ ___ ___ ___ ___
           ___ ___ CYN ___ ___ ___                                     ___ ___ ___ ___ ___ ___
           ___ ___ CYN ___ ___ ___                                     ___ ___ ___ ___ ___ ___
                   ___ ___ ___                                             ___ ___ ___ 
-                                       ___ ___ ___     ___ ___ ___ 
-    >;
-    layer-id = <LAYER_LeftRingy>;
-    fade-delay = <15>;
-  };
-  #endif
+                                      ___ ___ ___     ___ ___ ___ 
+        >;
+        layer-id = <LAYER_LeftRingy>;
+        fade-delay = <15>;
+      };
+      #endif
 
-  #ifdef LAYER_LeftMiddy
-  LeftMiddy {
-    bindings = <
+      #ifdef LAYER_LeftMiddy
+      LeftMiddy {
+        bindings = <
           ___ ___ BCL BNL BSL ___                                     ___ ___ ___ ___ ___ ___
           ___ ___ ___ GRN ___ ___                                     ___ ___ ___ ___ ___ ___
           ___ ___ ___ GRN ___ ___                                     ___ ___ ___ ___ ___ ___
           ___ ___ ___ GRN ___ ___                                     ___ ___ ___ ___ ___ ___
                   ___ ___ ___                                             ___ ___ ___ 
-                                       ___ ___ ___     ___ ___ ___ 
-    >;
-    layer-id = <LAYER_LeftMiddy>;
-    fade-delay = <15>;
-   };
-  #endif
+                                      ___ ___ ___     ___ ___ ___ 
+        >;
+        layer-id = <LAYER_LeftMiddy>;
+        fade-delay = <15>;
+      };
+      #endif
 
-  #ifdef LAYER_LeftIndex
-  LeftIndex {
-    bindings = <
+      #ifdef LAYER_LeftIndex
+      LeftIndex {
+        bindings = <
           ___ ___ BCL BNL BSL ___                                     ___ ___ ___ ___ ___ ___
           ___ ___ ___ ___ YLW ___                                     ___ ___ ___ ___ ___ ___
           ___ ___ ___ ___ YLW ___                                     ___ ___ ___ ___ ___ ___
           ___ ___ ___ ___ YLW ___                                     ___ ___ ___ ___ ___ ___
                   ___ ___ ___                                             ___ ___ ___ 
-                                       ___ ___ ___     ___ ___ ___ 
-    >;
-    layer-id = <LAYER_LeftIndex>;
-    fade-delay = <15>;
-  };
-  #endif
+                                      ___ ___ ___     ___ ___ ___ 
+        >;
+        layer-id = <LAYER_LeftIndex>;
+        fade-delay = <15>;
+      };
+      #endif
 
-  #ifdef LAYER_RightIndex
-  RightIndex {
-    bindings = <
-         ___ ___ BCL BNL BSL ___                                     ___ ___ ___ ___ ___ ___
+      #ifdef LAYER_RightIndex
+      RightIndex {
+        bindings = <
+          ___ ___ BCL BNL BSL ___                                     ___ ___ ___ ___ ___ ___
           ___ ___ ___ ___ ___ ___                                     ___ YLW ___ ___ ___ ___
           ___ ___ ___ ___ ___ ___                                     ___ YLW ___ ___ ___ ___
           ___ ___ ___ ___ ___ ___                                     ___ YLW ___ ___ ___ ___
                   ___ ___ ___                                             ___ ___ ___ 
-                                       ___ ___ ___     ___ ___ ___ 
-    >;
-    layer-id = <LAYER_RightIndex>;
-    fade-delay = <15>;
-  };
-  #endif
+                                      ___ ___ ___     ___ ___ ___ 
+        >;
+        layer-id = <LAYER_RightIndex>;
+        fade-delay = <15>;
+      };
+      #endif
 
-  #ifdef LAYER_RightMiddy
-  RightMiddy {
-    bindings = <
+      #ifdef LAYER_RightMiddy
+      RightMiddy {
+        bindings = <
           ___ ___ BCL BNL BSL ___                                     ___ ___ ___ ___ ___ ___
           ___ ___ ___ ___ ___ ___                                     ___ ___ GRN ___ ___ ___
           ___ ___ ___ ___ ___ ___                                     ___ ___ GRN ___ ___ ___
           ___ ___ ___ ___ ___ ___                                     ___ ___ GRN ___ ___ ___
                   ___ ___ ___                                             ___ ___ ___ 
-                                       ___ ___ ___     ___ ___ ___ 
-    >;
-    layer-id = <LAYER_RightMiddy>;
-    fade-delay = <15>;
-  };
-  #endif
+                                      ___ ___ ___     ___ ___ ___ 
+        >;
+        layer-id = <LAYER_RightMiddy>;
+        fade-delay = <15>;
+      };
+      #endif
 
-  #ifdef LAYER_RightRingy
-  RightRingy {
-    bindings = <
+      #ifdef LAYER_RightRingy
+      RightRingy {
+        bindings = <
           ___ ___ BCL BNL BSL ___                                     ___ ___ ___ ___ ___ ___
           ___ ___ ___ ___ ___ ___                                     ___ ___ ___ CYN ___ ___
           ___ ___ ___ ___ ___ ___                                     ___ ___ ___ CYN ___ ___
           ___ ___ ___ ___ ___ ___                                     ___ ___ ___ CYN ___ ___
                   ___ ___ ___                                             ___ ___ ___ 
-                                       ___ ___ ___     ___ ___ ___ 
-    >;
-    layer-id = <LAYER_RightRingy>;
-    fade-delay = <15>;
-  };
-  #endif
+                                      ___ ___ ___     ___ ___ ___ 
+        >;
+        layer-id = <LAYER_RightRingy>;
+        fade-delay = <15>;
+      };
+      #endif
 
-  #ifdef LAYER_RightPinky
-  RightPinky {
-    bindings = <
+      #ifdef LAYER_RightPinky
+      RightPinky {
+        bindings = <
           ___ ___ BCL BNL BSL ___                                     ___ ___ ___ ___ ___ ___
           ___ ___ ___ ___ ___ ___                                     ___ ___ ___ ___ MAJ ___
           ___ ___ ___ ___ ___ ___                                     ___ ___ ___ ___ MAJ ___
           ___ ___ ___ ___ ___ ___                                     ___ ___ ___ ___ MAJ ___
                   ___ ___ ___                                             ___ ___ ___ 
-                                       ___ ___ ___     ___ ___ ___ 
-    >;
-    layer-id = <LAYER_RightPinky>;
-    fade-delay = <15>;
-  };
-  #endif
+                                      ___ ___ ___     ___ ___ ___ 
+        >;
+        layer-id = <LAYER_RightPinky>;
+        fade-delay = <15>;
+      };
+      #endif
 
-
-  #ifdef LAYER_Cursor
-  Cursor {
-    bindings = <
+      #ifdef LAYER_Cursor
+      Cursor {
+        bindings = <
           ___ ORN ORN ORN ORN ___                                     ___ ___ ___ ___ ___ ___
           ___ ORN MAJ MAJ ORN YLW                                     YLW ORN PNK PNK ORN ___
           WHT WHT WHT WHT WHT YLW                                     YLW GRN GRN GRN GRN WHT
           MAJ CYN CYN CYN MAJ YLW                                     YLW GRN GRN GRN GRN MAJ
-                  ___ MAJ MAJ                                             MAJ MAJ MAJ
-                                      ___ DUG ___     CYN CYN CYN    
-    >;
-    layer-id = <LAYER_Cursor>;
-    fade-delay = <5>;
-  };
-  #endif
+                  ___ MAJ MAJ                                             MAJ MAJ MAJ 
+                                      ___ DUG ___     CYN CYN CYN 
+        >;
+        layer-id = <LAYER_Cursor>;
+        fade-delay = <5>;
+      };
+      #endif
 
-  #ifdef LAYER_Cursor_macOS
-  Cursor_macOS {
-    bindings = <
+      #ifdef LAYER_Cursor_macOS
+      Cursor_macOS {
+        bindings = <
           ___ ORN ORN ORN ORN ___                                     ___ ___ ___ ___ ___ ___
           ___ ORN CYN CYN ORN YLW                                     YLW ORN PNK PNK ORN ___
           WHT WHT WHT WHT WHT YLW                                     YLW GRN GRN GRN GRN WHT
           MAJ CYN CYN CYN MAJ YLW                                     YLW GRN GRN GRN GRN MAJ
-                  ___ MAJ MAJ                                             MAJ MAJ MAJ
-                                      ___ DUG ___     CYN CYN CYN    
-    >;
-    layer-id = <LAYER_Cursor_macOS>;
-    fade-delay = <5>;
-  };
-  #endif
+                  ___ MAJ MAJ                                             MAJ MAJ MAJ 
+                                      ___ DUG ___     CYN CYN CYN 
+        >;
+        layer-id = <LAYER_Cursor_macOS>;
+        fade-delay = <5>;
+      };
+      #endif
 
-  #ifdef LAYER_Symbol
-  Symbol {
-    bindings = <
+      #ifdef LAYER_Symbol
+      Symbol {
+        bindings = <
           MAJ AZU AZU AZU YLW YLW                                     ___ ___ ___ ___ ___ ___
           AZU MAJ AZU AZU YLW YLW                                     MAJ ORN ORN ORN ORN ___
           YLW YLW CHU ORN YLW YLW                                     MAJ ORN ORN ORN ORN ___
           MAJ CHU CHU CHU CHU YLW                                     MAJ WHT WHT WHT WHT ___
-                  MAJ MAJ ORN                                             YLW YLW YLW
+                  MAJ MAJ ORN                                             YLW YLW YLW 
                                       YLW YLW YLW     ___ ___ ___ 
-    >;
-    layer-id = <LAYER_Symbol>;
-    fade-delay = <5>;
-  };
-  #endif
+        >;
+        layer-id = <LAYER_Symbol>;
+        fade-delay = <5>;
+      };
+      #endif
 
-  #ifdef LAYER_Mouse
-  Mouse {
-    bindings = <
+      #ifdef LAYER_Mouse
+      Mouse {
+        bindings = <
           ___ ___ ___ ___ ___ ___                                     ___ ___ ___ ___ ___ ___
           ___ ___ LAC AZU LAC ___                                     ___ WHT WHT WHT WHT ___
           ___ TEA AZU AZU AZU ___                                     ___ FST WRP SLO YLW PNK
           ___ TEA SLO WRP FST ___                                     ___ LAC AZU LAC ORN PNK
-                  YLW YLW YLW                                                 AZU AZU AZU 
+                  YLW YLW YLW                                             AZU AZU AZU 
                                       YLW ORN PNK     ___ DUG ___ 
-    >;
-    layer-id = <LAYER_Mouse>;
-    fade-delay = <5>;
-  };
-  #endif
+        >;
+        layer-id = <LAYER_Mouse>;
+        fade-delay = <5>;
+      };
+      #endif
 
-  #ifdef LAYER_MouseFast
-  MouseFast {
-    bindings = <
-
+      #ifdef LAYER_MouseFast
+      MouseFast {
+        bindings = <
           ___ ___ ___ ___ ___ ___                                     ___ YLW GRN CYN MAJ ___
           ___ ___ FST FST FST ___                                     ___ FST FST FST FST ___
           ___ FST FST FST FST ___                                     ___ FST WRP SLO ___ ___
           ___ FST SLO WRP FST ___                                     ___ FST FST FST FST ___
-                  ___ ___ ___                                             YLW ORN MAJ
+                  ___ ___ ___                                             YLW ORN MAJ 
                                       YLW ORN PNK     ___ DUG ___ 
-    >;
-    layer-id = <LAYER_MouseFast>;
-    fade-delay = <5>;
-  };
-  #endif
+        >;
+        layer-id = <LAYER_MouseFast>;
+        fade-delay = <5>;
+      };
+      #endif
 
-  #ifdef LAYER_MouseWarp
-  MouseWarp {
-    bindings = <
-
+      #ifdef LAYER_MouseWarp
+      MouseWarp {
+        bindings = <
           ___ ___ ___ ___ ___ ___                                     ___ YLW GRN CYN MAJ ___
           ___ ___ WRP WRP WRP ___                                     ___ WRP WRP WRP WRP ___
           ___ WRP WRP WRP WRP ___                                     ___ FST WRP SLO ___ ___
           ___ WRP SLO WRP FST ___                                     ___ WRP WRP WRP WRP ___
-                  ___ ___ ___                                             YLW ORN MAJ
+                  ___ ___ ___                                             YLW ORN MAJ 
                                       YLW ORN PNK     ___ DUG ___ 
-    >;
-    layer-id = <LAYER_MouseWarp>;
-    fade-delay = <5>;
-  };
-  #endif
-
-  #ifdef LAYER_MouseSlow
-  MouseSlow {
-    bindings = <
-      ___ ___ ___ ___ ___ ___                                     ___ YLW GRN CYN MAJ ___
-      ___ ___ SLO SLO SLO ___                                     ___ SLO SLO SLO SLO ___
-      ___ SLO SLO SLO SLO ___                                     ___ FST WRP SLO ___ ___
-      ___ SLO SLO WRP FST ___                                     ___ SLO SLO SLO SLO ___
-              ___ ___ ___                                             YLW ORN MAJ
-                                      YLW ORN PNK     ___ DUG ___ 
-    >;
-    layer-id = <LAYER_MouseSlow>;
-    fade-delay = <5>;
-  };
-  #endif
-
-  #ifdef LAYER_Gaming
-  Gaming {
-    bindings = <
-
-      ___ ___ ___ ___ ___ ___                                     ___ ___ ___ ___ ___ ___
-      ___ ___ ___ GRN ___ ___                                     ___ ___ ___ ___ ___ ___
-      ___ ___ GRN GRN GRN ___                                     ___ ___ ___ ___ ___ ___
-      YLW ___ ___ ___ ___ ___                                     ___ ___ GRN ___ ___ ___
-              ___ ___ ___                                             GRN GRN GRN 
-                                   ___ ___ ___     ___ ___ ___  
-    >;
-    layer-id = <LAYER_Gaming>;
-    fade-delay = <120>;
-     };
+        >;
+        layer-id = <LAYER_MouseWarp>;
+        fade-delay = <5>;
+      };
       #endif
- 
+
+      #ifdef LAYER_MouseSlow
+      MouseSlow {
+        bindings = <
+          ___ ___ ___ ___ ___ ___                                     ___ YLW GRN CYN MAJ ___
+          ___ ___ SLO SLO SLO ___                                     ___ SLO SLO SLO SLO ___
+          ___ SLO SLO SLO SLO ___                                     ___ FST WRP SLO ___ ___
+          ___ SLO SLO WRP FST ___                                     ___ SLO SLO SLO SLO ___
+                  ___ ___ ___                                             YLW ORN MAJ 
+                                      YLW ORN PNK     ___ DUG ___ 
+        >;
+        layer-id = <LAYER_MouseSlow>;
+        fade-delay = <5>;
+      };
+      #endif
+
+      #ifdef LAYER_Gaming
+      Gaming {
+        bindings = <
+          ___ ___ ___ ___ ___ ___                                     ___ ___ ___ ___ ___ ___
+          ___ ___ ___ GRN ___ ___                                     ___ ___ ___ ___ ___ ___
+          ___ ___ GRN GRN GRN ___                                     ___ ___ ___ ___ ___ ___
+          YLW ___ ___ ___ ___ ___                                     ___ ___ GRN ___ ___ ___
+                  ___ ___ ___                                             GRN GRN GRN 
+                                      ___ ___ ___     ___ ___ ___ 
+        >;
+        layer-id = <LAYER_Gaming>;
+        fade-delay = <120>;
+      };
+      #endif
 
     };
   };
