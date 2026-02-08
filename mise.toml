@@ -53,12 +53,12 @@ run = "git cliff --unreleased"
 
 [tasks.release-patch]
 description = "Release a patch version (bug fixes)"
-run = "cargo release patch"
+run = "cargo release patch --execute"
 
 [tasks.release-minor]
 description = "Release a minor version (new features)"
-run = "cargo release minor"
+run = "cargo release minor --execute"
 
 [tasks.release-major]
 description = "Release a major version (breaking changes)"
-run = "cargo release major"
+run = "cargo release major --execute"
