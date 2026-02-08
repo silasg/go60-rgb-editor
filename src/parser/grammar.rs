@@ -62,70 +62,104 @@ fn parse_colors(header: &str) -> Result<ColorPalette, String> {
             continue;
         }
 
-        // Skip _RGB definitions (already processed)
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() < 3 {
             continue;
         }
-        let name = parts[1];
-        if name.ends_with("_RGB") {
+        if parts[1].ends_with("_RGB") {
             continue;
         }
 
-        // Check for &ug binding
-        if parts.len() >= 4 && parts[2] == "&ug" {
-            let rgb_name = parts[3];
-            if let Some((rgb, comment)) = rgb_colors.get(rgb_name) {
-                let mut color_def = ColorDef::new(name.to_string(), rgb.clone());
-                if let Some(c) = comment {
-                    color_def = color_def.with_comment(c.clone());
-                }
-                palette.add(color_def);
-            }
-        }
-        // Check for lock indicator (&ug_sl, &ug_nl, &ug_cl)
-        else if parts.len() >= 5
-            && (parts[2] == "&ug_sl" || parts[2] == "&ug_nl" || parts[2] == "&ug_cl")
+        let define = DefineLine {
+            name: parts[1],
+            binding: parts[2],
+            arg1: parts.get(3).copied(),
+            arg2: parts.get(4).copied(),
+        };
+
+        if let Some(color_def) = parse_underglow_binding(&define, &rgb_colors)
+            .or_else(|| parse_lock_indicator(&define, &rgb_colors))
+            .or_else(|| parse_alias(&define, &palette))
         {
-            let off_rgb = parts[3];
-            let on_rgb = parts[4];
-
-            // Get the "on" color's RGB for display
-            let rgb = rgb_colors
-                .get(on_rgb)
-                .map(|(r, _)| r.clone())
-                .unwrap_or_default();
-
-            // Extract abbrev from the RGB name (e.g., RED_RGB -> RED)
-            let off_abbrev = off_rgb.trim_end_matches("_RGB").to_string();
-            let on_abbrev = on_rgb.trim_end_matches("_RGB").to_string();
-
-            let color_def = ColorDef::new(name.to_string(), rgb).with_kind(
-                ColorKind::LockIndicator {
-                    off_color: off_abbrev,
-                    on_color: on_abbrev,
-                },
-            );
-            palette.add(color_def);
-        }
-        // Check for alias (simple identifier, not &ug)
-        else if parts.len() >= 3 && !parts[2].starts_with('&') && !parts[2].starts_with("0x") {
-            let target = parts[2];
-            // Get target's RGB for display
-            let rgb = palette
-                .get(target)
-                .map(|c| c.rgb.clone())
-                .unwrap_or_default();
-
-            let color_def = ColorDef::new(name.to_string(), rgb)
-                .with_kind(ColorKind::Alias {
-                    target: target.to_string(),
-                });
             palette.add(color_def);
         }
     }
 
     Ok(palette)
+}
+
+/// A parsed `#define` line split into named fields.
+/// `arg1`/`arg2` are generic because their meaning varies by binding type:
+/// - `&ug`: arg1 = RGB color name, arg2 unused
+/// - `&ug_sl`/`&ug_nl`/`&ug_cl`: arg1 = off RGB name, arg2 = on RGB name
+/// - alias: both unused (the target is the binding itself)
+struct DefineLine<'a> {
+    name: &'a str,
+    binding: &'a str,
+    arg1: Option<&'a str>,
+    arg2: Option<&'a str>,
+}
+
+/// Parse an `&ug` underglow binding: `#define NAME &ug COLOR_RGB`
+fn parse_underglow_binding(
+    define: &DefineLine,
+    rgb_colors: &std::collections::HashMap<String, (RgbColor, Option<String>)>,
+) -> Option<ColorDef> {
+    if define.binding != "&ug" {
+        return None;
+    }
+    let rgb_name = define.arg1?;
+    let (rgb, comment) = rgb_colors.get(rgb_name)?;
+    let mut color_def = ColorDef::new(define.name.to_string(), rgb.clone());
+    if let Some(c) = comment {
+        color_def = color_def.with_comment(c.clone());
+    }
+    Some(color_def)
+}
+
+/// Parse a lock indicator binding: `#define NAME &ug_sl|&ug_nl|&ug_cl OFF_RGB ON_RGB`
+fn parse_lock_indicator(
+    define: &DefineLine,
+    rgb_colors: &std::collections::HashMap<String, (RgbColor, Option<String>)>,
+) -> Option<ColorDef> {
+    if !matches!(define.binding, "&ug_sl" | "&ug_nl" | "&ug_cl") {
+        return None;
+    }
+    let off_rgb_name = define.arg1?;
+    let on_rgb_name = define.arg2?;
+
+    let rgb = rgb_colors
+        .get(on_rgb_name)
+        .map(|(r, _)| r.clone())
+        .unwrap_or_default();
+
+    let off_abbrev = off_rgb_name.trim_end_matches("_RGB").to_string();
+    let on_abbrev = on_rgb_name.trim_end_matches("_RGB").to_string();
+
+    Some(
+        ColorDef::new(define.name.to_string(), rgb).with_kind(ColorKind::LockIndicator {
+            off_color: off_abbrev,
+            on_color: on_abbrev,
+        }),
+    )
+}
+
+/// Parse an alias binding: `#define NAME TARGET` (where TARGET is not `&...` or `0x...`)
+fn parse_alias(define: &DefineLine, palette: &ColorPalette) -> Option<ColorDef> {
+    if define.binding.starts_with('&') || define.binding.starts_with("0x") {
+        return None;
+    }
+    let target = define.binding;
+    let rgb = palette
+        .get(target)
+        .map(|c| c.rgb.clone())
+        .unwrap_or_default();
+
+    Some(
+        ColorDef::new(define.name.to_string(), rgb).with_kind(ColorKind::Alias {
+            target: target.to_string(),
+        }),
+    )
 }
 
 /// A parsed `#define NAME_RGB 0xNNNNNN // comment` line

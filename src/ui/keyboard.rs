@@ -31,14 +31,12 @@ impl<'a> KeyboardWidget<'a> {
         &self, buf: &mut Buffer, half_keys: &[Vec<String>],
         row: usize, start_x: u16, y: u16, max_cols: usize, half: Half,
     ) {
-        if row < half_keys.len() {
-            for (col, color) in half_keys[row].iter().enumerate().take(max_cols) {
-                let x = start_x + col as u16 * KEY_CELL_WIDTH;
-                let is_selected = self.cursor.half == half
-                    && self.cursor.row == row
-                    && self.cursor.col == col;
-                self.render_key(buf, x, y, color, is_selected);
-            }
+        for (col, color) in half_keys[row].iter().enumerate().take(max_cols) {
+            let x = start_x + col as u16 * KEY_CELL_WIDTH;
+            let is_selected = self.cursor.half == half
+                && self.cursor.row == row
+                && self.cursor.col == col;
+            self.render_key(buf, x, y, color, is_selected);
         }
     }
 

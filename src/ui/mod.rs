@@ -72,6 +72,10 @@ pub fn draw(frame: &mut Frame, app: &App) {
     frame.render_widget(status, content_layout[2]);
 
     // Modal overlays
+    render_modals(frame, app, area);
+}
+
+fn render_modals(frame: &mut Frame, app: &App, area: Rect) {
     match app.mode {
         Mode::Help => {
             let help = HelpWidget::new();

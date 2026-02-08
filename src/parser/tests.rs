@@ -4,7 +4,7 @@ mod integration_tests {
     use crate::parser::{parse_config, write_config};
     use std::path::PathBuf;
 
-    const SAMPLE_CONFIG: &str = include_str!("../../Go60 TK Latest RGB scheme.txt");
+    const SAMPLE_CONFIG: &str = include_str!("../../tests/fixtures/sample_config.txt");
 
     #[test]
     fn test_parse_sample_config() {

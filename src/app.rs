@@ -6,6 +6,27 @@ const MAX_UNDO_HISTORY: usize = 50;
 const FADE_STEP_MS: u16 = 5;
 const STATUS_TIMEOUT_SECS: u64 = 3;
 
+/// Try platform clipboard commands in order: pbcopy (macOS), xclip (Linux), xsel (Linux)
+fn spawn_clipboard_process() -> std::io::Result<std::process::Child> {
+    use std::process::{Command, Stdio};
+
+    Command::new("pbcopy")
+        .stdin(Stdio::piped())
+        .spawn()
+        .or_else(|_| {
+            Command::new("xclip")
+                .args(["-selection", "clipboard"])
+                .stdin(Stdio::piped())
+                .spawn()
+        })
+        .or_else(|_| {
+            Command::new("xsel")
+                .args(["--clipboard", "--input"])
+                .stdin(Stdio::piped())
+                .spawn()
+        })
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
     Normal,
@@ -314,10 +335,8 @@ impl App {
     }
 
     pub fn copy_to_clipboard(&mut self) {
-        use std::process::{Command, Stdio};
         use std::io::Write;
 
-        // Read the current file contents
         let content = match std::fs::read_to_string(&self.config.file_path) {
             Ok(c) => c,
             Err(e) => {
@@ -326,35 +345,25 @@ impl App {
             }
         };
 
-        // Try pbcopy (macOS), then xclip (Linux), then xsel (Linux)
-        let result = Command::new("pbcopy")
-            .stdin(Stdio::piped())
-            .spawn()
-            .or_else(|_| Command::new("xclip").args(["-selection", "clipboard"]).stdin(Stdio::piped()).spawn())
-            .or_else(|_| Command::new("xsel").args(["--clipboard", "--input"]).stdin(Stdio::piped()).spawn());
-
-        match result {
-            Ok(mut child) => {
-                // Write to stdin and drop it to close the pipe
-                let write_result = {
-                    if let Some(mut stdin) = child.stdin.take() {
-                        stdin.write_all(content.as_bytes())
-                    } else {
-                        Err(std::io::Error::other("no stdin"))
-                    }
-                };
-                // stdin is now dropped/closed, so pbcopy will complete
-                
-                if write_result.is_ok() {
-                    let _ = child.wait();
-                    self.show_status("Copied to clipboard!");
-                } else {
-                    self.show_status("Clipboard write failed");
-                }
-            }
+        let mut child = match spawn_clipboard_process() {
+            Ok(child) => child,
             Err(_) => {
                 self.show_status("No clipboard command available");
+                return;
             }
+        };
+
+        let write_result = match child.stdin.take() {
+            Some(mut stdin) => stdin.write_all(content.as_bytes()),
+            None => Err(std::io::Error::other("no stdin")),
+        };
+        // stdin is now dropped/closed, so the clipboard command will complete
+
+        if write_result.is_ok() {
+            let _ = child.wait();
+            self.show_status("Copied to clipboard!");
+        } else {
+            self.show_status("Clipboard write failed");
         }
     }
 
