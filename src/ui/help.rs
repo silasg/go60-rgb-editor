@@ -24,7 +24,7 @@ impl Widget for HelpWidget {
 NAVIGATION
   h/←, j/↓, k/↑, l/→    Move cursor
   Tab                   Switch between left/right half
-  J/K                   Next/Previous layer
+  J/K, PgDn/PgUp        Next/Previous layer
 
 COLORS
   Enter                 Open color picker

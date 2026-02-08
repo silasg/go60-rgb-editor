@@ -47,9 +47,9 @@ fn handle_normal_mode(app: &mut App, key: KeyEvent) {
         KeyCode::Char('l') | KeyCode::Right => app.move_cursor(Direction::Right),
         KeyCode::Tab => app.switch_half(),
 
-        // Layer navigation (Shift+J/K)
-        KeyCode::Char('J') => app.next_layer(),
-        KeyCode::Char('K') => app.prev_layer(),
+        // Layer navigation (Shift+J/K or PageDown/PageUp)
+        KeyCode::Char('J') | KeyCode::PageDown => app.next_layer(),
+        KeyCode::Char('K') | KeyCode::PageUp => app.prev_layer(),
 
         // Color picking - initialize selection to current key's color
         KeyCode::Enter => {
