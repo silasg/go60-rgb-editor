@@ -25,3 +25,10 @@ impl Half {
         self == Half::Left
     }
 }
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct RgbPos {
+    pub row: usize,
+    pub col: usize,
+    pub half: Half,
+}

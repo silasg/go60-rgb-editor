@@ -3,8 +3,7 @@ use ratatui::{
     widgets::{Block, Borders, Widget},
 };
 
-use crate::app::Cursor;
-use crate::model::{ColorPalette, Half, Layer};
+use crate::model::{ColorPalette, Half, Layer, RgbPos};
 
 const KEY_CELL_WIDTH: u16 = 4;
 const HALF_GAP: u16 = 20;
@@ -15,11 +14,11 @@ const MIN_TERMINAL_HEIGHT: u16 = 8;
 pub struct KeyboardWidget<'a> {
     layer: &'a Layer,
     palette: &'a ColorPalette,
-    cursor: Cursor,
+    cursor: RgbPos,
 }
 
 impl<'a> KeyboardWidget<'a> {
-    pub fn new(layer: &'a Layer, palette: &'a ColorPalette, cursor: Cursor) -> Self {
+    pub fn new(layer: &'a Layer, palette: &'a ColorPalette, cursor: RgbPos) -> Self {
         Self {
             layer,
             palette,

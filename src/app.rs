@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use crate::model::{Config, Half, Layer, ROW_COUNT};
+use crate::model::{Config, Half, Layer, RgbPos, ROW_COUNT};
 
 const MAX_UNDO_HISTORY: usize = 50;
 const FADE_STEP_MS: u16 = 5;
@@ -16,13 +16,6 @@ pub enum Mode {
     ConfirmCopy,
     SaveAs,
     SaveAsConfirm,
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Cursor {
-    pub row: usize,
-    pub col: usize,
-    pub half: Half,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -53,7 +46,7 @@ pub struct App {
     pub config: Config,
     pub mode: Mode,
     pub current_layer: usize,
-    pub cursor: Cursor,
+    pub cursor: RgbPos,
     pub selected_color: usize,
     pub undo_stack: Vec<Config>,
     pub redo_stack: Vec<Config>,
@@ -70,7 +63,7 @@ impl App {
             config,
             mode: Mode::Normal,
             current_layer: 0,
-            cursor: Cursor::default(),
+            cursor: RgbPos::default(),
             selected_color: 0,
             undo_stack: Vec::new(),
             redo_stack: Vec::new(),
@@ -226,11 +219,9 @@ impl App {
 
     pub fn set_current_key_color(&mut self, color: &str) {
         self.push_undo();
-        let row = self.cursor.row;
-        let col = self.cursor.col;
-        let half = self.cursor.half;
+        let pos = self.cursor;
         if let Some(layer) = self.current_layer_mut() {
-            layer.set_color(row, col, half, color.to_string());
+            layer.set_color(&pos, color.to_string());
             self.modified = true;
         }
     }
@@ -382,7 +373,7 @@ impl App {
 
     pub fn get_current_color(&self) -> Option<&str> {
         let layer = self.current_layer()?;
-        layer.get_color(self.cursor.row, self.cursor.col, self.cursor.half)
+        layer.get_color(&self.cursor)
     }
 
     pub fn copy_color(&mut self) {
@@ -893,14 +884,14 @@ mod tests {
         app.cursor.row = row;
         app.cursor.col = col;
         app.cursor.half = Half::Left;
-        let original_color = app.current_layer().unwrap().get_color(row, col, Half::Left).unwrap().to_string();
+        let original_color = app.current_layer().unwrap().get_color(&RgbPos { row: row, col: col, half: Half::Left }).unwrap().to_string();
 
         // Act
         app.set_current_key_color("RED");
         app.undo();
 
         // Assert
-        let restored_color = app.current_layer().unwrap().get_color(row, col, Half::Left).unwrap();
+        let restored_color = app.current_layer().unwrap().get_color(&RgbPos { row: row, col: col, half: Half::Left }).unwrap();
         assert_eq!(
             restored_color, original_color,
             "undo should restore color from '{}' back to '{}'", "RED", original_color
@@ -921,7 +912,7 @@ mod tests {
         app.redo();
 
         // Assert
-        let reapplied_color = app.current_layer().unwrap().get_color(0, 0, Half::Left).unwrap();
+        let reapplied_color = app.current_layer().unwrap().get_color(&RgbPos { row: 0, col: 0, half: Half::Left }).unwrap();
         assert_eq!(reapplied_color, "RED", "redo should reapply the undone color change");
     }
 
@@ -1035,7 +1026,7 @@ mod tests {
         app.paste_color();
 
         // Assert
-        let pasted_color = app.current_layer().unwrap().get_color(0, 1, Half::Left).unwrap();
+        let pasted_color = app.current_layer().unwrap().get_color(&RgbPos { row: 0, col: 1, half: Half::Left }).unwrap();
         assert_eq!(pasted_color, "RED", "paste should apply the copied color to the new position");
     }
 
@@ -1072,7 +1063,7 @@ mod tests {
 
         // Assert
         let off_color = "___";
-        let cleared_color = app.current_layer().unwrap().get_color(0, 0, Half::Left).unwrap();
+        let cleared_color = app.current_layer().unwrap().get_color(&RgbPos { row: 0, col: 0, half: Half::Left }).unwrap();
         assert_eq!(
             cleared_color, off_color,
             "clear should set the key color to off ('{}')", off_color
@@ -1392,7 +1383,7 @@ mod tests {
         app.apply_quick_color(green_palette_index);
 
         // Assert
-        let applied_color = app.current_layer().unwrap().get_color(0, 0, Half::Left).unwrap();
+        let applied_color = app.current_layer().unwrap().get_color(&RgbPos { row: 0, col: 0, half: Half::Left }).unwrap();
         assert_eq!(
             applied_color, "GRN",
             "apply_quick_color(1) should apply the second palette color ('GRN'), got '{}'", applied_color
@@ -1406,14 +1397,14 @@ mod tests {
         app.cursor.row = 0;
         app.cursor.col = 0;
         app.cursor.half = Half::Left;
-        let color_before = app.current_layer().unwrap().get_color(0, 0, Half::Left).unwrap().to_string();
+        let color_before = app.current_layer().unwrap().get_color(&RgbPos { row: 0, col: 0, half: Half::Left }).unwrap().to_string();
         let out_of_range_index = 99;
 
         // Act
         app.apply_quick_color(out_of_range_index);
 
         // Assert
-        let color_after = app.current_layer().unwrap().get_color(0, 0, Half::Left).unwrap();
+        let color_after = app.current_layer().unwrap().get_color(&RgbPos { row: 0, col: 0, half: Half::Left }).unwrap();
         assert_eq!(
             color_after, color_before,
             "apply_quick_color with out-of-range index should not change the color"
@@ -1438,7 +1429,7 @@ mod tests {
         app.apply_selected_color();
 
         // Assert
-        let applied_color = app.current_layer().unwrap().get_color(0, 0, Half::Left).unwrap();
+        let applied_color = app.current_layer().unwrap().get_color(&RgbPos { row: 0, col: 0, half: Half::Left }).unwrap();
         assert_eq!(applied_color, "CYN", "should apply the selected palette color");
         assert_eq!(app.mode, Mode::Normal, "should return to Normal mode after applying color");
     }
