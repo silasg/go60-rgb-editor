@@ -3,7 +3,7 @@
 A terminal-based (TUI) RGB underglow editor for ZMK keyboards, specifically designed for the MoErgo Go60 layout.
 
 ![CI](https://github.com/silasg/go60-rgb-editor/actions/workflows/ci.yml/badge.svg)
-![Release](https://github.com/silasg/go60-rgb-editor/actions/workflows/release.yml/badge.svg)
+![GitHub Release](https://img.shields.io/github/v/release/silasg/go60-rgb-editor)
 ![Rust](https://img.shields.io/badge/rust-1.70%2B-orange)
 
 ![Go60 RGB Editor Screenshot](screenshot.png)
