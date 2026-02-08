@@ -2,7 +2,8 @@ use std::time::Instant;
 
 use crate::cursor;
 pub use crate::cursor::Direction;
-use crate::model::{Config, RgbPos, COLORS_PER_PICKER_ROW};
+use crate::model::{Config, RgbPos};
+use crate::ui::COLORS_PER_PICKER_ROW;
 use crate::undo::UndoHistory;
 
 const FADE_STEP_MS: u16 = 5;

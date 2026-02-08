@@ -25,8 +25,8 @@ pub fn parse_config(input: &str) -> Result<Config, String> {
         .unwrap_or(input.len());
     config.raw_footer = input[footer_start..].to_string();
 
-    // Parse colors from header
-    config.palette = parse_colors(&config.raw_header)?;
+    // Parse color palette from header
+    config.palette = parse_palette(&config.raw_header)?;
 
     // Parse layers from section
     let section = &input[start_pos..end_pos];
@@ -35,7 +35,7 @@ pub fn parse_config(input: &str) -> Result<Config, String> {
     Ok(config)
 }
 
-fn parse_colors(header: &str) -> Result<ColorPalette, String> {
+fn parse_palette(header: &str) -> Result<ColorPalette, String> {
     let mut palette = ColorPalette::new();
     let mut rgb_colors: std::collections::HashMap<String, (RgbColor, Option<String>)> =
         std::collections::HashMap::new();

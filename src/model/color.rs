@@ -90,13 +90,12 @@ impl ColorDef {
         self.kind = kind;
         self
     }
-
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct ColorPalette {
     pub colors: Vec<ColorDef>,
-    pub by_abbrev: HashMap<String, usize>,
+    pub abbrev_to_index: HashMap<String, usize>,
 }
 
 impl ColorPalette {
@@ -106,12 +105,12 @@ impl ColorPalette {
 
     pub fn add(&mut self, color: ColorDef) {
         let idx = self.colors.len();
-        self.by_abbrev.insert(color.abbrev.clone(), idx);
+        self.abbrev_to_index.insert(color.abbrev.clone(), idx);
         self.colors.push(color);
     }
 
     pub fn get(&self, abbrev: &str) -> Option<&ColorDef> {
-        self.by_abbrev.get(abbrev).map(|&idx| &self.colors[idx])
+        self.abbrev_to_index.get(abbrev).map(|&idx| &self.colors[idx])
     }
 
     /// Resolve aliases and lock indicators to their effective RGB value.

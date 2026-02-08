@@ -1,13 +1,4 @@
-/// Number of columns in the main key rows (rows 0–3)
-pub const MAIN_ROW_COLS: usize = 6;
-/// Number of columns in the thumb rows (rows 4–5)
-pub const THUMB_ROW_COLS: usize = 3;
-/// Total number of key rows per half (4 main + 2 thumb)
-pub const ROW_COUNT: usize = 6;
-/// First thumb row index
-pub const THUMB_START_ROW: usize = 4;
-/// Number of colors per row in the color picker
-pub const COLORS_PER_PICKER_ROW: usize = 17;
+use crate::geometry::{MAIN_ROW_COLS, THUMB_ROW_COLS};
 
 /// A keyboard layer with per-key RGB color assignments.
 ///
@@ -74,29 +65,12 @@ impl Layer {
         }
     }
 
-    pub fn cols_for_row(row: usize) -> usize {
-        if row < THUMB_START_ROW {
-            MAIN_ROW_COLS
-        } else {
-            THUMB_ROW_COLS
-        }
-    }
-
-    #[cfg(test)]
-    pub fn is_valid_pos(row: usize, col: usize) -> bool {
-        if row < THUMB_START_ROW {
-            col < MAIN_ROW_COLS
-        } else if row < ROW_COUNT {
-            col < THUMB_ROW_COLS
-        } else {
-            false
-        }
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::geometry;
 
     #[test]
     fn test_layer_new() {
@@ -137,10 +111,10 @@ mod tests {
         let thumb_row_col_count = 3;
 
         // Act
-        let first_main_row_cols = Layer::cols_for_row(0);
-        let last_main_row_cols = Layer::cols_for_row(3);
-        let inner_thumb_row_cols = Layer::cols_for_row(4);
-        let outer_thumb_row_cols = Layer::cols_for_row(5);
+        let first_main_row_cols = geometry::cols_for_row(0);
+        let last_main_row_cols = geometry::cols_for_row(3);
+        let inner_thumb_row_cols = geometry::cols_for_row(4);
+        let outer_thumb_row_cols = geometry::cols_for_row(5);
 
         // Assert
         assert_eq!(first_main_row_cols, main_row_col_count);
@@ -152,28 +126,28 @@ mod tests {
     #[test]
     fn test_is_valid_pos_for_main_rows() {
         // Act & Assert
-        assert!(Layer::is_valid_pos(0, 0), "row 0 col 0 should be valid");
-        assert!(Layer::is_valid_pos(0, 5), "row 0 col 5 should be valid");
-        assert!(!Layer::is_valid_pos(0, 6), "row 0 col 6 should be out of bounds");
-        assert!(Layer::is_valid_pos(3, 5), "row 3 col 5 should be valid");
-        assert!(!Layer::is_valid_pos(3, 6), "row 3 col 6 should be out of bounds");
+        assert!(geometry::is_valid_pos(0, 0), "row 0 col 0 should be valid");
+        assert!(geometry::is_valid_pos(0, 5), "row 0 col 5 should be valid");
+        assert!(!geometry::is_valid_pos(0, 6), "row 0 col 6 should be out of bounds");
+        assert!(geometry::is_valid_pos(3, 5), "row 3 col 5 should be valid");
+        assert!(!geometry::is_valid_pos(3, 6), "row 3 col 6 should be out of bounds");
     }
 
     #[test]
     fn test_is_valid_pos_for_thumb_rows() {
         // Act & Assert
-        assert!(Layer::is_valid_pos(4, 0), "row 4 col 0 should be valid");
-        assert!(Layer::is_valid_pos(4, 2), "row 4 col 2 should be valid");
-        assert!(!Layer::is_valid_pos(4, 3), "row 4 col 3 should be out of bounds");
-        assert!(Layer::is_valid_pos(5, 2), "row 5 col 2 should be valid");
-        assert!(!Layer::is_valid_pos(5, 3), "row 5 col 3 should be out of bounds");
+        assert!(geometry::is_valid_pos(4, 0), "row 4 col 0 should be valid");
+        assert!(geometry::is_valid_pos(4, 2), "row 4 col 2 should be valid");
+        assert!(!geometry::is_valid_pos(4, 3), "row 4 col 3 should be out of bounds");
+        assert!(geometry::is_valid_pos(5, 2), "row 5 col 2 should be valid");
+        assert!(!geometry::is_valid_pos(5, 3), "row 5 col 3 should be out of bounds");
     }
 
     #[test]
     fn test_is_valid_pos_for_out_of_bounds_row() {
         // Act & Assert
-        assert!(!Layer::is_valid_pos(6, 0), "row 6 should be out of bounds");
-        assert!(!Layer::is_valid_pos(100, 0), "row 100 should be out of bounds");
+        assert!(!geometry::is_valid_pos(6, 0), "row 6 should be out of bounds");
+        assert!(!geometry::is_valid_pos(100, 0), "row 100 should be out of bounds");
     }
 
     #[test]

@@ -52,7 +52,7 @@ fn handle_normal_mode(app: &mut App, key: KeyEvent) {
         // Color picking - initialize selection to current key's color
         KeyCode::Enter => {
             if let Some(color) = app.get_current_color() {
-                if let Some(&idx) = app.config.palette.by_abbrev.get(color) {
+                if let Some(&idx) = app.config.palette.abbrev_to_index.get(color) {
                     app.selected_color = idx;
                 }
             }
@@ -209,5 +209,3 @@ fn handle_save_as_confirm_mode(app: &mut App, key: KeyEvent) {
         _ => {}
     }
 }
-
-

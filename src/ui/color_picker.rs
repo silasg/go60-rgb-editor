@@ -3,8 +3,11 @@ use ratatui::{
     widgets::{Block, Borders, Widget},
 };
 
-use crate::model::{ColorPalette, COLORS_PER_PICKER_ROW};
+use crate::model::ColorPalette;
 use super::render_color_cell;
+
+/// Number of colors per row in the color picker grid.
+pub const COLORS_PER_PICKER_ROW: usize = 17;
 
 const KEY_CELL_WIDTH: u16 = 4;
 /// Maximum rows of regular colors shown before the lock/alias sections
@@ -108,6 +111,7 @@ impl<'a> Widget for ColorPickerWidget<'a> {
             inner, current_y,
         );
 
+        // Currently all aliases are mouse speed colors; update label if aliases expand.
         current_y = self.render_labeled_section(
             buf,
             &LabeledSection {

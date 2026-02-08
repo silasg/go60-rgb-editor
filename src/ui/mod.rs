@@ -6,7 +6,7 @@ mod help;
 
 pub use keyboard::KeyboardWidget;
 pub use layer_list::LayerListWidget;
-pub use color_picker::ColorPickerWidget;
+pub use color_picker::{ColorPickerWidget, COLORS_PER_PICKER_ROW};
 pub use status_bar::StatusBarWidget;
 pub use help::HelpWidget;
 
@@ -95,7 +95,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
         app.selected_color
     } else {
         app.get_current_color()
-            .and_then(|color| app.config.palette.by_abbrev.get(color).copied())
+            .and_then(|color| app.config.palette.abbrev_to_index.get(color).copied())
             .unwrap_or(0)
     };
 

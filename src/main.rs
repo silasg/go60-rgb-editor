@@ -1,6 +1,7 @@
 mod app;
 mod cursor;
 mod event;
+mod geometry;
 mod model;
 mod parser;
 mod tui;

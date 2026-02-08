@@ -50,7 +50,7 @@ impl<'a> Widget for StatusBarWidget<'a> {
         
         // Render status message in center if present
         if let Some(msg) = status_msg {
-            let msg_x = area.x + area.width / 2 - msg.len() as u16 / 2;
+            let msg_x = area.x + (area.width / 2).saturating_sub(msg.len() as u16 / 2);
             buf.set_string(
                 msg_x,
                 area.y,
