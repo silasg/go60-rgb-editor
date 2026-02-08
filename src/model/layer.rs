@@ -53,20 +53,18 @@ impl Layer {
         }
     }
 
-    pub fn get_color(&self, row: usize, col: usize, is_left: bool) -> Option<&str> {
-        let half = if is_left {
-            &self.left_half
-        } else {
-            &self.right_half
+    pub fn get_color(&self, row: usize, col: usize, half: super::Half) -> Option<&str> {
+        let half = match half {
+            super::Half::Left => &self.left_half,
+            super::Half::Right => &self.right_half,
         };
         half.get(row).and_then(|r| r.get(col)).map(|s| s.as_str())
     }
 
-    pub fn set_color(&mut self, row: usize, col: usize, is_left: bool, color: String) {
-        let half = if is_left {
-            &mut self.left_half
-        } else {
-            &mut self.right_half
+    pub fn set_color(&mut self, row: usize, col: usize, half: super::Half, color: String) {
+        let half = match half {
+            super::Half::Left => &mut self.left_half,
+            super::Half::Right => &mut self.right_half,
         };
         if let Some(row_vec) = half.get_mut(row) {
             if let Some(cell) = row_vec.get_mut(col) {
@@ -116,19 +114,20 @@ mod tests {
 
     #[test]
     fn test_get_set_color() {
+        use crate::model::Half;
+
         // Arrange
         let mut layer = Layer::new("Test".to_string(), "LAYER_Test".to_string());
         let row = 0;
         let col = 0;
-        let is_left_half = true;
         let default_color = "___";
 
         // Act
-        layer.set_color(row, col, is_left_half, "RED".to_string());
+        layer.set_color(row, col, Half::Left, "RED".to_string());
 
         // Assert
-        assert_eq!(layer.get_color(row, col, is_left_half), Some("RED"));
-        assert_eq!(layer.get_color(row, col, !is_left_half), Some(default_color));
+        assert_eq!(layer.get_color(row, col, Half::Left), Some("RED"));
+        assert_eq!(layer.get_color(row, col, Half::Right), Some(default_color));
     }
 
     #[test]
@@ -178,28 +177,32 @@ mod tests {
 
     #[test]
     fn test_get_color_out_of_bounds_returns_none() {
+        use crate::model::Half;
+
         // Arrange
         let layer = Layer::new("Test".to_string(), "LAYER_Test".to_string());
 
         // Act & Assert
         assert_eq!(
-            layer.get_color(10, 0, true), None,
+            layer.get_color(10, 0, Half::Left), None,
             "getting color at an out-of-bounds row should return None"
         );
         assert_eq!(
-            layer.get_color(0, 20, true), None,
+            layer.get_color(0, 20, Half::Left), None,
             "getting color at an out-of-bounds column should return None"
         );
     }
 
     #[test]
     fn test_set_color_out_of_bounds_does_not_panic() {
+        use crate::model::Half;
+
         // Arrange
         let mut layer = Layer::new("Test".to_string(), "LAYER_Test".to_string());
 
         // Act & Assert (should not panic)
-        layer.set_color(10, 0, true, "RED".to_string());
-        layer.set_color(0, 20, true, "RED".to_string());
+        layer.set_color(10, 0, Half::Left, "RED".to_string());
+        layer.set_color(0, 20, Half::Left, "RED".to_string());
     }
 
     #[test]

@@ -4,7 +4,7 @@ use ratatui::{
 };
 
 use crate::app::Cursor;
-use crate::model::{ColorPalette, Layer};
+use crate::model::{ColorPalette, Half, Layer};
 
 const KEY_CELL_WIDTH: u16 = 4;
 const HALF_GAP: u16 = 20;
@@ -28,14 +28,14 @@ impl<'a> KeyboardWidget<'a> {
     }
 
     fn render_half_row(
-        &self, buf: &mut Buffer, half: &[Vec<String>],
-        row: usize, start_x: u16, y: u16, max_cols: usize, is_left: bool,
+        &self, buf: &mut Buffer, half_keys: &[Vec<String>],
+        row: usize, start_x: u16, y: u16, max_cols: usize, half: Half,
     ) {
-        if row < half.len() {
-            for col in 0..half[row].len().min(max_cols) {
+        if row < half_keys.len() {
+            for col in 0..half_keys[row].len().min(max_cols) {
                 let x = start_x + col as u16 * KEY_CELL_WIDTH;
-                let color = &half[row][col];
-                let is_selected = self.cursor.is_left == is_left
+                let color = &half_keys[row][col];
+                let is_selected = self.cursor.half == half
                     && self.cursor.row == row
                     && self.cursor.col == col;
                 self.render_key(buf, x, y, color, is_selected);
@@ -44,18 +44,20 @@ impl<'a> KeyboardWidget<'a> {
     }
 
     fn render_selection_info(&self, buf: &mut Buffer, x: u16, y: u16) {
-        let half_data = if self.cursor.is_left {
-            &self.layer.left_half
-        } else {
-            &self.layer.right_half
+        let half_keys = match self.cursor.half {
+            Half::Left => &self.layer.left_half,
+            Half::Right => &self.layer.right_half,
         };
-        let selected_color = half_data.get(self.cursor.row).and_then(|r| r.get(self.cursor.col));
+        let selected_color = half_keys.get(self.cursor.row).and_then(|r| r.get(self.cursor.col));
 
         if let Some(color) = selected_color {
-            let half = if self.cursor.is_left { "L" } else { "R" };
+            let half_label = match self.cursor.half {
+                Half::Left => "L",
+                Half::Right => "R",
+            };
             let info = format!(
                 "Selected: {} @ {}{},{} ",
-                color, half, self.cursor.row, self.cursor.col
+                color, half_label, self.cursor.row, self.cursor.col
             );
             buf.set_string(x, y, info, Style::default().fg(Color::Cyan));
         }
@@ -117,23 +119,23 @@ impl<'a> Widget for KeyboardWidget<'a> {
         // Main rows (0-3)
         for row in 0..4 {
             let y = start_y + row as u16;
-            self.render_half_row(buf, &self.layer.left_half, row, left_start_x, y, 6, true);
-            self.render_half_row(buf, &self.layer.right_half, row, right_start_x, y, 6, false);
+            self.render_half_row(buf, &self.layer.left_half, row, left_start_x, y, 6, Half::Left);
+            self.render_half_row(buf, &self.layer.right_half, row, right_start_x, y, 6, Half::Right);
         }
 
         // Row 4 (inner thumb keys)
         let row4_y = start_y + 4;
         let left_row4_x = left_start_x + center_shift;
         let right_row4_x = right_start_x + 3 * KEY_CELL_WIDTH - center_shift;
-        self.render_half_row(buf, &self.layer.left_half, 4, left_row4_x, row4_y, 3, true);
-        self.render_half_row(buf, &self.layer.right_half, 4, right_row4_x, row4_y, 3, false);
+        self.render_half_row(buf, &self.layer.left_half, 4, left_row4_x, row4_y, 3, Half::Left);
+        self.render_half_row(buf, &self.layer.right_half, 4, right_row4_x, row4_y, 3, Half::Right);
 
         // Row 5 (outer thumb keys)
         let thumb_y = start_y + 5;
         let left_thumb_x = left_row4_x + 3 * KEY_CELL_WIDTH;
         let right_thumb_x = right_start_x - center_shift;
-        self.render_half_row(buf, &self.layer.left_half, 5, left_thumb_x, thumb_y, 3, true);
-        self.render_half_row(buf, &self.layer.right_half, 5, right_thumb_x, thumb_y, 3, false);
+        self.render_half_row(buf, &self.layer.left_half, 5, left_thumb_x, thumb_y, 3, Half::Left);
+        self.render_half_row(buf, &self.layer.right_half, 5, right_thumb_x, thumb_y, 3, Half::Right);
 
         // Selection info
         if inner.height > 8 {

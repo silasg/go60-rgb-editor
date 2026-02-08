@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use crate::model::{Config, Layer, ROW_COUNT};
+use crate::model::{Config, Half, Layer, ROW_COUNT};
 
 const MAX_UNDO_HISTORY: usize = 50;
 const FADE_STEP_MS: u16 = 5;
@@ -22,7 +22,7 @@ pub enum Mode {
 pub struct Cursor {
     pub row: usize,
     pub col: usize,
-    pub is_left: bool,
+    pub half: Half,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -93,7 +93,7 @@ impl App {
     /// Convert data column to visual column for a given row
     /// Visual columns account for the shifted positions of rows 4 and 5
     fn to_visual_col(&self, row: usize, col: usize) -> usize {
-        if self.cursor.is_left {
+        if self.cursor.half.is_left() {
             match row {
                 0..=3 => col,
                 4 => col + 2,      // Row 4 shifted 2 keys toward center
@@ -116,7 +116,7 @@ impl App {
     fn from_visual_col(&self, row: usize, visual_col: usize) -> usize {
         let max_col = Layer::cols_for_row(row);
         
-        let data_col = if self.cursor.is_left {
+        let data_col = if self.cursor.half.is_left() {
             match row {
                 0..=3 => visual_col,
                 4 => visual_col.saturating_sub(2),
@@ -155,9 +155,8 @@ impl App {
                 let max_col = self.max_col_for_row();
                 if self.cursor.col > 0 {
                     self.cursor.col -= 1;
-                } else if !self.cursor.is_left {
-                    // Wrap to left half
-                    self.cursor.is_left = true;
+                } else if self.cursor.half == Half::Right {
+                    self.cursor.half = Half::Left;
                     self.cursor.col = max_col - 1;
                 }
             }
@@ -165,9 +164,8 @@ impl App {
                 let max_col = self.max_col_for_row();
                 if self.cursor.col < max_col - 1 {
                     self.cursor.col += 1;
-                } else if self.cursor.is_left {
-                    // Wrap to right half
-                    self.cursor.is_left = false;
+                } else if self.cursor.half == Half::Left {
+                    self.cursor.half = Half::Right;
                     self.cursor.col = 0;
                 }
             }
@@ -186,7 +184,7 @@ impl App {
     }
 
     pub fn switch_half(&mut self) {
-        self.cursor.is_left = !self.cursor.is_left;
+        self.cursor.half = self.cursor.half.opposite();
         self.clamp_cursor_col();
     }
 
@@ -230,9 +228,9 @@ impl App {
         self.push_undo();
         let row = self.cursor.row;
         let col = self.cursor.col;
-        let is_left = self.cursor.is_left;
+        let half = self.cursor.half;
         if let Some(layer) = self.current_layer_mut() {
-            layer.set_color(row, col, is_left, color.to_string());
+            layer.set_color(row, col, half, color.to_string());
             self.modified = true;
         }
     }
@@ -384,7 +382,7 @@ impl App {
 
     pub fn get_current_color(&self) -> Option<&str> {
         let layer = self.current_layer()?;
-        layer.get_color(self.cursor.row, self.cursor.col, self.cursor.is_left)
+        layer.get_color(self.cursor.row, self.cursor.col, self.cursor.half)
     }
 
     pub fn copy_color(&mut self) {
@@ -518,7 +516,7 @@ mod tests {
     fn test_visual_col_mapping_left_half() {
         // Arrange
         let mut app = create_test_app();
-        app.cursor.is_left = true;
+        app.cursor.half = Half::Left;
 
         // Act - main rows (0-3) have no offset
         let main_row_first_col_visual = app.to_visual_col(0, 0);
@@ -555,7 +553,7 @@ mod tests {
     fn test_from_visual_col_left_half() {
         // Arrange
         let mut app = create_test_app();
-        app.cursor.is_left = true;
+        app.cursor.half = Half::Left;
         let inner_thumb_offset = 2;
         let outer_thumb_offset = 5;
 
@@ -594,7 +592,7 @@ mod tests {
     fn test_navigation_down_from_row3_to_row4_left() {
         // Arrange
         let mut app = create_test_app();
-        app.cursor.is_left = true;
+        app.cursor.half = Half::Left;
         let main_row = 3;
         let inner_thumb_row = 4;
         let inner_thumb_first_aligned_main_col = 2;
@@ -641,7 +639,7 @@ mod tests {
     fn test_navigation_up_from_row4_to_row3_left() {
         // Arrange
         let mut app = create_test_app();
-        app.cursor.is_left = true;
+        app.cursor.half = Half::Left;
         let inner_thumb_row = 4;
         let main_row = 3;
         let inner_thumb_offset = 2;
@@ -678,7 +676,7 @@ mod tests {
     fn test_navigation_up_from_row5_to_row4_left() {
         // Arrange
         let mut app = create_test_app();
-        app.cursor.is_left = true;
+        app.cursor.half = Half::Left;
         let outer_thumb_row = 5;
         let inner_thumb_row = 4;
         let inner_thumb_max_col = 2;
@@ -892,18 +890,17 @@ mod tests {
         let mut app = create_test_app();
         let row = 0;
         let col = 0;
-        let is_left = true;
         app.cursor.row = row;
         app.cursor.col = col;
-        app.cursor.is_left = is_left;
-        let original_color = app.current_layer().unwrap().get_color(row, col, is_left).unwrap().to_string();
+        app.cursor.half = Half::Left;
+        let original_color = app.current_layer().unwrap().get_color(row, col, Half::Left).unwrap().to_string();
 
         // Act
         app.set_current_key_color("RED");
         app.undo();
 
         // Assert
-        let restored_color = app.current_layer().unwrap().get_color(row, col, is_left).unwrap();
+        let restored_color = app.current_layer().unwrap().get_color(row, col, Half::Left).unwrap();
         assert_eq!(
             restored_color, original_color,
             "undo should restore color from '{}' back to '{}'", "RED", original_color
@@ -916,7 +913,7 @@ mod tests {
         let mut app = create_test_app();
         app.cursor.row = 0;
         app.cursor.col = 0;
-        app.cursor.is_left = true;
+        app.cursor.half = Half::Left;
         app.set_current_key_color("RED");
         app.undo();
 
@@ -924,7 +921,7 @@ mod tests {
         app.redo();
 
         // Assert
-        let reapplied_color = app.current_layer().unwrap().get_color(0, 0, true).unwrap();
+        let reapplied_color = app.current_layer().unwrap().get_color(0, 0, Half::Left).unwrap();
         assert_eq!(reapplied_color, "RED", "redo should reapply the undone color change");
     }
 
@@ -966,7 +963,7 @@ mod tests {
         let mut app = create_test_app();
         app.cursor.row = 0;
         app.cursor.col = 0;
-        app.cursor.is_left = true;
+        app.cursor.half = Half::Left;
         app.set_current_key_color("RED");
         app.undo();
         assert!(!app.redo_stack.is_empty(), "redo stack should not be empty after undo");
@@ -987,7 +984,7 @@ mod tests {
         let mut app = create_test_app();
         app.cursor.row = 0;
         app.cursor.col = 0;
-        app.cursor.is_left = true;
+        app.cursor.half = Half::Left;
 
         // Act
         for i in 0..=MAX_UNDO_HISTORY + 10 {
@@ -1010,7 +1007,7 @@ mod tests {
         let mut app = create_test_app();
         app.cursor.row = 0;
         app.cursor.col = 0;
-        app.cursor.is_left = true;
+        app.cursor.half = Half::Left;
         app.set_current_key_color("RED");
 
         // Act
@@ -1029,7 +1026,7 @@ mod tests {
         let mut app = create_test_app();
         app.cursor.row = 0;
         app.cursor.col = 0;
-        app.cursor.is_left = true;
+        app.cursor.half = Half::Left;
         app.set_current_key_color("RED");
         app.copy_color();
         app.cursor.col = 1;
@@ -1038,7 +1035,7 @@ mod tests {
         app.paste_color();
 
         // Assert
-        let pasted_color = app.current_layer().unwrap().get_color(0, 1, true).unwrap();
+        let pasted_color = app.current_layer().unwrap().get_color(0, 1, Half::Left).unwrap();
         assert_eq!(pasted_color, "RED", "paste should apply the copied color to the new position");
     }
 
@@ -1067,7 +1064,7 @@ mod tests {
         let mut app = create_test_app();
         app.cursor.row = 0;
         app.cursor.col = 0;
-        app.cursor.is_left = true;
+        app.cursor.half = Half::Left;
         app.set_current_key_color("RED");
 
         // Act
@@ -1075,7 +1072,7 @@ mod tests {
 
         // Assert
         let off_color = "___";
-        let cleared_color = app.current_layer().unwrap().get_color(0, 0, true).unwrap();
+        let cleared_color = app.current_layer().unwrap().get_color(0, 0, Half::Left).unwrap();
         assert_eq!(
             cleared_color, off_color,
             "clear should set the key color to off ('{}')", off_color
@@ -1207,20 +1204,20 @@ mod tests {
     fn test_switch_half_toggles_left_to_right() {
         // Arrange
         let mut app = create_test_app();
-        app.cursor.is_left = true;
+        app.cursor.half = Half::Left;
 
         // Act
         app.switch_half();
 
         // Assert
-        assert!(!app.cursor.is_left, "switch_half should toggle from left to right");
+        assert_eq!(app.cursor.half, Half::Right, "switch_half should toggle from left to right");
     }
 
     #[test]
     fn test_switch_half_clamps_column_on_thumb_row() {
         // Arrange
         let mut app = create_test_app();
-        app.cursor.is_left = true;
+        app.cursor.half = Half::Left;
         app.cursor.row = 0;
         app.cursor.col = 5;
 
@@ -1244,7 +1241,7 @@ mod tests {
     fn test_move_left_at_right_half_start_wraps_to_left_half() {
         // Arrange
         let mut app = create_test_app();
-        app.cursor.is_left = false;
+        app.cursor.half = Half::Right;
         app.cursor.row = 0;
         app.cursor.col = 0;
         let main_row_max_col = 5;
@@ -1253,7 +1250,7 @@ mod tests {
         app.move_cursor(Direction::Left);
 
         // Assert
-        assert!(app.cursor.is_left, "moving left from col 0 on right half should wrap to left half");
+        assert_eq!(app.cursor.half, Half::Left, "moving left from col 0 on right half should wrap to left half");
         assert_eq!(
             app.cursor.col, main_row_max_col,
             "wrapping to left half should place cursor at last column"
@@ -1264,7 +1261,7 @@ mod tests {
     fn test_move_right_at_left_half_end_wraps_to_right_half() {
         // Arrange
         let mut app = create_test_app();
-        app.cursor.is_left = true;
+        app.cursor.half = Half::Left;
         app.cursor.row = 0;
         app.cursor.col = 5;
 
@@ -1272,7 +1269,7 @@ mod tests {
         app.move_cursor(Direction::Right);
 
         // Assert
-        assert!(!app.cursor.is_left, "moving right from last col on left half should wrap to right half");
+        assert_eq!(app.cursor.half, Half::Right, "moving right from last col on left half should wrap to right half");
         assert_eq!(app.cursor.col, 0, "wrapping to right half should place cursor at col 0");
     }
 
@@ -1280,7 +1277,7 @@ mod tests {
     fn test_move_left_at_left_half_start_stays() {
         // Arrange
         let mut app = create_test_app();
-        app.cursor.is_left = true;
+        app.cursor.half = Half::Left;
         app.cursor.row = 0;
         app.cursor.col = 0;
 
@@ -1288,7 +1285,7 @@ mod tests {
         app.move_cursor(Direction::Left);
 
         // Assert
-        assert!(app.cursor.is_left, "should stay on left half");
+        assert_eq!(app.cursor.half, Half::Left, "should stay on left half");
         assert_eq!(app.cursor.col, 0, "should stay at col 0 when already at leftmost position");
     }
 
@@ -1296,7 +1293,7 @@ mod tests {
     fn test_move_right_at_right_half_end_stays() {
         // Arrange
         let mut app = create_test_app();
-        app.cursor.is_left = false;
+        app.cursor.half = Half::Right;
         app.cursor.row = 0;
         app.cursor.col = 5;
 
@@ -1304,7 +1301,7 @@ mod tests {
         app.move_cursor(Direction::Right);
 
         // Assert
-        assert!(!app.cursor.is_left, "should stay on right half");
+        assert_eq!(app.cursor.half, Half::Right, "should stay on right half");
         assert_eq!(app.cursor.col, 5, "should stay at last col when already at rightmost position");
     }
 
@@ -1344,7 +1341,7 @@ mod tests {
     fn test_visual_col_mapping_right_half() {
         // Arrange
         let mut app = create_test_app();
-        app.cursor.is_left = false;
+        app.cursor.half = Half::Right;
 
         // Act & Assert: main rows have no offset
         assert_eq!(app.to_visual_col(0, 0), 0, "right half main row col 0 should have no offset");
@@ -1363,7 +1360,7 @@ mod tests {
     fn test_from_visual_col_right_half() {
         // Arrange
         let mut app = create_test_app();
-        app.cursor.is_left = false;
+        app.cursor.half = Half::Right;
 
         // Act & Assert: main rows have no offset
         assert_eq!(app.from_visual_col(0, 3), 3, "right half main row visual 3 should map to data 3");
@@ -1388,14 +1385,14 @@ mod tests {
         app.config.palette.add(grn);
         app.cursor.row = 0;
         app.cursor.col = 0;
-        app.cursor.is_left = true;
+        app.cursor.half = Half::Left;
 
         // Act
         let green_palette_index = 1;
         app.apply_quick_color(green_palette_index);
 
         // Assert
-        let applied_color = app.current_layer().unwrap().get_color(0, 0, true).unwrap();
+        let applied_color = app.current_layer().unwrap().get_color(0, 0, Half::Left).unwrap();
         assert_eq!(
             applied_color, "GRN",
             "apply_quick_color(1) should apply the second palette color ('GRN'), got '{}'", applied_color
@@ -1408,15 +1405,15 @@ mod tests {
         let mut app = create_test_app();
         app.cursor.row = 0;
         app.cursor.col = 0;
-        app.cursor.is_left = true;
-        let color_before = app.current_layer().unwrap().get_color(0, 0, true).unwrap().to_string();
+        app.cursor.half = Half::Left;
+        let color_before = app.current_layer().unwrap().get_color(0, 0, Half::Left).unwrap().to_string();
         let out_of_range_index = 99;
 
         // Act
         app.apply_quick_color(out_of_range_index);
 
         // Assert
-        let color_after = app.current_layer().unwrap().get_color(0, 0, true).unwrap();
+        let color_after = app.current_layer().unwrap().get_color(0, 0, Half::Left).unwrap();
         assert_eq!(
             color_after, color_before,
             "apply_quick_color with out-of-range index should not change the color"
@@ -1433,7 +1430,7 @@ mod tests {
         app.config.palette.add(cyan);
         app.cursor.row = 0;
         app.cursor.col = 0;
-        app.cursor.is_left = true;
+        app.cursor.half = Half::Left;
         app.mode = Mode::ColorPick;
         app.selected_color = 0;
 
@@ -1441,7 +1438,7 @@ mod tests {
         app.apply_selected_color();
 
         // Assert
-        let applied_color = app.current_layer().unwrap().get_color(0, 0, true).unwrap();
+        let applied_color = app.current_layer().unwrap().get_color(0, 0, Half::Left).unwrap();
         assert_eq!(applied_color, "CYN", "should apply the selected palette color");
         assert_eq!(app.mode, Mode::Normal, "should return to Normal mode after applying color");
     }
@@ -1489,7 +1486,7 @@ mod tests {
         let mut app = create_test_app();
         app.cursor.row = 0;
         app.cursor.col = 0;
-        app.cursor.is_left = true;
+        app.cursor.half = Half::Left;
         assert!(!app.modified);
 
         // Act
