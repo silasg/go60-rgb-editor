@@ -3,4 +3,5 @@
 /local
 *.bak
 .nvimlog
-CODE_REVIEW.md
+.agency
+.sandbox
