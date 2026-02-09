@@ -6,7 +6,7 @@ mod help;
 
 pub use keyboard::KeyboardWidget;
 pub use layer_list::LayerListWidget;
-pub use color_picker::{ColorPickerWidget, COLORS_PER_PICKER_ROW};
+pub use color_picker::{ColorPickerState, ColorPickerWidget};
 pub use status_bar::StatusBarWidget;
 pub use help::HelpWidget;
 
@@ -106,7 +106,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
     }
 
     let selected_color_idx = if matches!(app.mode, Mode::ColorPick) {
-        app.selected_color
+        app.color_picker.selected
     } else {
         app.get_current_color()
             .and_then(|color| app.editor.config.palette.abbrev_to_index.get(color).copied())

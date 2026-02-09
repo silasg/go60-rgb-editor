@@ -4,7 +4,7 @@ use std::time::Instant;
 pub use crate::domain::cursor::Direction;
 use crate::domain::editor::EditorState;
 use crate::domain::Config;
-use crate::ui::COLORS_PER_PICKER_ROW;
+use crate::ui::ColorPickerState;
 
 const FADE_STEP_MS: u16 = 5;
 const STATUS_TIMEOUT_SECS: u64 = 3;
@@ -20,20 +20,13 @@ pub enum Mode {
     SaveAsConfirm,
 }
 
-fn move_within_section(section: &[usize], pos: usize, delta: isize) -> usize {
-    let new_pos = pos as isize + delta;
-    if new_pos >= 0 && (new_pos as usize) < section.len() {
-        section[new_pos as usize]
-    } else {
-        section[pos]
-    }
-}
+
 
 pub struct App {
     pub editor: EditorState,
     pub file_path: PathBuf,
     pub mode: Mode,
-    pub selected_color: usize,
+    pub color_picker: ColorPickerState,
     pub status_message: Option<(String, Instant)>,
     pub should_quit: bool,
     pub filename_input: String,
@@ -45,7 +38,7 @@ impl App {
             editor: EditorState::new(config),
             file_path,
             mode: Mode::Normal,
-            selected_color: 0,
+            color_picker: ColorPickerState::new(),
             status_message: None,
             should_quit: false,
             filename_input: String::new(),
@@ -214,75 +207,12 @@ impl App {
     }
 
     pub fn move_color_selection(&mut self, direction: Direction) {
-        let categories = self.editor.config.palette.categorize();
-        let current = self.selected_color;
-        let cols = COLORS_PER_PICKER_ROW;
-
-        let sections = [&categories.regular, &categories.locks, &categories.aliases];
-
-        let (section_idx, pos) = match sections.iter().enumerate()
-            .find_map(|(i, s)| s.iter().position(|&x| x == current).map(|p| (i, p)))
-        {
-            Some(found) => found,
-            None => return,
-        };
-        let section = sections[section_idx];
-
-        match direction {
-            Direction::Left => {
-                self.selected_color = move_within_section(section, pos, -1);
-            }
-            Direction::Right => {
-                self.selected_color = move_within_section(section, pos, 1);
-            }
-            Direction::Up => {
-                self.selected_color = self.jump_to_prev_section(sections, section_idx, pos, cols);
-            }
-            Direction::Down => {
-                self.selected_color = self.jump_to_next_section(sections, section_idx, pos, cols);
-            }
-        }
-    }
-
-    fn jump_to_prev_section(
-        &self, sections: [&Vec<usize>; 3], section_idx: usize, pos: usize, cols: usize,
-    ) -> usize {
-        if section_idx == 0 {
-            // Within regular: move up one row
-            if pos >= cols { return sections[0][pos - cols]; }
-            return self.selected_color;
-        }
-        let target = sections[section_idx - 1];
-        if target.is_empty() { return self.selected_color; }
-
-        let target_pos = if section_idx - 1 == 0 {
-            // Jumping into regular: land on last row at same column
-            let last_row_start = (target.len() - 1) / cols * cols;
-            last_row_start + pos
-        } else {
-            pos
-        };
-        target[target_pos.min(target.len() - 1)]
-    }
-
-    fn jump_to_next_section(
-        &self, sections: [&Vec<usize>; 3], section_idx: usize, pos: usize, cols: usize,
-    ) -> usize {
-        if section_idx == 0 && pos + cols < sections[0].len() {
-            // Within regular: move down one row
-            return sections[0][pos + cols];
-        }
-        if section_idx + 1 >= sections.len() { return self.selected_color; }
-
-        let target = sections[section_idx + 1];
-        if target.is_empty() { return self.selected_color; }
-
-        let target_pos = if section_idx == 0 { pos % cols } else { pos };
-        target[target_pos.min(target.len() - 1)]
+        self.color_picker
+            .move_selection(direction, &self.editor.config.palette);
     }
 
     pub fn apply_selected_color(&mut self) {
-        if let Some(color) = self.editor.config.palette.colors.get(self.selected_color) {
+        if let Some(color) = self.editor.config.palette.colors.get(self.color_picker.selected) {
             let abbrev = color.abbrev.clone();
             self.set_current_key_color(&abbrev);
             self.mode = Mode::Normal;
@@ -539,7 +469,7 @@ mod tests {
         app.editor.config.palette.add(cyan);
         app.editor.cursor = RgbPos { row: 0, col: 0, half: Half::Left };
         app.mode = Mode::ColorPick;
-        app.selected_color = 0;
+        app.color_picker.selected = 0;
 
         app.apply_selected_color();
 

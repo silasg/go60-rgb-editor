@@ -4,10 +4,115 @@ use ratatui::{
 };
 
 use crate::domain::ColorPalette;
+use crate::domain::cursor::Direction;
 use super::render_color_cell;
 
 /// Number of colors per row in the color picker grid.
 pub const COLORS_PER_PICKER_ROW: usize = 17;
+
+pub struct ColorPickerState {
+    pub selected: usize,
+}
+
+impl ColorPickerState {
+    pub fn new() -> Self {
+        Self { selected: 0 }
+    }
+
+    pub fn move_selection(&mut self, direction: Direction, palette: &ColorPalette) {
+        let categories = palette.categorize();
+        let current = self.selected;
+        let cols = COLORS_PER_PICKER_ROW;
+
+        let sections = [&categories.regular, &categories.locks, &categories.aliases];
+
+        let (section_idx, pos) = match sections
+            .iter()
+            .enumerate()
+            .find_map(|(i, s)| s.iter().position(|&x| x == current).map(|p| (i, p)))
+        {
+            Some(found) => found,
+            None => return,
+        };
+        let section = sections[section_idx];
+
+        match direction {
+            Direction::Left => {
+                self.selected = move_within_section(section, pos, -1);
+            }
+            Direction::Right => {
+                self.selected = move_within_section(section, pos, 1);
+            }
+            Direction::Up => {
+                self.selected =
+                    jump_to_prev_section(current, sections, section_idx, pos, cols);
+            }
+            Direction::Down => {
+                self.selected =
+                    jump_to_next_section(current, sections, section_idx, pos, cols);
+            }
+        }
+    }
+}
+
+fn move_within_section(section: &[usize], pos: usize, delta: isize) -> usize {
+    let new_pos = pos as isize + delta;
+    if new_pos >= 0 && (new_pos as usize) < section.len() {
+        section[new_pos as usize]
+    } else {
+        section[pos]
+    }
+}
+
+fn jump_to_prev_section(
+    current: usize,
+    sections: [&Vec<usize>; 3],
+    section_idx: usize,
+    pos: usize,
+    cols: usize,
+) -> usize {
+    if section_idx == 0 {
+        if pos >= cols {
+            return sections[0][pos - cols];
+        }
+        return current;
+    }
+    let target = sections[section_idx - 1];
+    if target.is_empty() {
+        return current;
+    }
+
+    let target_pos = if section_idx - 1 == 0 {
+        let last_row_start = (target.len() - 1) / cols * cols;
+        last_row_start + pos
+    } else {
+        pos
+    };
+    target[target_pos.min(target.len() - 1)]
+}
+
+fn jump_to_next_section(
+    current: usize,
+    sections: [&Vec<usize>; 3],
+    section_idx: usize,
+    pos: usize,
+    cols: usize,
+) -> usize {
+    if section_idx == 0 && pos + cols < sections[0].len() {
+        return sections[0][pos + cols];
+    }
+    if section_idx + 1 >= sections.len() {
+        return current;
+    }
+
+    let target = sections[section_idx + 1];
+    if target.is_empty() {
+        return current;
+    }
+
+    let target_pos = if section_idx == 0 { pos % cols } else { pos };
+    target[target_pos.min(target.len() - 1)]
+}
 
 const KEY_CELL_WIDTH: u16 = 4;
 /// Maximum rows of regular colors shown before the lock/alias sections

@@ -53,7 +53,7 @@ fn handle_normal_mode(app: &mut App, key: KeyEvent) {
         KeyCode::Enter => {
             if let Some(color) = app.get_current_color() {
                 if let Some(&idx) = app.editor.config.palette.abbrev_to_index.get(color) {
-                    app.selected_color = idx;
+                    app.color_picker.selected = idx;
                 }
             }
             app.mode = Mode::ColorPick;
