@@ -96,7 +96,3 @@ mise tasks ls
 ```
 
 This will show all available development tasks with descriptions (build, test, coverage, etc.).
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for a list of all changes.
