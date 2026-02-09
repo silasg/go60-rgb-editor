@@ -219,6 +219,31 @@ impl App {
         }
     }
 
+    pub fn request_quit(&mut self) {
+        if self.editor.modified {
+            self.mode = Mode::ConfirmQuit;
+        } else {
+            self.should_quit = true;
+        }
+    }
+
+    pub fn request_copy(&mut self) {
+        if self.editor.modified {
+            self.mode = Mode::ConfirmCopy;
+        } else {
+            self.copy_to_clipboard();
+        }
+    }
+
+    pub fn enter_color_pick(&mut self) {
+        if let Some(color) = self.editor.current_color() {
+            if let Some(&idx) = self.editor.config.palette.abbrev_to_index.get(color) {
+                self.color_picker.selected = idx;
+            }
+        }
+        self.mode = Mode::ColorPick;
+    }
+
     pub fn apply_quick_color(&mut self, index: usize) {
         if let Some(color) = self.editor.config.palette.colors.get(index) {
             let abbrev = color.abbrev.clone();
@@ -475,6 +500,62 @@ mod tests {
 
         assert_eq!(app.editor.current_color().unwrap(), "CYN");
         assert_eq!(app.mode, Mode::Normal);
+    }
+
+    // --- Guard methods ---
+
+    #[test]
+    fn test_request_quit_when_unmodified_quits() {
+        let mut app = create_test_app();
+
+        app.request_quit();
+
+        assert!(app.should_quit);
+    }
+
+    #[test]
+    fn test_request_quit_when_modified_prompts_confirmation() {
+        let mut app = create_test_app();
+        app.editor.modified = true;
+
+        app.request_quit();
+
+        assert!(!app.should_quit);
+        assert_eq!(app.mode, Mode::ConfirmQuit);
+    }
+
+    #[test]
+    fn test_request_copy_when_modified_prompts_confirmation() {
+        let mut app = create_test_app();
+        app.editor.modified = true;
+
+        app.request_copy();
+
+        assert_eq!(app.mode, Mode::ConfirmCopy);
+    }
+
+    #[test]
+    fn test_enter_color_pick_sets_mode() {
+        let mut app = create_test_app();
+
+        app.enter_color_pick();
+
+        assert_eq!(app.mode, Mode::ColorPick);
+    }
+
+    #[test]
+    fn test_enter_color_pick_selects_current_color_in_palette() {
+        let mut app = create_test_app();
+        let red = crate::domain::ColorDef::new("RED".to_string(), crate::domain::RgbColor::new(255, 0, 0));
+        let grn = crate::domain::ColorDef::new("GRN".to_string(), crate::domain::RgbColor::new(0, 255, 0));
+        app.editor.config.palette.add(red);
+        app.editor.config.palette.add(grn);
+        app.editor.cursor = RgbPos { row: 0, col: 0, half: Half::Left };
+        app.set_current_key_color("GRN");
+
+        app.enter_color_pick();
+
+        assert_eq!(app.color_picker.selected, 1);
     }
 
     // --- Status expiry ---

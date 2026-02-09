@@ -27,13 +27,7 @@ fn handle_key(app: &mut App, key: KeyEvent) {
 fn handle_normal_mode(app: &mut App, key: KeyEvent) {
     match key.code {
         // Quit
-        KeyCode::Char('q') => {
-            if app.editor.modified {
-                app.mode = Mode::ConfirmQuit;
-            } else {
-                app.should_quit = true;
-            }
-        }
+        KeyCode::Char('q') => app.request_quit(),
         KeyCode::Char('Q') => {
             app.should_quit = true;
         }
@@ -50,14 +44,7 @@ fn handle_normal_mode(app: &mut App, key: KeyEvent) {
         KeyCode::Char('K') | KeyCode::PageUp => app.prev_layer(),
 
         // Color picking - initialize selection to current key's color
-        KeyCode::Enter => {
-            if let Some(color) = app.get_current_color() {
-                if let Some(&idx) = app.editor.config.palette.abbrev_to_index.get(color) {
-                    app.color_picker.selected = idx;
-                }
-            }
-            app.mode = Mode::ColorPick;
-        }
+        KeyCode::Enter => app.enter_color_pick(),
 
         // Quick color selection (0-9)
         KeyCode::Char(c) if c.is_ascii_digit() => {
@@ -85,13 +72,7 @@ fn handle_normal_mode(app: &mut App, key: KeyEvent) {
         KeyCode::Char('F') => app.decrease_fade(),
 
         // Copy file to clipboard
-        KeyCode::Char('c') => {
-            if app.editor.modified {
-                app.mode = Mode::ConfirmCopy;
-            } else {
-                app.copy_to_clipboard();
-            }
-        }
+        KeyCode::Char('c') => app.request_copy(),
 
         // Help
         KeyCode::Char('?') => app.mode = Mode::Help,
