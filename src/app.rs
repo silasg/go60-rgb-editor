@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::time::Instant;
 
 use crate::domain::cursor;
@@ -8,32 +9,6 @@ use crate::domain::undo::UndoHistory;
 
 const FADE_STEP_MS: u16 = 5;
 const STATUS_TIMEOUT_SECS: u64 = 3;
-
-/// Try platform clipboard commands: pbcopy (macOS), xclip/xsel (Linux), clip (Windows)
-fn spawn_clipboard_process() -> std::io::Result<std::process::Child> {
-    use std::process::{Command, Stdio};
-
-    Command::new("pbcopy")
-        .stdin(Stdio::piped())
-        .spawn()
-        .or_else(|_| {
-            Command::new("xclip")
-                .args(["-selection", "clipboard"])
-                .stdin(Stdio::piped())
-                .spawn()
-        })
-        .or_else(|_| {
-            Command::new("xsel")
-                .args(["--clipboard", "--input"])
-                .stdin(Stdio::piped())
-                .spawn()
-        })
-        .or_else(|_| {
-            Command::new("clip")
-                .stdin(Stdio::piped())
-                .spawn()
-        })
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
@@ -57,6 +32,7 @@ fn move_within_section(section: &[usize], pos: usize, delta: isize) -> usize {
 
 pub struct App {
     pub config: Config,
+    pub file_path: PathBuf,
     pub mode: Mode,
     pub current_layer: usize,
     pub cursor: RgbPos,
@@ -70,9 +46,10 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(config: Config) -> Self {
+    pub fn new(config: Config, file_path: PathBuf) -> Self {
         Self {
             config,
+            file_path,
             mode: Mode::Normal,
             current_layer: 0,
             cursor: RgbPos::default(),
@@ -84,6 +61,13 @@ impl App {
             yanked_color: None,
             filename_input: String::new(),
         }
+    }
+
+    pub fn file_name(&self) -> &str {
+        self.file_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("unknown")
     }
 
     pub fn current_layer(&self) -> Option<&crate::domain::Layer> {
@@ -172,7 +156,7 @@ impl App {
     }
 
     pub fn save(&mut self) {
-        match self.config.save() {
+        match crate::io::save_config_with_backup(&self.config, &self.file_path) {
             Ok(()) => {
                 self.modified = false;
                 self.show_status("Saved!");
@@ -185,7 +169,7 @@ impl App {
 
     pub fn save_as(&mut self) {
         // Pre-populate with current filename
-        self.filename_input = self.config.file_path
+        self.filename_input = self.file_path
             .to_string_lossy()
             .to_string();
         self.mode = Mode::SaveAs;
@@ -197,10 +181,10 @@ impl App {
             return;
         }
 
-        let path = std::path::PathBuf::from(&self.filename_input);
-        
+        let path = PathBuf::from(&self.filename_input);
+
         // Check if file already exists (and is different from current file)
-        if path.exists() && path != self.config.file_path {
+        if path.exists() && path != self.file_path {
             self.mode = Mode::SaveAsConfirm;
         } else {
             self.execute_save_as();
@@ -208,10 +192,10 @@ impl App {
     }
 
     pub fn execute_save_as(&mut self) {
-        let path = std::path::PathBuf::from(&self.filename_input);
-        match self.config.save_as(&path) {
+        let path = PathBuf::from(&self.filename_input);
+        match crate::io::save_config_with_backup(&self.config, &path) {
             Ok(()) => {
-                self.config.file_path = path;
+                self.file_path = path;
                 self.modified = false;
                 self.mode = Mode::Normal;
                 self.filename_input.clear();
@@ -230,9 +214,7 @@ impl App {
     }
 
     pub fn copy_to_clipboard(&mut self) {
-        use std::io::Write;
-
-        let content = match std::fs::read_to_string(&self.config.file_path) {
+        let content = match std::fs::read_to_string(&self.file_path) {
             Ok(c) => c,
             Err(e) => {
                 self.show_status(&format!("Read failed: {}", e));
@@ -240,25 +222,9 @@ impl App {
             }
         };
 
-        let mut child = match spawn_clipboard_process() {
-            Ok(child) => child,
-            Err(_) => {
-                self.show_status("No clipboard command available");
-                return;
-            }
-        };
-
-        let write_result = match child.stdin.take() {
-            Some(mut stdin) => stdin.write_all(content.as_bytes()),
-            None => Err(std::io::Error::other("no stdin")),
-        };
-        // stdin is now dropped/closed, so the clipboard command will complete
-
-        if write_result.is_ok() {
-            let _ = child.wait();
-            self.show_status("Copied to clipboard!");
-        } else {
-            self.show_status("Clipboard write failed");
+        match crate::io::copy_to_clipboard(&content) {
+            Ok(()) => self.show_status("Copied to clipboard!"),
+            Err(e) => self.show_status(&e),
         }
     }
 
@@ -392,13 +358,12 @@ mod tests {
 
     fn create_test_app() -> App {
         use crate::domain::{Config, ColorPalette, Layer};
-        use std::path::PathBuf;
 
-        let mut config = Config::new(PathBuf::from("test.txt"));
+        let mut config = Config::new();
         config.palette = ColorPalette::new();
         config.layers.push(Layer::new("Test".to_string(), "LAYER_Test".to_string()));
-        
-        App::new(config)
+
+        App::new(config, PathBuf::from("test.txt"))
     }
 
     #[test]
@@ -512,9 +477,9 @@ mod tests {
         // Arrange
         let mut temp_file = NamedTempFile::new().unwrap();
         writeln!(temp_file, "test content").unwrap();
-        let mut config = crate::domain::Config::new(temp_file.path().to_path_buf());
+        let mut config = crate::domain::Config::new();
         config.palette = crate::domain::ColorPalette::new();
-        let mut app = App::new(config);
+        let mut app = App::new(config, temp_file.path().to_path_buf());
 
         // Act
         app.copy_to_clipboard();
@@ -525,13 +490,11 @@ mod tests {
 
     #[test]
     fn test_copy_to_clipboard_with_nonexistent_file() {
-        use std::path::PathBuf;
-
         // Arrange
         let nonexistent_path = PathBuf::from("/nonexistent/path/file.txt");
-        let mut config = crate::domain::Config::new(nonexistent_path);
+        let mut config = crate::domain::Config::new();
         config.palette = crate::domain::ColorPalette::new();
-        let mut app = App::new(config);
+        let mut app = App::new(config, nonexistent_path);
 
         // Act
         app.copy_to_clipboard();
@@ -595,9 +558,9 @@ mod tests {
 
         // Arrange
         let source_file = NamedTempFile::new().unwrap();
-        let mut config = crate::domain::Config::new(source_file.path().to_path_buf());
+        let mut config = crate::domain::Config::new();
         config.palette = crate::domain::ColorPalette::new();
-        let mut app = App::new(config);
+        let mut app = App::new(config, source_file.path().to_path_buf());
         let mut existing_target_file = NamedTempFile::new().unwrap();
         writeln!(existing_target_file, "existing content").unwrap();
         app.mode = Mode::SaveAs;
@@ -618,9 +581,9 @@ mod tests {
         // Arrange
         let mut temp_file = NamedTempFile::new().unwrap();
         writeln!(temp_file, "content").unwrap();
-        let mut config = crate::domain::Config::new(temp_file.path().to_path_buf());
+        let mut config = crate::domain::Config::new();
         config.palette = crate::domain::ColorPalette::new();
-        let mut app = App::new(config);
+        let mut app = App::new(config, temp_file.path().to_path_buf());
         app.mode = Mode::SaveAs;
         app.filename_input = temp_file.path().to_string_lossy().to_string();
 
@@ -639,9 +602,9 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let source_path = temp_dir.path().join("source.txt");
         std::fs::write(&source_path, "content").unwrap();
-        let mut config = crate::domain::Config::new(source_path);
+        let mut config = crate::domain::Config::new();
         config.palette = crate::domain::ColorPalette::new();
-        let mut app = App::new(config);
+        let mut app = App::new(config, source_path);
         app.mode = Mode::SaveAs;
         let new_file_path = temp_dir.path().join("new_file.txt");
         app.filename_input = new_file_path.to_string_lossy().to_string();
@@ -662,9 +625,9 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let source_path = temp_dir.path().join("source.txt");
         std::fs::write(&source_path, "content").unwrap();
-        let mut config = crate::domain::Config::new(source_path.clone());
+        let mut config = crate::domain::Config::new();
         config.palette = crate::domain::ColorPalette::new();
-        let mut app = App::new(config);
+        let mut app = App::new(config, source_path);
         app.modified = true;
         let new_path = temp_dir.path().join("new_file.txt");
         app.filename_input = new_path.to_string_lossy().to_string();
@@ -673,7 +636,7 @@ mod tests {
         app.execute_save_as();
 
         // Assert
-        assert_eq!(app.config.file_path, new_path);
+        assert_eq!(app.file_path, new_path);
         assert!(!app.modified);
         assert_eq!(app.mode, Mode::Normal);
         assert!(app.filename_input.is_empty());

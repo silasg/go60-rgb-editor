@@ -18,7 +18,7 @@ impl<'a> StatusBarWidget<'a> {
 impl<'a> Widget for StatusBarWidget<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let modified = if self.app.modified { "[+]" } else { "" };
-        let file_name = self.app.config.file_name();
+        let file_name = self.app.file_name();
         
         // Left side: file info
         let left = format!(" {} {} ", file_name, modified);

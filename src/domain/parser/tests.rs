@@ -2,7 +2,6 @@
 mod integration_tests {
     use crate::domain::{ColorDef, ColorKind, ColorPalette, Config, Layer, RgbColor};
     use crate::domain::parser::{parse_config, write_config};
-    use std::path::PathBuf;
 
     const SAMPLE_CONFIG: &str = include_str!("../../../tests/fixtures/sample_config.txt");
 
@@ -97,7 +96,7 @@ mod integration_tests {
 
     #[test]
     fn test_serialize_complete_config_with_layers_to_zmk_format() {
-        let mut config = Config::new(PathBuf::from("test.txt"));
+        let mut config = Config::new();
         config.raw_header = "// Test header\n".to_string();
         config.raw_footer = "// Test footer\n".to_string();
         config.palette = build_test_palette();

@@ -1,6 +1,7 @@
 mod app;
 mod domain;
 mod event;
+mod io;
 mod tui;
 mod ui;
 
@@ -11,7 +12,6 @@ use clap::Parser;
 use color_eyre::Result;
 
 use app::App;
-use domain::Config;
 
 const TICK_RATE_MS: u64 = 250;
 
@@ -29,8 +29,8 @@ fn main() -> Result<()> {
     color_eyre::install()?;
 
     let args = Args::parse();
-    let config = Config::load(&args.file).map_err(|e| color_eyre::eyre::eyre!(e))?;
-    let mut app = App::new(config);
+    let config = io::load_config(&args.file).map_err(|e| color_eyre::eyre::eyre!(e))?;
+    let mut app = App::new(config, args.file);
 
     let mut tui = tui::Tui::new()?;
     tui.enter()?;
