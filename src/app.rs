@@ -1,10 +1,10 @@
 use std::time::Instant;
 
-use crate::cursor;
-pub use crate::cursor::Direction;
-use crate::model::{Config, RgbPos};
+use crate::domain::cursor;
+pub use crate::domain::cursor::Direction;
+use crate::domain::{Config, RgbPos};
 use crate::ui::COLORS_PER_PICKER_ROW;
-use crate::undo::UndoHistory;
+use crate::domain::undo::UndoHistory;
 
 const FADE_STEP_MS: u16 = 5;
 const STATUS_TIMEOUT_SECS: u64 = 3;
@@ -86,11 +86,11 @@ impl App {
         }
     }
 
-    pub fn current_layer(&self) -> Option<&crate::model::Layer> {
+    pub fn current_layer(&self) -> Option<&crate::domain::Layer> {
         self.config.layers.get(self.current_layer)
     }
 
-    pub fn current_layer_mut(&mut self) -> Option<&mut crate::model::Layer> {
+    pub fn current_layer_mut(&mut self) -> Option<&mut crate::domain::Layer> {
         self.config.layers.get_mut(self.current_layer)
     }
 
@@ -388,10 +388,10 @@ impl App {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::Half;
+    use crate::domain::Half;
 
     fn create_test_app() -> App {
-        use crate::model::{Config, ColorPalette, Layer};
+        use crate::domain::{Config, ColorPalette, Layer};
         use std::path::PathBuf;
 
         let mut config = Config::new(PathBuf::from("test.txt"));
@@ -512,8 +512,8 @@ mod tests {
         // Arrange
         let mut temp_file = NamedTempFile::new().unwrap();
         writeln!(temp_file, "test content").unwrap();
-        let mut config = crate::model::Config::new(temp_file.path().to_path_buf());
-        config.palette = crate::model::ColorPalette::new();
+        let mut config = crate::domain::Config::new(temp_file.path().to_path_buf());
+        config.palette = crate::domain::ColorPalette::new();
         let mut app = App::new(config);
 
         // Act
@@ -529,8 +529,8 @@ mod tests {
 
         // Arrange
         let nonexistent_path = PathBuf::from("/nonexistent/path/file.txt");
-        let mut config = crate::model::Config::new(nonexistent_path);
-        config.palette = crate::model::ColorPalette::new();
+        let mut config = crate::domain::Config::new(nonexistent_path);
+        config.palette = crate::domain::ColorPalette::new();
         let mut app = App::new(config);
 
         // Act
@@ -595,8 +595,8 @@ mod tests {
 
         // Arrange
         let source_file = NamedTempFile::new().unwrap();
-        let mut config = crate::model::Config::new(source_file.path().to_path_buf());
-        config.palette = crate::model::ColorPalette::new();
+        let mut config = crate::domain::Config::new(source_file.path().to_path_buf());
+        config.palette = crate::domain::ColorPalette::new();
         let mut app = App::new(config);
         let mut existing_target_file = NamedTempFile::new().unwrap();
         writeln!(existing_target_file, "existing content").unwrap();
@@ -618,8 +618,8 @@ mod tests {
         // Arrange
         let mut temp_file = NamedTempFile::new().unwrap();
         writeln!(temp_file, "content").unwrap();
-        let mut config = crate::model::Config::new(temp_file.path().to_path_buf());
-        config.palette = crate::model::ColorPalette::new();
+        let mut config = crate::domain::Config::new(temp_file.path().to_path_buf());
+        config.palette = crate::domain::ColorPalette::new();
         let mut app = App::new(config);
         app.mode = Mode::SaveAs;
         app.filename_input = temp_file.path().to_string_lossy().to_string();
@@ -639,8 +639,8 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let source_path = temp_dir.path().join("source.txt");
         std::fs::write(&source_path, "content").unwrap();
-        let mut config = crate::model::Config::new(source_path);
-        config.palette = crate::model::ColorPalette::new();
+        let mut config = crate::domain::Config::new(source_path);
+        config.palette = crate::domain::ColorPalette::new();
         let mut app = App::new(config);
         app.mode = Mode::SaveAs;
         let new_file_path = temp_dir.path().join("new_file.txt");
@@ -662,8 +662,8 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let source_path = temp_dir.path().join("source.txt");
         std::fs::write(&source_path, "content").unwrap();
-        let mut config = crate::model::Config::new(source_path.clone());
-        config.palette = crate::model::ColorPalette::new();
+        let mut config = crate::domain::Config::new(source_path.clone());
+        config.palette = crate::domain::ColorPalette::new();
         let mut app = App::new(config);
         app.modified = true;
         let new_path = temp_dir.path().join("new_file.txt");
@@ -930,7 +930,7 @@ mod tests {
     fn test_next_layer_wraps_around() {
         // Arrange
         let mut app = create_test_app();
-        app.config.layers.push(crate::model::Layer::new("Second".to_string(), "LAYER_Second".to_string()));
+        app.config.layers.push(crate::domain::Layer::new("Second".to_string(), "LAYER_Second".to_string()));
         let layer_count = app.config.layers.len();
         app.current_layer = layer_count - 1;
 
@@ -948,7 +948,7 @@ mod tests {
     fn test_prev_layer_wraps_around() {
         // Arrange
         let mut app = create_test_app();
-        app.config.layers.push(crate::model::Layer::new("Second".to_string(), "LAYER_Second".to_string()));
+        app.config.layers.push(crate::domain::Layer::new("Second".to_string(), "LAYER_Second".to_string()));
         let layer_count = app.config.layers.len();
         app.current_layer = 0;
 
@@ -1131,8 +1131,8 @@ mod tests {
     fn test_apply_quick_color_applies_palette_color_by_index() {
         // Arrange
         let mut app = create_test_app();
-        let red = crate::model::ColorDef::new("RED".to_string(), crate::model::RgbColor::new(255, 0, 0));
-        let grn = crate::model::ColorDef::new("GRN".to_string(), crate::model::RgbColor::new(0, 255, 0));
+        let red = crate::domain::ColorDef::new("RED".to_string(), crate::domain::RgbColor::new(255, 0, 0));
+        let grn = crate::domain::ColorDef::new("GRN".to_string(), crate::domain::RgbColor::new(0, 255, 0));
         app.config.palette.add(red);
         app.config.palette.add(grn);
         app.cursor.row = 0;
@@ -1178,7 +1178,7 @@ mod tests {
     fn test_apply_selected_color_sets_key_and_returns_to_normal_mode() {
         // Arrange
         let mut app = create_test_app();
-        let cyan = crate::model::ColorDef::new("CYN".to_string(), crate::model::RgbColor::new(0, 255, 255));
+        let cyan = crate::domain::ColorDef::new("CYN".to_string(), crate::domain::RgbColor::new(0, 255, 255));
         app.config.palette.add(cyan);
         app.cursor.row = 0;
         app.cursor.col = 0;

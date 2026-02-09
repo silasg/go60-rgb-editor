@@ -29,7 +29,7 @@ impl Config {
         let content = fs::read_to_string(path)
             .map_err(|e| format!("Failed to read file: {}", e))?;
         
-        let mut config = crate::parser::parse_config(&content)?;
+        let mut config = super::parser::parse_config(&content)?;
         config.file_path = path.to_path_buf();
         Ok(config)
     }
@@ -39,7 +39,7 @@ impl Config {
     }
 
     pub fn save_as(&self, path: &Path) -> Result<(), String> {
-        let content = crate::parser::write_config(self);
+        let content = super::parser::write_config(self);
         
         // Create backup of original file if it exists
         if path.exists() {

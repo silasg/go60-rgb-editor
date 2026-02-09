@@ -1,4 +1,4 @@
-use crate::model::Config;
+use crate::domain::Config;
 
 pub fn write_config(config: &Config) -> String {
     let mut output = String::new();
@@ -30,7 +30,7 @@ fn format_key_row(keys: &[String]) -> String {
         .join(" ")
 }
 
-fn write_layer(output: &mut String, layer: &crate::model::Layer) {
+fn write_layer(output: &mut String, layer: &crate::domain::Layer) {
     let display_name = layer
         .macro_name
         .strip_prefix("LAYER_")
@@ -76,7 +76,7 @@ fn write_layer(output: &mut String, layer: &crate::model::Layer) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::Layer;
+    use crate::domain::Layer;
 
     #[test]
     fn test_write_layer() {

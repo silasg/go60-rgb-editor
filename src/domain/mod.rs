@@ -1,10 +1,14 @@
 pub mod color;
-pub mod layer;
 pub mod config;
+pub mod cursor;
+pub mod geometry;
+pub mod layer;
+pub mod parser;
+pub mod undo;
 
-pub use color::{RgbColor, ColorDef, ColorPalette, ColorKind};
-pub use layer::Layer;
+pub use color::{ColorDef, ColorKind, ColorPalette, RgbColor};
 pub use config::Config;
+pub use layer::Layer;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Half {

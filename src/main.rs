@@ -1,12 +1,8 @@
 mod app;
-mod cursor;
+mod domain;
 mod event;
-mod geometry;
-mod model;
-mod parser;
 mod tui;
 mod ui;
-mod undo;
 
 use std::path::PathBuf;
 use std::time::Duration;
@@ -15,7 +11,7 @@ use clap::Parser;
 use color_eyre::Result;
 
 use app::App;
-use model::Config;
+use domain::Config;
 
 const TICK_RATE_MS: u64 = 250;
 

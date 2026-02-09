@@ -3,7 +3,7 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Widget},
 };
 
-use crate::model::Layer;
+use crate::domain::Layer;
 
 pub struct LayerListWidget<'a> {
     layers: &'a [Layer],

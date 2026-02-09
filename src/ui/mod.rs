@@ -16,7 +16,7 @@ use ratatui::{
 };
 
 use crate::app::{App, Mode};
-use crate::model::ColorPalette;
+use crate::domain::ColorPalette;
 
 const MODAL_WIDTH: u16 = 65;
 const MODAL_HEIGHT: u16 = 8;

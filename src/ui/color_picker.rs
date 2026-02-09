@@ -3,7 +3,7 @@ use ratatui::{
     widgets::{Block, Borders, Widget},
 };
 
-use crate::model::ColorPalette;
+use crate::domain::ColorPalette;
 use super::render_color_cell;
 
 /// Number of colors per row in the color picker grid.

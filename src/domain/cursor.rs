@@ -1,5 +1,5 @@
-use crate::geometry::{self, ROW_COUNT};
-use crate::model::{Half, RgbPos};
+use super::geometry::{self, ROW_COUNT};
+use super::{Half, RgbPos};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Direction {

@@ -1,4 +1,4 @@
-use crate::model::{Config, ColorDef, ColorKind, ColorPalette, Layer, RgbColor};
+use crate::domain::{Config, ColorDef, ColorKind, ColorPalette, Layer, RgbColor};
 use std::path::PathBuf;
 
 pub fn parse_config(input: &str) -> Result<Config, String> {

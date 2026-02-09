@@ -3,7 +3,7 @@
 //! Each half has 6 rows: 4 main rows (6 keys each) and 2 thumb rows (3 keys each).
 //! The thumb rows are visually offset toward the center of the keyboard.
 
-use crate::model::Half;
+use super::Half;
 
 /// Columns in main key rows (rows 0–3).
 pub const MAIN_ROW_COLS: usize = 6;
