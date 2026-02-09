@@ -276,26 +276,32 @@ mod tests {
         use std::io::Write;
         use tempfile::NamedTempFile;
 
+        // Arrange
         let mut temp_file = NamedTempFile::new().unwrap();
         writeln!(temp_file, "test content").unwrap();
         let mut config = crate::domain::Config::new();
         config.palette = crate::domain::ColorPalette::new();
         let mut app = App::new(config, temp_file.path().to_path_buf());
 
+        // Act
         app.copy_to_clipboard();
 
+        // Assert
         assert!(app.status_message.is_some());
     }
 
     #[test]
     fn test_copy_to_clipboard_with_nonexistent_file() {
+        // Arrange
         let nonexistent_path = PathBuf::from("/nonexistent/path/file.txt");
         let mut config = crate::domain::Config::new();
         config.palette = crate::domain::ColorPalette::new();
         let mut app = App::new(config, nonexistent_path);
 
+        // Act
         app.copy_to_clipboard();
 
+        // Assert
         let (msg, _) = app.status_message.as_ref().unwrap();
         assert!(msg.contains("Read failed"));
     }
@@ -304,34 +310,43 @@ mod tests {
 
     #[test]
     fn test_save_as_opens_dialog_with_current_filename() {
+        // Arrange
         let mut app = create_test_app();
 
+        // Act
         app.save_as();
 
+        // Assert
         assert_eq!(app.mode, Mode::SaveAs);
         assert_eq!(app.filename_input, "test.txt");
     }
 
     #[test]
     fn test_cancel_save_as() {
+        // Arrange
         let mut app = create_test_app();
         app.save_as();
         app.filename_input = "modified.txt".to_string();
 
+        // Act
         app.cancel_save_as();
 
+        // Assert
         assert_eq!(app.mode, Mode::Normal);
         assert!(app.filename_input.is_empty());
     }
 
     #[test]
     fn test_try_save_as_empty_filename_shows_error() {
+        // Arrange
         let mut app = create_test_app();
         app.mode = Mode::SaveAs;
         app.filename_input = String::new();
 
+        // Act
         app.try_save_as();
 
+        // Assert
         assert_eq!(app.mode, Mode::SaveAs);
         let (msg, _) = app.status_message.as_ref().unwrap();
         assert!(msg.contains("empty"));
@@ -342,6 +357,7 @@ mod tests {
         use std::io::Write;
         use tempfile::NamedTempFile;
 
+        // Arrange
         let source_file = NamedTempFile::new().unwrap();
         let mut config = crate::domain::Config::new();
         config.palette = crate::domain::ColorPalette::new();
@@ -351,8 +367,10 @@ mod tests {
         app.mode = Mode::SaveAs;
         app.filename_input = existing_target_file.path().to_string_lossy().to_string();
 
+        // Act
         app.try_save_as();
 
+        // Assert
         assert_eq!(app.mode, Mode::SaveAsConfirm);
     }
 
@@ -361,6 +379,7 @@ mod tests {
         use std::io::Write;
         use tempfile::NamedTempFile;
 
+        // Arrange
         let mut temp_file = NamedTempFile::new().unwrap();
         writeln!(temp_file, "content").unwrap();
         let mut config = crate::domain::Config::new();
@@ -369,8 +388,10 @@ mod tests {
         app.mode = Mode::SaveAs;
         app.filename_input = temp_file.path().to_string_lossy().to_string();
 
+        // Act
         app.try_save_as();
 
+        // Assert
         assert_eq!(app.mode, Mode::Normal);
     }
 
@@ -378,6 +399,7 @@ mod tests {
     fn test_try_save_as_new_file_no_confirmation() {
         use tempfile::TempDir;
 
+        // Arrange
         let temp_dir = TempDir::new().unwrap();
         let source_path = temp_dir.path().join("source.txt");
         std::fs::write(&source_path, "content").unwrap();
@@ -387,8 +409,10 @@ mod tests {
         app.mode = Mode::SaveAs;
         app.filename_input = temp_dir.path().join("new_file.txt").to_string_lossy().to_string();
 
+        // Act
         app.try_save_as();
 
+        // Assert
         assert_eq!(app.mode, Mode::Normal);
         assert!(!app.editor.modified);
     }
@@ -397,6 +421,7 @@ mod tests {
     fn test_execute_save_as_updates_file_path() {
         use tempfile::TempDir;
 
+        // Arrange
         let temp_dir = TempDir::new().unwrap();
         let source_path = temp_dir.path().join("source.txt");
         std::fs::write(&source_path, "content").unwrap();
@@ -407,8 +432,10 @@ mod tests {
         let new_path = temp_dir.path().join("new_file.txt");
         app.filename_input = new_path.to_string_lossy().to_string();
 
+        // Act
         app.execute_save_as();
 
+        // Assert
         assert_eq!(app.file_path, new_path);
         assert!(!app.editor.modified);
         assert_eq!(app.mode, Mode::Normal);
@@ -417,11 +444,14 @@ mod tests {
 
     #[test]
     fn test_execute_save_as_invalid_path_shows_error() {
+        // Arrange
         let mut app = create_test_app();
         app.filename_input = "/nonexistent/directory/file.txt".to_string();
 
+        // Act
         app.execute_save_as();
 
+        // Assert
         assert_eq!(app.mode, Mode::SaveAs);
         let (msg, _) = app.status_message.as_ref().unwrap();
         assert!(msg.contains("Save failed"));
@@ -431,30 +461,39 @@ mod tests {
 
     #[test]
     fn test_undo_with_empty_stack_shows_nothing_to_undo() {
+        // Arrange
         let mut app = create_test_app();
 
+        // Act
         app.undo();
 
+        // Assert
         let (msg, _) = app.status_message.as_ref().unwrap();
         assert!(msg.contains("Nothing to undo"));
     }
 
     #[test]
     fn test_redo_with_empty_stack_shows_nothing_to_redo() {
+        // Arrange
         let mut app = create_test_app();
 
+        // Act
         app.redo();
 
+        // Assert
         let (msg, _) = app.status_message.as_ref().unwrap();
         assert!(msg.contains("Nothing to redo"));
     }
 
     #[test]
     fn test_paste_without_copy_shows_nothing_to_paste() {
+        // Arrange
         let mut app = create_test_app();
 
+        // Act
         app.paste_color();
 
+        // Assert
         let (msg, _) = app.status_message.as_ref().unwrap();
         assert!(msg.contains("Nothing to paste"));
     }
@@ -463,6 +502,7 @@ mod tests {
 
     #[test]
     fn test_apply_quick_color_applies_palette_color_by_index() {
+        // Arrange
         let mut app = create_test_app();
         let red = crate::domain::ColorDef::new("RED".to_string(), crate::domain::RgbColor::new(255, 0, 0));
         let grn = crate::domain::ColorDef::new("GRN".to_string(), crate::domain::RgbColor::new(0, 255, 0));
@@ -470,25 +510,31 @@ mod tests {
         app.editor.config.palette.add(grn);
         app.editor.cursor = RgbPos { row: 0, col: 0, half: Half::Left };
 
+        // Act
         app.apply_quick_color(1);
 
+        // Assert
         let color = app.editor.current_color().unwrap();
         assert_eq!(color, "GRN");
     }
 
     #[test]
     fn test_apply_quick_color_with_out_of_range_index_does_nothing() {
+        // Arrange
         let mut app = create_test_app();
         app.editor.cursor = RgbPos { row: 0, col: 0, half: Half::Left };
         let before = app.editor.current_color().unwrap().to_string();
 
+        // Act
         app.apply_quick_color(99);
 
+        // Assert
         assert_eq!(app.editor.current_color().unwrap(), before);
     }
 
     #[test]
     fn test_apply_selected_color_sets_key_and_returns_to_normal_mode() {
+        // Arrange
         let mut app = create_test_app();
         let cyan = crate::domain::ColorDef::new("CYN".to_string(), crate::domain::RgbColor::new(0, 255, 255));
         app.editor.config.palette.add(cyan);
@@ -496,8 +542,10 @@ mod tests {
         app.mode = Mode::ColorPick;
         app.color_picker.selected = 0;
 
+        // Act
         app.apply_selected_color();
 
+        // Assert
         assert_eq!(app.editor.current_color().unwrap(), "CYN");
         assert_eq!(app.mode, Mode::Normal);
     }
@@ -506,45 +554,58 @@ mod tests {
 
     #[test]
     fn test_request_quit_when_unmodified_quits() {
+        // Arrange
         let mut app = create_test_app();
 
+        // Act
         app.request_quit();
 
+        // Assert
         assert!(app.should_quit);
     }
 
     #[test]
     fn test_request_quit_when_modified_prompts_confirmation() {
+        // Arrange
         let mut app = create_test_app();
         app.editor.modified = true;
 
+        // Act
         app.request_quit();
 
+        // Assert
         assert!(!app.should_quit);
         assert_eq!(app.mode, Mode::ConfirmQuit);
     }
 
     #[test]
     fn test_request_copy_when_modified_prompts_confirmation() {
+        // Arrange
         let mut app = create_test_app();
         app.editor.modified = true;
 
+        // Act
         app.request_copy();
 
+        // Assert
         assert_eq!(app.mode, Mode::ConfirmCopy);
     }
 
     #[test]
     fn test_enter_color_pick_sets_mode() {
+        // Arrange
         let mut app = create_test_app();
 
+        // Act
         app.enter_color_pick();
 
+        // Assert
         assert_eq!(app.mode, Mode::ColorPick);
     }
 
     #[test]
     fn test_enter_color_pick_selects_current_color_in_palette() {
+        // Arrange
         let mut app = create_test_app();
         let red = crate::domain::ColorDef::new("RED".to_string(), crate::domain::RgbColor::new(255, 0, 0));
         let grn = crate::domain::ColorDef::new("GRN".to_string(), crate::domain::RgbColor::new(0, 255, 0));
@@ -553,8 +614,10 @@ mod tests {
         app.editor.cursor = RgbPos { row: 0, col: 0, half: Half::Left };
         app.set_current_key_color("GRN");
 
+        // Act
         app.enter_color_pick();
 
+        // Assert
         assert_eq!(app.color_picker.selected, 1);
     }
 
@@ -562,22 +625,28 @@ mod tests {
 
     #[test]
     fn test_tick_clears_expired_status_message() {
+        // Arrange
         let mut app = create_test_app();
         let expired_time = Instant::now() - std::time::Duration::from_secs(5);
         app.status_message = Some(("old message".to_string(), expired_time));
 
+        // Act
         app.clear_expired_status();
 
+        // Assert
         assert!(app.status_message.is_none());
     }
 
     #[test]
     fn test_tick_keeps_fresh_status_message() {
+        // Arrange
         let mut app = create_test_app();
         app.show_status("fresh message");
 
+        // Act
         app.clear_expired_status();
 
+        // Assert
         assert!(app.status_message.is_some());
     }
 }

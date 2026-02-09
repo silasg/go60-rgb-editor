@@ -47,63 +47,81 @@ mod tests {
 
     #[test]
     fn test_save_and_undo() {
+        // Arrange
         let mut history = UndoHistory::new();
         history.save("state_0".to_string());
 
+        // Act
         let restored = history.undo("state_1".to_string());
 
+        // Assert
         assert_eq!(restored, Some("state_0".to_string()));
     }
 
     #[test]
     fn test_undo_then_redo() {
+        // Arrange
         let mut history = UndoHistory::new();
         history.save("state_0".to_string());
         history.undo("state_1".to_string());
 
+        // Act
         let redone = history.redo("state_0".to_string());
 
+        // Assert
         assert_eq!(redone, Some("state_1".to_string()));
     }
 
     #[test]
     fn test_undo_empty_returns_none() {
+        // Arrange
         let mut history: UndoHistory<String> = UndoHistory::new();
 
+        // Act
         let result = history.undo("current".to_string());
 
+        // Assert
         assert_eq!(result, None);
     }
 
     #[test]
     fn test_redo_empty_returns_none() {
+        // Arrange
         let mut history: UndoHistory<String> = UndoHistory::new();
 
+        // Act
         let result = history.redo("current".to_string());
 
+        // Assert
         assert_eq!(result, None);
     }
 
     #[test]
     fn test_save_after_undo_clears_redo() {
+        // Arrange
         let mut history = UndoHistory::new();
         history.save("state_0".to_string());
         history.undo("state_1".to_string());
 
+        // Act
         history.save("state_2".to_string());
         let redo_result = history.redo("state_2".to_string());
 
+        // Assert
         assert_eq!(redo_result, None, "redo stack should be cleared after a new save");
     }
 
     #[test]
     fn test_stack_limited_to_max_entries() {
+        // Arrange
         let mut history = UndoHistory::new();
 
+        // Act
         for i in 0..MAX_UNDO_HISTORY + 10 {
             history.save(format!("state_{}", i));
         }
 
+        // Assert
         assert!(
             history.len() <= MAX_UNDO_HISTORY,
             "undo stack should be limited to {} entries, got {}",

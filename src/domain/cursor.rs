@@ -64,39 +64,64 @@ mod tests {
 
     #[test]
     fn test_move_cursor_up_at_top_stays() {
+        // Arrange
         let mut cursor = RgbPos { row: 0, col: 3, half: Half::Left };
+
+        // Act
         move_cursor(&mut cursor, Direction::Up);
+
+        // Assert
         assert_eq!(cursor.row, 0);
     }
 
     #[test]
     fn test_move_cursor_down_at_bottom_stays() {
+        // Arrange
         let mut cursor = RgbPos { row: 5, col: 0, half: Half::Left };
+
+        // Act
         move_cursor(&mut cursor, Direction::Down);
+
+        // Assert
         assert_eq!(cursor.row, 5);
     }
 
     #[test]
     fn test_move_cursor_left_wraps_to_left_half() {
+        // Arrange
         let mut cursor = RgbPos { row: 0, col: 0, half: Half::Right };
+
+        // Act
         move_cursor(&mut cursor, Direction::Left);
+
+        // Assert
         assert_eq!(cursor.half, Half::Left);
         assert_eq!(cursor.col, 5);
     }
 
     #[test]
     fn test_move_cursor_right_wraps_to_right_half() {
+        // Arrange
         let mut cursor = RgbPos { row: 0, col: 5, half: Half::Left };
+
+        // Act
         move_cursor(&mut cursor, Direction::Right);
+
+        // Assert
         assert_eq!(cursor.half, Half::Right);
         assert_eq!(cursor.col, 0);
     }
 
     #[test]
     fn test_switch_half_clamps_col() {
-        let mut cursor = RgbPos { row: 4, col: 5, half: Half::Left };
+        // Arrange
         // col 5 is out of range for row 4 (max 3 cols), switch should clamp
+        let mut cursor = RgbPos { row: 4, col: 5, half: Half::Left };
+
+        // Act
         switch_half(&mut cursor);
+
+        // Assert
         assert_eq!(cursor.half, Half::Right);
         assert!(cursor.col <= 2);
     }

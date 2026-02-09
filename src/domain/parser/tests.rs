@@ -25,8 +25,10 @@ mod integration_tests {
 
     #[test]
     fn test_parse_sample_config() {
+        // Act
         let config = parse_config(SAMPLE_CONFIG).expect("Failed to parse config");
 
+        // Assert
         assert!(!config.layers.is_empty(), "Should have parsed layers");
         assert!(!config.palette.colors.is_empty(), "Should have parsed colors");
         assert!(config.palette.get("RED").is_some(), "Should have RED color");
@@ -38,13 +40,15 @@ mod integration_tests {
 
     #[test]
     fn test_parse_layers() {
+        // Act
         let config = parse_config(SAMPLE_CONFIG).expect("Failed to parse config");
+
+        // Assert
         let cursor_layer = config
             .layers
             .iter()
             .find(|l| l.name == "Cursor")
             .expect("Should have Cursor layer");
-
         assert!(config.layers.len() > 5, "Should have multiple layers");
         assert_eq!(cursor_layer.macro_name, "LAYER_Cursor");
         assert_eq!(cursor_layer.fade_delay, 5);
@@ -54,10 +58,14 @@ mod integration_tests {
 
     #[test]
     fn test_roundtrip() {
+        // Arrange
         let config = parse_config(SAMPLE_CONFIG).expect("Failed to parse config");
+
+        // Act
         let output = write_config(&config);
         let reparsed = parse_config(&output).expect("Failed to reparse config");
 
+        // Assert
         assert_eq!(config.layers.len(), reparsed.layers.len(), "Layer count should match");
         for (orig, new) in config.layers.iter().zip(reparsed.layers.iter()) {
             assert_eq!(orig.name, new.name, "Layer names should match");
@@ -84,11 +92,13 @@ mod integration_tests {
 
     #[test]
     fn test_special_colors() {
+        // Act
         let config = parse_config(SAMPLE_CONFIG).expect("Failed to parse config");
+
+        // Assert
         let lock_indicator_bsl = config.palette.get("BSL").expect("Should have BSL");
         let alias_fst = config.palette.get("FST").expect("Should have FST");
         let regular_color_red = config.palette.get("RED").expect("Should have RED");
-
         assert!(matches!(lock_indicator_bsl.kind, ColorKind::LockIndicator { .. }), "BSL should be a lock indicator");
         assert!(matches!(alias_fst.kind, ColorKind::Alias { .. }), "FST should be an alias");
         assert!(matches!(regular_color_red.kind, ColorKind::Regular), "RED should be a regular color");
@@ -96,6 +106,7 @@ mod integration_tests {
 
     #[test]
     fn test_serialize_complete_config_with_layers_to_zmk_format() {
+        // Arrange
         let mut config = Config::new();
         config.raw_header = "// Test header\n".to_string();
         config.raw_footer = "// Test footer\n".to_string();
@@ -183,8 +194,10 @@ mod integration_tests {
 // Test footer
 "#;
 
+        // Act
         let output = write_config(&config);
 
+        // Assert
         assert_eq!(output, expected, "Serialized output doesn't match expected");
     }
 }

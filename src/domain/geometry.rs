@@ -71,6 +71,7 @@ mod tests {
 
     #[test]
     fn test_cols_for_row() {
+        // Act & Assert
         assert_eq!(cols_for_row(0), MAIN_ROW_COLS);
         assert_eq!(cols_for_row(3), MAIN_ROW_COLS);
         assert_eq!(cols_for_row(4), THUMB_ROW_COLS);
@@ -79,30 +80,35 @@ mod tests {
 
     #[test]
     fn test_visual_col_left_main_rows_no_offset() {
+        // Act & Assert
         assert_eq!(to_visual_col(Half::Left, 0, 0), 0);
         assert_eq!(to_visual_col(Half::Left, 3, 5), 5);
     }
 
     #[test]
     fn test_visual_col_left_row4_shifted_by_2() {
+        // Act & Assert
         assert_eq!(to_visual_col(Half::Left, 4, 0), 2);
         assert_eq!(to_visual_col(Half::Left, 4, 2), 4);
     }
 
     #[test]
     fn test_visual_col_left_row5_shifted_by_5() {
+        // Act & Assert
         assert_eq!(to_visual_col(Half::Left, 5, 0), 5);
         assert_eq!(to_visual_col(Half::Left, 5, 2), 7);
     }
 
     #[test]
     fn test_visual_col_right_row4_shifted_by_1() {
+        // Act & Assert
         assert_eq!(to_visual_col(Half::Right, 4, 0), 1);
         assert_eq!(to_visual_col(Half::Right, 4, 2), 3);
     }
 
     #[test]
     fn test_visual_col_roundtrip_left() {
+        // Act & Assert
         for row in 0..ROW_COUNT {
             let max = cols_for_row(row);
             for col in 0..max {
@@ -115,6 +121,7 @@ mod tests {
 
     #[test]
     fn test_main_rows_have_no_offset() {
+        // Act & Assert
         for row in 0..4 {
             assert_eq!(row_offset(Half::Left, row), 0);
             assert_eq!(row_offset(Half::Right, row), 0);
@@ -123,6 +130,7 @@ mod tests {
 
     #[test]
     fn test_out_of_range_row_returns_zero_offset() {
+        // Act & Assert
         assert_eq!(row_offset(Half::Left, 99), 0);
         assert_eq!(row_offset(Half::Right, 99), 0);
     }

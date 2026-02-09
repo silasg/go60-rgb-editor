@@ -210,9 +210,11 @@ mod tests {
 
     #[test]
     fn test_contrasting_fg_returns_true_black_and_white() {
+        // Arrange
         let true_black = Color::Rgb(0, 0, 0);
         let true_white = Color::Rgb(255, 255, 255);
 
+        // Act & Assert
         // Bright colors should get true black text
         let yellow = RgbColor::from_hex("FFFF00").unwrap();
         assert_eq!(contrasting_fg(&yellow), true_black);

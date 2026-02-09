@@ -98,6 +98,16 @@ mise run release-major    # Release major version (breaking)
 
 `cargo-release` bumps the version in `Cargo.toml`, generates the changelog via `git-cliff`, commits, and tags. Push the tag manually to trigger the GitHub Actions release workflow which builds binaries for all platforms.
 
+## Tests
+
+- All tests **must** use Arrange-Act-Assert (AAA) block comments to structure test bodies:
+  - `// Arrange` — set up test data and preconditions
+  - `// Act` — execute the code under test
+  - `// Assert` — verify the expected outcome
+  - Use `// Act & Assert` when act and assert are interleaved or inseparable (e.g., multiple inline checks)
+- Omit a section comment if that phase is empty (e.g., no arrange needed)
+- Keep any existing explanatory comments; AAA comments are added alongside them, not as replacements
+
 ## Config File Format
 
 The editor parses TailorKey RGB config files. See:

@@ -159,9 +159,11 @@ mod tests {
 
     #[test]
     fn test_navigation_down_from_row3_to_row4_left() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.cursor.half = Half::Left;
 
+        // Act & Assert
         editor.cursor.row = 3;
         editor.cursor.col = 2;
         editor.move_cursor(Direction::Down);
@@ -189,9 +191,11 @@ mod tests {
 
     #[test]
     fn test_navigation_up_from_row4_to_row3_left() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.cursor.half = Half::Left;
 
+        // Act & Assert
         editor.cursor.row = 4;
         editor.cursor.col = 0;
         editor.move_cursor(Direction::Up);
@@ -213,12 +217,16 @@ mod tests {
 
     #[test]
     fn test_navigation_up_from_row5_to_row4_left() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.cursor.half = Half::Left;
 
+        // Act
         editor.cursor.row = 5;
         editor.cursor.col = 0;
         editor.move_cursor(Direction::Up);
+
+        // Assert
         assert_eq!(editor.cursor.row, 4);
         assert_eq!(editor.cursor.col, 2);
     }
@@ -227,6 +235,7 @@ mod tests {
 
     #[test]
     fn test_undo_restores_previous_color() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.cursor = RgbPos {
             row: 0,
@@ -238,15 +247,18 @@ mod tests {
             .unwrap()
             .to_string();
 
+        // Act
         editor.set_key_color("RED");
         editor.undo();
 
+        // Assert
         let restored = editor.current_color().unwrap();
         assert_eq!(restored, original_color);
     }
 
     #[test]
     fn test_redo_reapplies_undone_color() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.cursor = RgbPos {
             row: 0,
@@ -256,26 +268,35 @@ mod tests {
         editor.set_key_color("RED");
         editor.undo();
 
+        // Act
         editor.redo();
 
+        // Assert
         let reapplied = editor.current_color().unwrap();
         assert_eq!(reapplied, "RED");
     }
 
     #[test]
     fn test_undo_with_empty_stack_returns_false() {
+        // Arrange
         let mut editor = create_test_editor();
+
+        // Act & Assert
         assert!(!editor.undo());
     }
 
     #[test]
     fn test_redo_with_empty_stack_returns_false() {
+        // Arrange
         let mut editor = create_test_editor();
+
+        // Act & Assert
         assert!(!editor.redo());
     }
 
     #[test]
     fn test_new_change_after_undo_clears_redo() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.cursor = RgbPos {
             row: 0,
@@ -284,8 +305,11 @@ mod tests {
         };
         editor.set_key_color("RED");
         editor.undo();
+
+        // Act
         editor.set_key_color("CYN");
 
+        // Assert
         assert!(!editor.redo(), "redo should be cleared after a new change");
     }
 
@@ -293,6 +317,7 @@ mod tests {
 
     #[test]
     fn test_yank_color_returns_current_color() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.cursor = RgbPos {
             row: 0,
@@ -301,14 +326,17 @@ mod tests {
         };
         editor.set_key_color("RED");
 
+        // Act
         let yanked = editor.yank_color();
 
+        // Assert
         assert_eq!(yanked.as_deref(), Some("RED"));
         assert_eq!(editor.yanked_color.as_deref(), Some("RED"));
     }
 
     #[test]
     fn test_paste_color_applies_yanked_color() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.cursor = RgbPos {
             row: 0,
@@ -319,8 +347,10 @@ mod tests {
         editor.yank_color();
         editor.cursor.col = 1;
 
+        // Act
         let pasted = editor.paste_color();
 
+        // Assert
         assert_eq!(pasted.as_deref(), Some("RED"));
         let color = editor
             .current_layer()
@@ -336,11 +366,14 @@ mod tests {
 
     #[test]
     fn test_paste_without_yank_returns_none() {
+        // Arrange
         let mut editor = create_test_editor();
         assert!(editor.yanked_color.is_none());
 
+        // Act
         let result = editor.paste_color();
 
+        // Assert
         assert!(result.is_none());
     }
 
@@ -348,6 +381,7 @@ mod tests {
 
     #[test]
     fn test_clear_key_color_sets_to_off() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.cursor = RgbPos {
             row: 0,
@@ -356,8 +390,10 @@ mod tests {
         };
         editor.set_key_color("RED");
 
+        // Act
         editor.clear_key_color();
 
+        // Assert
         let cleared = editor.current_color().unwrap();
         assert_eq!(cleared, "___");
     }
@@ -366,32 +402,41 @@ mod tests {
 
     #[test]
     fn test_adjust_fade_positive() {
+        // Arrange
         let mut editor = create_test_editor();
         let initial = editor.current_layer().unwrap().fade_delay;
 
+        // Act
         let result = editor.adjust_fade(5);
 
+        // Assert
         assert_eq!(result, Some(initial + 5));
         assert!(editor.modified);
     }
 
     #[test]
     fn test_adjust_fade_negative() {
+        // Arrange
         let mut editor = create_test_editor();
         let initial = editor.current_layer().unwrap().fade_delay;
 
+        // Act
         let result = editor.adjust_fade(-5);
 
+        // Assert
         assert_eq!(result, Some(initial - 5));
     }
 
     #[test]
     fn test_adjust_fade_clamps_at_zero() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.current_layer_mut().unwrap().fade_delay = 3;
 
+        // Act
         let result = editor.adjust_fade(-5);
 
+        // Assert
         assert_eq!(result, Some(0));
     }
 
@@ -399,6 +444,7 @@ mod tests {
 
     #[test]
     fn test_next_layer_wraps_around() {
+        // Arrange
         let mut editor = create_test_editor();
         editor
             .config
@@ -406,13 +452,16 @@ mod tests {
             .push(Layer::new("Second".to_string(), "LAYER_Second".to_string()));
         editor.current_layer = editor.config.layers.len() - 1;
 
+        // Act
         editor.next_layer();
 
+        // Assert
         assert_eq!(editor.current_layer, 0);
     }
 
     #[test]
     fn test_prev_layer_wraps_around() {
+        // Arrange
         let mut editor = create_test_editor();
         editor
             .config
@@ -420,28 +469,36 @@ mod tests {
             .push(Layer::new("Second".to_string(), "LAYER_Second".to_string()));
         editor.current_layer = 0;
 
+        // Act
         editor.prev_layer();
 
+        // Assert
         assert_eq!(editor.current_layer, editor.config.layers.len() - 1);
     }
 
     #[test]
     fn test_next_layer_with_empty_layers_does_nothing() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.config.layers.clear();
 
+        // Act
         editor.next_layer();
 
+        // Assert
         assert_eq!(editor.current_layer, 0);
     }
 
     #[test]
     fn test_prev_layer_with_empty_layers_does_nothing() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.config.layers.clear();
 
+        // Act
         editor.prev_layer();
 
+        // Assert
         assert_eq!(editor.current_layer, 0);
     }
 
@@ -449,24 +506,31 @@ mod tests {
 
     #[test]
     fn test_switch_half_toggles_left_to_right() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.cursor.half = Half::Left;
 
+        // Act
         editor.switch_half();
 
+        // Assert
         assert_eq!(editor.cursor.half, Half::Right);
     }
 
     #[test]
     fn test_switch_half_clamps_column_on_thumb_row() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.cursor.half = Half::Left;
         editor.cursor.row = 0;
         editor.cursor.col = 5;
         editor.switch_half();
         editor.cursor.row = 4;
+
+        // Act
         editor.switch_half();
 
+        // Assert
         assert!(editor.cursor.col <= 2);
     }
 
@@ -474,6 +538,7 @@ mod tests {
 
     #[test]
     fn test_move_left_at_right_half_start_wraps() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.cursor = RgbPos {
             row: 0,
@@ -481,14 +546,17 @@ mod tests {
             half: Half::Right,
         };
 
+        // Act
         editor.move_cursor(Direction::Left);
 
+        // Assert
         assert_eq!(editor.cursor.half, Half::Left);
         assert_eq!(editor.cursor.col, 5);
     }
 
     #[test]
     fn test_move_right_at_left_half_end_wraps() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.cursor = RgbPos {
             row: 0,
@@ -496,14 +564,17 @@ mod tests {
             half: Half::Left,
         };
 
+        // Act
         editor.move_cursor(Direction::Right);
 
+        // Assert
         assert_eq!(editor.cursor.half, Half::Right);
         assert_eq!(editor.cursor.col, 0);
     }
 
     #[test]
     fn test_move_left_at_left_half_start_stays() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.cursor = RgbPos {
             row: 0,
@@ -511,14 +582,17 @@ mod tests {
             half: Half::Left,
         };
 
+        // Act
         editor.move_cursor(Direction::Left);
 
+        // Assert
         assert_eq!(editor.cursor.half, Half::Left);
         assert_eq!(editor.cursor.col, 0);
     }
 
     #[test]
     fn test_move_right_at_right_half_end_stays() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.cursor = RgbPos {
             row: 0,
@@ -526,31 +600,39 @@ mod tests {
             half: Half::Right,
         };
 
+        // Act
         editor.move_cursor(Direction::Right);
 
+        // Assert
         assert_eq!(editor.cursor.half, Half::Right);
         assert_eq!(editor.cursor.col, 5);
     }
 
     #[test]
     fn test_move_up_at_row0_stays() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.cursor.row = 0;
         editor.cursor.col = 3;
 
+        // Act
         editor.move_cursor(Direction::Up);
 
+        // Assert
         assert_eq!(editor.cursor.row, 0);
     }
 
     #[test]
     fn test_move_down_at_row5_stays() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.cursor.row = 5;
         editor.cursor.col = 0;
 
+        // Act
         editor.move_cursor(Direction::Down);
 
+        // Assert
         assert_eq!(editor.cursor.row, 5);
     }
 
@@ -558,6 +640,7 @@ mod tests {
 
     #[test]
     fn test_set_key_color_marks_modified() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.cursor = RgbPos {
             row: 0,
@@ -566,13 +649,16 @@ mod tests {
         };
         assert!(!editor.modified);
 
+        // Act
         editor.set_key_color("RED");
 
+        // Assert
         assert!(editor.modified);
     }
 
     #[test]
     fn test_mark_saved_clears_modified() {
+        // Arrange
         let mut editor = create_test_editor();
         editor.cursor = RgbPos {
             row: 0,
@@ -582,8 +668,10 @@ mod tests {
         editor.set_key_color("RED");
         assert!(editor.modified);
 
+        // Act
         editor.mark_saved();
 
+        // Assert
         assert!(!editor.modified);
     }
 }
