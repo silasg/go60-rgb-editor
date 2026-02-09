@@ -28,7 +28,7 @@ fn handle_normal_mode(app: &mut App, key: KeyEvent) {
     match key.code {
         // Quit
         KeyCode::Char('q') => {
-            if app.modified {
+            if app.editor.modified {
                 app.mode = Mode::ConfirmQuit;
             } else {
                 app.should_quit = true;
@@ -52,7 +52,7 @@ fn handle_normal_mode(app: &mut App, key: KeyEvent) {
         // Color picking - initialize selection to current key's color
         KeyCode::Enter => {
             if let Some(color) = app.get_current_color() {
-                if let Some(&idx) = app.config.palette.abbrev_to_index.get(color) {
+                if let Some(&idx) = app.editor.config.palette.abbrev_to_index.get(color) {
                     app.selected_color = idx;
                 }
             }
@@ -86,7 +86,7 @@ fn handle_normal_mode(app: &mut App, key: KeyEvent) {
 
         // Copy file to clipboard
         KeyCode::Char('c') => {
-            if app.modified {
+            if app.editor.modified {
                 app.mode = Mode::ConfirmCopy;
             } else {
                 app.copy_to_clipboard();

@@ -88,7 +88,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
         ])
         .split(area);
 
-    let layer_widget = LayerListWidget::new(&app.config.layers, app.current_layer);
+    let layer_widget = LayerListWidget::new(&app.editor.config.layers, app.editor.current_layer);
     frame.render_widget(layer_widget, main_layout[0]);
 
     let content_layout = Layout::default()
@@ -100,8 +100,8 @@ pub fn draw(frame: &mut Frame, app: &App) {
         ])
         .split(main_layout[1]);
 
-    if let Some(layer) = app.config.layers.get(app.current_layer) {
-        let keyboard_widget = KeyboardWidget::new(layer, &app.config.palette, app.cursor);
+    if let Some(layer) = app.editor.config.layers.get(app.editor.current_layer) {
+        let keyboard_widget = KeyboardWidget::new(layer, &app.editor.config.palette, app.editor.cursor);
         frame.render_widget(keyboard_widget, content_layout[0]);
     }
 
@@ -109,12 +109,12 @@ pub fn draw(frame: &mut Frame, app: &App) {
         app.selected_color
     } else {
         app.get_current_color()
-            .and_then(|color| app.config.palette.abbrev_to_index.get(color).copied())
+            .and_then(|color| app.editor.config.palette.abbrev_to_index.get(color).copied())
             .unwrap_or(0)
     };
 
     let color_picker = ColorPickerWidget::new(
-        &app.config.palette,
+        &app.editor.config.palette,
         selected_color_idx,
         matches!(app.mode, Mode::ColorPick),
     );

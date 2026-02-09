@@ -1,6 +1,7 @@
 pub mod color;
 pub mod config;
 pub mod cursor;
+pub mod editor;
 pub mod geometry;
 pub mod layer;
 pub mod parser;
