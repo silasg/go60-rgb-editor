@@ -40,20 +40,8 @@ impl RgbColor {
         Ok(Self { r, g, b })
     }
 
-    pub fn to_ratatui_color(&self) -> ratatui::style::Color {
-        ratatui::style::Color::Rgb(self.r, self.g, self.b)
-    }
-
     pub fn luminance(&self) -> f64 {
         0.299 * self.r as f64 + 0.587 * self.g as f64 + 0.114 * self.b as f64
-    }
-
-    pub fn contrasting_fg(&self) -> ratatui::style::Color {
-        if self.luminance() > 128.0 {
-            ratatui::style::Color::Rgb(0, 0, 0)  // True black
-        } else {
-            ratatui::style::Color::Rgb(255, 255, 255)  // True white
-        }
     }
 
     #[cfg(test)]
@@ -207,56 +195,6 @@ mod tests {
         assert!(black_luminance < low_luminance_threshold);
     }
 
-    #[test]
-    fn test_contrasting_fg_returns_true_black_and_white() {
-        use ratatui::style::Color;
-        let true_black = Color::Rgb(0, 0, 0);
-        let true_white = Color::Rgb(255, 255, 255);
-
-        // Bright colors should get true black text
-        // Arrange
-        let yellow = RgbColor::new(255, 255, 0);
-        // Act
-        let yellow_fg = yellow.contrasting_fg();
-        // Assert
-        assert_eq!(yellow_fg, true_black);
-
-        // Arrange
-        let white = RgbColor::new(255, 255, 255);
-        // Act
-        let white_fg = white.contrasting_fg();
-        // Assert
-        assert_eq!(white_fg, true_black);
-
-        // Arrange
-        let cyan = RgbColor::new(0, 255, 255);
-        // Act
-        let cyan_fg = cyan.contrasting_fg();
-        // Assert
-        assert_eq!(cyan_fg, true_black);
-
-        // Dark colors should get true white text
-        // Arrange
-        let black = RgbColor::new(0, 0, 0);
-        // Act
-        let black_fg = black.contrasting_fg();
-        // Assert
-        assert_eq!(black_fg, true_white);
-
-        // Arrange
-        let dark_blue = RgbColor::new(0, 0, 128);
-        // Act
-        let dark_blue_fg = dark_blue.contrasting_fg();
-        // Assert
-        assert_eq!(dark_blue_fg, true_white);
-
-        // Arrange
-        let purple = RgbColor::new(122, 0, 255);
-        // Act
-        let purple_fg = purple.contrasting_fg();
-        // Assert
-        assert_eq!(purple_fg, true_white);
-    }
 
     #[test]
     fn test_palette() {
