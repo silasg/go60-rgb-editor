@@ -1,6 +1,6 @@
 # Go60 RGB Editor
 
-A terminal-based (TUI) RGB underglow editor for ZMK keyboards, specifically designed for the MoErgo Go60 layout.
+A terminal-based (TUI) RGB underglow editor for the MoErgo Go60 keyboard running the `community.pr36.per-key-rgb` community firmware.
 
 ![CI](https://github.com/silasg/go60-rgb-editor/actions/workflows/ci.yml/badge.svg)
 ![GitHub Release](https://img.shields.io/github/v/release/silasg/go60-rgb-editor)
@@ -72,6 +72,10 @@ The included `Go60 TK Latest RGB scheme.txt` is an example configuration from Ta
 ## Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for a list of all changes.
+
+## Disclaimer
+
+This software is provided as-is, without any warranty or guarantee of any kind. I cannot predict how different firmware versions may react to specific configuration file formats. Use this tool at your own risk — I accept no liability for any problems, damage, or unexpected behavior that may result from using it.
 
 ## Development
 
