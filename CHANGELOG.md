@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2026-02-12
+
+### ♻️ Refactor
+
+- Move model, parser, cursor, geometry, undo into domain module
+- Extract ratatui color helpers from RgbColor to UI module
+- Extract IO into dedicated module, remove IO from Config
+- Create EditorState to encapsulate domain logic
+- Move color picker navigation to UI module
+- Extract guard logic from event.rs into App methods
+
+### ✨ Features
+
+- Add layer management (add, duplicate, rename, delete)
+
+### 🎨 Style
+
+- Add Arrange-Act-Assert comments to all tests
+
+### 📚 Documentation
+
+- Add prebuilt binaries section and changelog link to README
+- Add prebuilt binaries section and changelog link to README
+
+### 🔧 Miscellaneous
+
+- Remove duplicated Changelog section from README
+- Add .agency and .sandbox folders to gitignore
 ## [0.1.1] - 2026-02-08
 
 ### 🐛 Bug Fixes
