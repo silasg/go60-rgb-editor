@@ -130,7 +130,7 @@ fn render_modals(frame: &mut Frame, app: &App, area: Rect) {
     match app.mode {
         Mode::Help => {
             let help = HelpWidget::new();
-            let help_area = centered_rect_chars(58, 28, area);
+            let help_area = centered_rect_chars(100, 22, area);
             frame.render_widget(Clear, help_area);
             frame.render_widget(help, help_area);
         }
@@ -160,6 +160,36 @@ fn render_modals(frame: &mut Frame, app: &App, area: Rect) {
             );
             render_modal(frame, &text, &ModalStyle {
                 title: " Confirm Overwrite ", border_color: Color::Red, alignment: Alignment::Center, size: ModalSize::Fixed,
+            }, area);
+        }
+        Mode::AddLayer => {
+            let text = format!(
+                "Enter layer name:\n\n{}▌\n\n[Enter] Add  [Esc] Cancel  [Ctrl+U] Clear",
+                &app.layer_name_input
+            );
+            render_modal(frame, &text, &ModalStyle {
+                title: " Add Layer ", border_color: Color::Yellow, alignment: Alignment::Left, size: ModalSize::Fixed,
+            }, area);
+        }
+        Mode::RenameLayer => {
+            let text = format!(
+                "Rename layer:\n\n{}▌\n\n[Enter] Rename  [Esc] Cancel  [Ctrl+U] Clear",
+                &app.layer_name_input
+            );
+            render_modal(frame, &text, &ModalStyle {
+                title: " Rename Layer ", border_color: Color::Yellow, alignment: Alignment::Left, size: ModalSize::Fixed,
+            }, area);
+        }
+        Mode::ConfirmDelete => {
+            let layer_name = app.editor.current_layer()
+                .map(|l| l.name.as_str())
+                .unwrap_or("?");
+            let text = format!(
+                "Delete layer '{}'?\n\n[y] Yes  [n] No",
+                layer_name
+            );
+            render_modal(frame, &text, &ModalStyle {
+                title: " Delete Layer ", border_color: Color::Red, alignment: Alignment::Center, size: ModalSize::FitText,
             }, area);
         }
         _ => {}

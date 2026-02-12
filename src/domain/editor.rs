@@ -135,6 +135,107 @@ impl EditorState {
         }
     }
 
+    // --- Layer management ---
+
+    /// Add a new empty layer after the current layer. Returns `Ok(())` on success.
+    pub fn add_layer(&mut self, name: &str) -> Result<(), String> {
+        self.validate_layer_name(name, None)?;
+        let macro_name = format!("LAYER_{}", name);
+        let layer = Layer::new(name.to_string(), macro_name);
+        self.push_undo();
+        let insert_pos = self.current_layer + 1;
+        self.config.layers.insert(insert_pos, layer);
+        self.current_layer = insert_pos;
+        self.modified = true;
+        Ok(())
+    }
+
+    /// Duplicate the current layer with an auto-generated unique name.
+    /// Returns the new layer's name on success.
+    pub fn duplicate_layer(&mut self) -> Result<String, String> {
+        if self.config.layers.is_empty() {
+            return Err("No layers to duplicate".to_string());
+        }
+        let source = self.config.layers[self.current_layer].clone();
+        let new_name = self.generate_unique_copy_name(&source.name);
+        let macro_name = format!("LAYER_{}", new_name);
+        let mut new_layer = source;
+        new_layer.name = new_name.clone();
+        new_layer.macro_name = macro_name;
+        self.push_undo();
+        let insert_pos = self.current_layer + 1;
+        self.config.layers.insert(insert_pos, new_layer);
+        self.current_layer = insert_pos;
+        self.modified = true;
+        Ok(new_name)
+    }
+
+    /// Rename the current layer. Returns `Ok(())` on success.
+    pub fn rename_layer(&mut self, new_name: &str) -> Result<(), String> {
+        self.validate_layer_name(new_name, Some(self.current_layer))?;
+        self.push_undo();
+        if let Some(layer) = self.config.layers.get_mut(self.current_layer) {
+            layer.name = new_name.to_string();
+            layer.macro_name = format!("LAYER_{}", new_name);
+        }
+        self.modified = true;
+        Ok(())
+    }
+
+    /// Delete the current layer. Returns the deleted layer's name on success.
+    pub fn delete_layer(&mut self) -> Result<String, String> {
+        if self.config.layers.len() <= 1 {
+            return Err("Cannot delete the last remaining layer".to_string());
+        }
+        self.push_undo();
+        let removed = self.config.layers.remove(self.current_layer);
+        if self.current_layer >= self.config.layers.len() {
+            self.current_layer = self.config.layers.len() - 1;
+        }
+        self.modified = true;
+        Ok(removed.name)
+    }
+
+    /// Validate a layer name: not empty, only `[A-Za-z0-9_]`, max 50 chars, unique.
+    /// `exclude_index` allows excluding one layer (for rename of the same layer).
+    fn validate_layer_name(&self, name: &str, exclude_index: Option<usize>) -> Result<(), String> {
+        if name.is_empty() {
+            return Err("Layer name cannot be empty".to_string());
+        }
+        if name.len() > 50 {
+            return Err("Layer name cannot exceed 50 characters".to_string());
+        }
+        if !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+            return Err("Layer name can only contain letters, digits, and underscores".to_string());
+        }
+        for (i, layer) in self.config.layers.iter().enumerate() {
+            if Some(i) == exclude_index {
+                continue;
+            }
+            if layer.name == name {
+                return Err(format!("Layer name '{}' already exists", name));
+            }
+        }
+        Ok(())
+    }
+
+    /// Generate a unique copy name: `Name_copy`, `Name_copy_2`, `Name_copy_3`, ...
+    fn generate_unique_copy_name(&self, base_name: &str) -> String {
+        let existing_names: Vec<&str> = self.config.layers.iter().map(|l| l.name.as_str()).collect();
+        let candidate = format!("{}_copy", base_name);
+        if !existing_names.contains(&candidate.as_str()) {
+            return candidate;
+        }
+        let mut counter = 2;
+        loop {
+            let candidate = format!("{}_copy_{}", base_name, counter);
+            if !existing_names.contains(&candidate.as_str()) {
+                return candidate;
+            }
+            counter += 1;
+        }
+    }
+
     /// Mark the editor state as saved (not modified).
     pub fn mark_saved(&mut self) {
         self.modified = false;
@@ -673,5 +774,307 @@ mod tests {
 
         // Assert
         assert!(!editor.modified);
+    }
+
+    // --- Add layer ---
+
+    #[test]
+    fn test_add_layer_inserts_and_selects() {
+        // Arrange
+        let mut editor = create_test_editor();
+        assert_eq!(editor.config.layers.len(), 1);
+
+        // Act
+        let result = editor.add_layer("NewLayer");
+
+        // Assert
+        assert!(result.is_ok());
+        assert_eq!(editor.config.layers.len(), 2);
+        assert_eq!(editor.current_layer, 1);
+        assert_eq!(editor.config.layers[1].name, "NewLayer");
+        assert_eq!(editor.config.layers[1].macro_name, "LAYER_NewLayer");
+        // All keys should be "___"
+        assert_eq!(editor.config.layers[1].left_half[0][0], "___");
+    }
+
+    #[test]
+    fn test_add_layer_empty_name_returns_error() {
+        // Arrange
+        let mut editor = create_test_editor();
+
+        // Act
+        let result = editor.add_layer("");
+
+        // Assert
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("empty"));
+    }
+
+    #[test]
+    fn test_add_layer_duplicate_name_returns_error() {
+        // Arrange
+        let mut editor = create_test_editor();
+
+        // Act
+        let result = editor.add_layer("Test");
+
+        // Assert
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("already exists"));
+    }
+
+    #[test]
+    fn test_add_layer_invalid_chars_returns_error() {
+        // Arrange
+        let mut editor = create_test_editor();
+
+        // Act
+        let result = editor.add_layer("My Layer!");
+
+        // Assert
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("letters, digits, and underscores"));
+    }
+
+    #[test]
+    fn test_add_layer_marks_modified_and_pushes_undo() {
+        // Arrange
+        let mut editor = create_test_editor();
+        editor.modified = false;
+
+        // Act
+        editor.add_layer("NewLayer").unwrap();
+
+        // Assert
+        assert!(editor.modified);
+        assert!(editor.undo());
+        assert_eq!(editor.config.layers.len(), 1);
+    }
+
+    // --- Duplicate layer ---
+
+    #[test]
+    fn test_duplicate_layer_clones_colors_and_fade() {
+        // Arrange
+        let mut editor = create_test_editor();
+        editor.cursor = RgbPos { row: 0, col: 0, half: Half::Left };
+        editor.set_key_color("RED");
+        editor.current_layer_mut().unwrap().fade_delay = 42;
+        editor.modified = false;
+
+        // Act
+        let result = editor.duplicate_layer();
+
+        // Assert
+        assert!(result.is_ok());
+        let new_layer = &editor.config.layers[editor.current_layer];
+        assert_eq!(new_layer.left_half[0][0], "RED");
+        assert_eq!(new_layer.fade_delay, 42);
+    }
+
+    #[test]
+    fn test_duplicate_layer_generates_unique_name() {
+        // Arrange
+        let mut editor = create_test_editor();
+
+        // Act
+        let name1 = editor.duplicate_layer().unwrap();
+
+        // Assert
+        assert_eq!(name1, "Test_copy");
+
+        // Act — duplicate again (should get _copy_2)
+        editor.current_layer = 0; // go back to original
+        let name2 = editor.duplicate_layer().unwrap();
+
+        // Assert
+        assert_eq!(name2, "Test_copy_2");
+    }
+
+    #[test]
+    fn test_duplicate_layer_with_no_layers_returns_error() {
+        // Arrange
+        let mut editor = create_test_editor();
+        editor.config.layers.clear();
+
+        // Act
+        let result = editor.duplicate_layer();
+
+        // Assert
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("No layers"));
+    }
+
+    #[test]
+    fn test_duplicate_layer_marks_modified_and_pushes_undo() {
+        // Arrange
+        let mut editor = create_test_editor();
+        editor.modified = false;
+
+        // Act
+        editor.duplicate_layer().unwrap();
+
+        // Assert
+        assert!(editor.modified);
+        assert!(editor.undo());
+        assert_eq!(editor.config.layers.len(), 1);
+    }
+
+    // --- Rename layer ---
+
+    #[test]
+    fn test_rename_layer_updates_name_and_macro() {
+        // Arrange
+        let mut editor = create_test_editor();
+
+        // Act
+        let result = editor.rename_layer("Renamed");
+
+        // Assert
+        assert!(result.is_ok());
+        assert_eq!(editor.config.layers[0].name, "Renamed");
+        assert_eq!(editor.config.layers[0].macro_name, "LAYER_Renamed");
+    }
+
+    #[test]
+    fn test_rename_layer_to_existing_name_returns_error() {
+        // Arrange
+        let mut editor = create_test_editor();
+        editor.add_layer("Other").unwrap();
+
+        // Act
+        let result = editor.rename_layer("Test");
+
+        // Assert
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("already exists"));
+    }
+
+    #[test]
+    fn test_rename_layer_same_name_succeeds() {
+        // Arrange
+        let mut editor = create_test_editor();
+        editor.current_layer = 0;
+
+        // Act
+        let result = editor.rename_layer("Test");
+
+        // Assert
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_rename_layer_marks_modified_and_pushes_undo() {
+        // Arrange
+        let mut editor = create_test_editor();
+        editor.modified = false;
+
+        // Act
+        editor.rename_layer("Renamed").unwrap();
+
+        // Assert
+        assert!(editor.modified);
+        assert!(editor.undo());
+        assert_eq!(editor.config.layers[0].name, "Test");
+    }
+
+    // --- Delete layer ---
+
+    #[test]
+    fn test_delete_layer_removes_and_adjusts_index() {
+        // Arrange
+        let mut editor = create_test_editor();
+        editor.add_layer("Second").unwrap();
+        editor.add_layer("Third").unwrap();
+        editor.current_layer = 1; // "Second"
+
+        // Act
+        let result = editor.delete_layer();
+
+        // Assert
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), "Second");
+        assert_eq!(editor.config.layers.len(), 2);
+        assert_eq!(editor.current_layer, 1);
+        assert_eq!(editor.config.layers[1].name, "Third");
+    }
+
+    #[test]
+    fn test_delete_layer_last_selected_moves_to_previous() {
+        // Arrange
+        let mut editor = create_test_editor();
+        editor.add_layer("Second").unwrap();
+        editor.current_layer = 1; // "Second" — the last layer
+
+        // Act
+        let result = editor.delete_layer();
+
+        // Assert
+        assert!(result.is_ok());
+        assert_eq!(editor.current_layer, 0);
+    }
+
+    #[test]
+    fn test_delete_last_remaining_layer_returns_error() {
+        // Arrange
+        let mut editor = create_test_editor();
+
+        // Act
+        let result = editor.delete_layer();
+
+        // Assert
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("last remaining"));
+    }
+
+    #[test]
+    fn test_delete_layer_marks_modified_and_pushes_undo() {
+        // Arrange
+        let mut editor = create_test_editor();
+        editor.add_layer("Second").unwrap();
+        editor.modified = false;
+        editor.current_layer = 1;
+
+        // Act
+        editor.delete_layer().unwrap();
+
+        // Assert
+        assert!(editor.modified);
+        assert!(editor.undo());
+        assert_eq!(editor.config.layers.len(), 2);
+    }
+
+    // --- Undo integration with layers ---
+
+    #[test]
+    fn test_undo_after_add_layer_removes_it() {
+        // Arrange
+        let mut editor = create_test_editor();
+        editor.add_layer("NewLayer").unwrap();
+        assert_eq!(editor.config.layers.len(), 2);
+
+        // Act
+        editor.undo();
+
+        // Assert
+        assert_eq!(editor.config.layers.len(), 1);
+        assert_eq!(editor.config.layers[0].name, "Test");
+    }
+
+    #[test]
+    fn test_undo_after_delete_layer_restores_it() {
+        // Arrange
+        let mut editor = create_test_editor();
+        editor.add_layer("Second").unwrap();
+        editor.current_layer = 1;
+        editor.delete_layer().unwrap();
+        assert_eq!(editor.config.layers.len(), 1);
+
+        // Act
+        editor.undo();
+
+        // Assert
+        assert_eq!(editor.config.layers.len(), 2);
+        assert_eq!(editor.config.layers[1].name, "Second");
     }
 }

@@ -21,6 +21,9 @@ fn handle_key(app: &mut App, key: KeyEvent) {
         Mode::ConfirmCopy => handle_confirm_copy_mode(app, key),
         Mode::SaveAs => handle_save_as_mode(app, key),
         Mode::SaveAsConfirm => handle_save_as_confirm_mode(app, key),
+        Mode::AddLayer => handle_add_layer_mode(app, key),
+        Mode::RenameLayer => handle_rename_layer_mode(app, key),
+        Mode::ConfirmDelete => handle_confirm_delete_mode(app, key),
     }
 }
 
@@ -42,6 +45,12 @@ fn handle_normal_mode(app: &mut App, key: KeyEvent) {
         // Layer navigation (Shift+J/K or PageDown/PageUp)
         KeyCode::Char('J') | KeyCode::PageDown => app.next_layer(),
         KeyCode::Char('K') | KeyCode::PageUp => app.prev_layer(),
+
+        // Layer management
+        KeyCode::Char('a') => app.start_add_layer(),
+        KeyCode::Char('d') => app.duplicate_layer(),
+        KeyCode::Char('n') => app.start_rename_layer(),
+        KeyCode::Char('x') => app.start_delete_layer(),
 
         // Color picking - initialize selection to current key's color
         KeyCode::Enter => app.enter_color_pick(),
@@ -186,6 +195,76 @@ fn handle_save_as_confirm_mode(app: &mut App, key: KeyEvent) {
         KeyCode::Esc => {
             // Cancel entirely
             app.cancel_save_as();
+        }
+        _ => {}
+    }
+}
+
+fn handle_add_layer_mode(app: &mut App, key: KeyEvent) {
+    match key.code {
+        KeyCode::Esc => {
+            app.cancel_layer_input();
+        }
+        KeyCode::Enter => {
+            app.confirm_add_layer();
+        }
+        KeyCode::Backspace => {
+            app.layer_name_input.pop();
+        }
+        KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            app.layer_name_input.clear();
+        }
+        KeyCode::Char('w') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            while app.layer_name_input.ends_with(' ') {
+                app.layer_name_input.pop();
+            }
+            while app.layer_name_input.chars().last().is_some_and(|c| c != ' ') {
+                app.layer_name_input.pop();
+            }
+        }
+        KeyCode::Char(c) => {
+            app.layer_name_input.push(c);
+        }
+        _ => {}
+    }
+}
+
+fn handle_rename_layer_mode(app: &mut App, key: KeyEvent) {
+    match key.code {
+        KeyCode::Esc => {
+            app.cancel_layer_input();
+        }
+        KeyCode::Enter => {
+            app.confirm_rename_layer();
+        }
+        KeyCode::Backspace => {
+            app.layer_name_input.pop();
+        }
+        KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            app.layer_name_input.clear();
+        }
+        KeyCode::Char('w') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            while app.layer_name_input.ends_with(' ') {
+                app.layer_name_input.pop();
+            }
+            while app.layer_name_input.chars().last().is_some_and(|c| c != ' ') {
+                app.layer_name_input.pop();
+            }
+        }
+        KeyCode::Char(c) => {
+            app.layer_name_input.push(c);
+        }
+        _ => {}
+    }
+}
+
+fn handle_confirm_delete_mode(app: &mut App, key: KeyEvent) {
+    match key.code {
+        KeyCode::Char('y') | KeyCode::Char('Y') => {
+            app.confirm_delete_layer();
+        }
+        KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
+            app.mode = Mode::Normal;
         }
         _ => {}
     }

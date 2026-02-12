@@ -18,6 +18,9 @@ pub enum Mode {
     ConfirmCopy,
     SaveAs,
     SaveAsConfirm,
+    AddLayer,
+    RenameLayer,
+    ConfirmDelete,
 }
 
 
@@ -30,6 +33,7 @@ pub struct App {
     pub status_message: Option<(String, Instant)>,
     pub should_quit: bool,
     pub filename_input: String,
+    pub layer_name_input: String,
 }
 
 impl App {
@@ -42,6 +46,7 @@ impl App {
             status_message: None,
             should_quit: false,
             filename_input: String::new(),
+            layer_name_input: String::new(),
         }
     }
 
@@ -217,6 +222,81 @@ impl App {
             self.set_current_key_color(&abbrev);
             self.mode = Mode::Normal;
         }
+    }
+
+    // --- Layer management ---
+
+    pub fn start_add_layer(&mut self) {
+        self.layer_name_input.clear();
+        self.mode = Mode::AddLayer;
+    }
+
+    pub fn confirm_add_layer(&mut self) {
+        match self.editor.add_layer(&self.layer_name_input) {
+            Ok(()) => {
+                let name = self.layer_name_input.clone();
+                self.show_status(&format!("Added: {}", name));
+                self.layer_name_input.clear();
+                self.mode = Mode::Normal;
+            }
+            Err(e) => {
+                self.show_status(&e);
+            }
+        }
+    }
+
+    pub fn duplicate_layer(&mut self) {
+        match self.editor.duplicate_layer() {
+            Ok(name) => {
+                self.show_status(&format!("Duplicated: {}", name));
+            }
+            Err(e) => {
+                self.show_status(&e);
+            }
+        }
+    }
+
+    pub fn start_rename_layer(&mut self) {
+        if let Some(layer) = self.editor.current_layer() {
+            self.layer_name_input = layer.name.clone();
+        }
+        self.mode = Mode::RenameLayer;
+    }
+
+    pub fn confirm_rename_layer(&mut self) {
+        match self.editor.rename_layer(&self.layer_name_input) {
+            Ok(()) => {
+                let name = self.layer_name_input.clone();
+                self.show_status(&format!("Renamed: {}", name));
+                self.layer_name_input.clear();
+                self.mode = Mode::Normal;
+            }
+            Err(e) => {
+                self.show_status(&e);
+            }
+        }
+    }
+
+    pub fn start_delete_layer(&mut self) {
+        self.mode = Mode::ConfirmDelete;
+    }
+
+    pub fn confirm_delete_layer(&mut self) {
+        match self.editor.delete_layer() {
+            Ok(name) => {
+                self.show_status(&format!("Deleted: {}", name));
+                self.mode = Mode::Normal;
+            }
+            Err(e) => {
+                self.show_status(&e);
+                self.mode = Mode::Normal;
+            }
+        }
+    }
+
+    pub fn cancel_layer_input(&mut self) {
+        self.layer_name_input.clear();
+        self.mode = Mode::Normal;
     }
 
     pub fn request_quit(&mut self) {
@@ -648,5 +728,156 @@ mod tests {
 
         // Assert
         assert!(app.status_message.is_some());
+    }
+
+    // --- Layer management ---
+
+    #[test]
+    fn test_start_add_layer_sets_mode() {
+        // Arrange
+        let mut app = create_test_app();
+
+        // Act
+        app.start_add_layer();
+
+        // Assert
+        assert_eq!(app.mode, Mode::AddLayer);
+        assert!(app.layer_name_input.is_empty());
+    }
+
+    #[test]
+    fn test_confirm_add_layer_success_returns_to_normal() {
+        // Arrange
+        let mut app = create_test_app();
+        app.start_add_layer();
+        app.layer_name_input = "NewLayer".to_string();
+
+        // Act
+        app.confirm_add_layer();
+
+        // Assert
+        assert_eq!(app.mode, Mode::Normal);
+        assert_eq!(app.editor.config.layers.len(), 2);
+        let (msg, _) = app.status_message.as_ref().unwrap();
+        assert!(msg.contains("Added"));
+    }
+
+    #[test]
+    fn test_confirm_add_layer_error_shows_status() {
+        // Arrange
+        let mut app = create_test_app();
+        app.start_add_layer();
+        app.layer_name_input = String::new(); // empty name
+
+        // Act
+        app.confirm_add_layer();
+
+        // Assert
+        assert_eq!(app.mode, Mode::AddLayer); // stays in AddLayer mode
+        let (msg, _) = app.status_message.as_ref().unwrap();
+        assert!(msg.contains("empty"));
+    }
+
+    #[test]
+    fn test_duplicate_layer_shows_status() {
+        // Arrange
+        let mut app = create_test_app();
+
+        // Act
+        app.duplicate_layer();
+
+        // Assert
+        let (msg, _) = app.status_message.as_ref().unwrap();
+        assert!(msg.contains("Duplicated"));
+        assert_eq!(app.editor.config.layers.len(), 2);
+    }
+
+    #[test]
+    fn test_start_rename_layer_prefills_current_name() {
+        // Arrange
+        let mut app = create_test_app();
+
+        // Act
+        app.start_rename_layer();
+
+        // Assert
+        assert_eq!(app.mode, Mode::RenameLayer);
+        assert_eq!(app.layer_name_input, "Test");
+    }
+
+    #[test]
+    fn test_confirm_rename_success() {
+        // Arrange
+        let mut app = create_test_app();
+        app.start_rename_layer();
+        app.layer_name_input = "Renamed".to_string();
+
+        // Act
+        app.confirm_rename_layer();
+
+        // Assert
+        assert_eq!(app.mode, Mode::Normal);
+        assert_eq!(app.editor.config.layers[0].name, "Renamed");
+        let (msg, _) = app.status_message.as_ref().unwrap();
+        assert!(msg.contains("Renamed"));
+    }
+
+    #[test]
+    fn test_start_delete_layer_sets_confirm_mode() {
+        // Arrange
+        let mut app = create_test_app();
+
+        // Act
+        app.start_delete_layer();
+
+        // Assert
+        assert_eq!(app.mode, Mode::ConfirmDelete);
+    }
+
+    #[test]
+    fn test_confirm_delete_layer_returns_to_normal() {
+        // Arrange
+        let mut app = create_test_app();
+        app.editor.add_layer("Second").unwrap();
+        app.start_delete_layer();
+
+        // Act
+        app.confirm_delete_layer();
+
+        // Assert
+        assert_eq!(app.mode, Mode::Normal);
+        assert_eq!(app.editor.config.layers.len(), 1);
+        let (msg, _) = app.status_message.as_ref().unwrap();
+        assert!(msg.contains("Deleted"));
+    }
+
+    #[test]
+    fn test_confirm_delete_last_layer_shows_error() {
+        // Arrange
+        let mut app = create_test_app();
+        app.start_delete_layer();
+
+        // Act
+        app.confirm_delete_layer();
+
+        // Assert
+        assert_eq!(app.mode, Mode::Normal);
+        let (msg, _) = app.status_message.as_ref().unwrap();
+        assert!(msg.contains("last remaining"));
+    }
+
+    #[test]
+    fn test_cancel_layer_input_clears_and_returns_to_normal() {
+        // Arrange
+        let mut app = create_test_app();
+        app.start_add_layer();
+        app.layer_name_input = "something".to_string();
+
+        // Act
+        app.cancel_layer_input();
+
+        // Assert
+        assert_eq!(app.mode, Mode::Normal);
+        assert!(app.layer_name_input.is_empty());
     }
 }

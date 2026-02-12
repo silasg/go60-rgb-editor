@@ -11,6 +11,7 @@ A terminal-based (TUI) RGB underglow editor for the MoErgo Go60 keyboard running
 ## Features
 
 - [x] **Visual keyboard layout** - color display matching the physical Go60 layout
+- [x] **Layer management** - add, duplicate, rename, and delete layers
 - [x] **Layer navigation** - navigate between RGB layers, adjust fade duration
 - [x] **Color picker** - select from the full color palette with keyboard navigation
 - [x] **Quick color assignment** - number keys for fast color selection
@@ -20,7 +21,7 @@ A terminal-based (TUI) RGB underglow editor for the MoErgo Go60 keyboard running
 - [x] **Clipboard export** - copy configuration to system clipboard
 - [x] **Special color support** - lock indicators (CapsLock/NumLock/ScrollLock) and mouse speed aliases
 - [x] **Roundtrip parsing** - preserves original file formatting and comments
-- [ ] **Layer management** - add, remove, rename layers
+
 - [ ] **Color palette management** - add, edit, remove color definitions
 
 Press `?` in the editor to see all key bindings.

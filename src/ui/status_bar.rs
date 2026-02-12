@@ -32,6 +32,9 @@ impl<'a> Widget for StatusBarWidget<'a> {
             crate::app::Mode::ConfirmCopy => "COPY?  ",
             crate::app::Mode::SaveAs => "SAVE AS  ",
             crate::app::Mode::SaveAsConfirm => "OVERWRITE?  ",
+            crate::app::Mode::AddLayer => "ADD LAYER  ",
+            crate::app::Mode::RenameLayer => "RENAME  ",
+            crate::app::Mode::ConfirmDelete => "DELETE?  ",
         };
         
         let right = format!(" {}?:help  q:quit  s:save ", mode_str);
