@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [0.2.0] - 2026-02-12
 
+### ✨ Features
+
+- Add layer management: add, duplicate, rename, and delete layers
+  - `a` — add a new empty layer
+  - `d` — duplicate the current layer
+  - `n` — rename the current layer
+  - `x` — delete the current layer (with confirmation)
+- Layer name validation: alphanumeric and underscores only, max 50 characters, unique names enforced
+- Auto-generated unique names for duplicated layers (e.g., `Cursor_copy`, `Cursor_copy_2`)
+- Full undo/redo support for all layer operations
+
 ### ♻️ Refactor
 
 - Move model, parser, cursor, geometry, undo into domain module
@@ -12,10 +23,7 @@ All notable changes to this project will be documented in this file.
 - Create EditorState to encapsulate domain logic
 - Move color picker navigation to UI module
 - Extract guard logic from event.rs into App methods
-
-### ✨ Features
-
-- Add layer management (add, duplicate, rename, delete)
+- Reorganized help popup into a two-column layout
 
 ### 🎨 Style
 
@@ -23,7 +31,6 @@ All notable changes to this project will be documented in this file.
 
 ### 📚 Documentation
 
-- Add prebuilt binaries section and changelog link to README
 - Add prebuilt binaries section and changelog link to README
 
 ### 🔧 Miscellaneous
