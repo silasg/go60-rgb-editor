@@ -3,9 +3,22 @@
 "cargo:git-cliff" = "latest"
 "cargo:cargo-release" = "latest"
 
+[vars]
+# Pinned nightly toolchain for cargo-pup (architecture linting).
+# cargo-pup hooks into rustc internals, which are only available on nightly.
+# Update this together with the cargo_pup_lint_config version in Cargo.toml
+# when upgrading cargo-pup.
+PUP_NIGHTLY = "nightly-2026-01-22"
+
 [tasks.setup]
 description = "One-time setup for dev environment (installs rustup components)"
-run = "rustup component add llvm-tools-preview"
+run = """
+rustup component add llvm-tools-preview
+rustup toolchain install {{vars.PUP_NIGHTLY}}
+rustup component add --toolchain {{vars.PUP_NIGHTLY}} rust-src rustc-dev llvm-tools-preview
+NIGHTLY_BIN="$(dirname "$(rustup which --toolchain {{vars.PUP_NIGHTLY}} cargo)")"
+PATH="$NIGHTLY_BIN:$PATH" cargo install cargo_pup
+"""
 
 [tasks.build]
 description = "Build the project"
@@ -46,6 +59,14 @@ cargo llvm-cov --html && open target/llvm-cov/html/index.html
 [tasks.run]
 description = "Run the editor with the example config file"
 run = "cargo run -- 'Go60 TK Latest RGB scheme.txt'"
+
+[tasks.arch-lint]
+description = "Run architecture linting with cargo-pup (requires nightly)"
+run = """
+cargo test --test architecture -- --nocapture
+NIGHTLY_BIN="$(dirname "$(rustup which --toolchain {{vars.PUP_NIGHTLY}} cargo)")"
+PATH="$NIGHTLY_BIN:$PATH" cargo pup
+"""
 
 [tasks.changelog]
 description = "Preview unreleased changelog entries"

@@ -90,6 +90,8 @@ mise install
 mise run setup
 ```
 
+> **Note:** `mise run setup` installs a pinned Rust nightly toolchain and [cargo-pup](https://github.com/datadog/cargo-pup) for architecture linting. This is separate from your normal Rust installation and does not affect regular builds.
+
 ### Available Tasks
 
 ```bash

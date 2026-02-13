@@ -1,4 +1,6 @@
 /target
+/.pup
+/pup.ron
 /plans
 /local
 *.bak

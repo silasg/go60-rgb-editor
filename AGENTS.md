@@ -30,6 +30,9 @@ src/
     ├── color_picker.rs
     ├── status_bar.rs
     └── help.rs
+tests/
+├── fixtures/        # Test fixture files
+└── architecture.rs  # Architecture rules (cargo-pup)
 ```
 
 ## Tech Stack
@@ -38,6 +41,7 @@ src/
 - Ratatui (TUI framework)
 - Crossterm (terminal backend)
 - Nom (parser combinators)
+- [cargo-pup](https://github.com/datadog/cargo-pup) (architecture linting)
 
 ## Development
 
@@ -45,11 +49,12 @@ Uses [mise](https://mise.jdx.dev/) for task management. Run `mise tasks ls` for 
 
 ```bash
 mise install          # Install tools (cargo-llvm-cov, git-cliff, cargo-release)
-mise run setup        # One-time setup (rustup components)
+mise run setup        # One-time setup (rustup components, nightly for cargo-pup)
 mise run build        # Build (debug)
 mise run build-release # Build (release)
 mise run test         # Run clippy + tests
 mise run lint         # Run clippy lints
+mise run arch-lint    # Run architecture linting with cargo-pup (requires nightly)
 mise run coverage     # Test coverage report
 mise run coverage-html # Coverage report in browser
 mise run run          # Run editor with example config
@@ -107,6 +112,34 @@ mise run release-major    # Release major version (breaking)
   - Use `// Act & Assert` when act and assert are interleaved or inseparable (e.g., multiple inline checks)
 - Omit a section comment if that phase is empty (e.g., no arrange needed)
 - Keep any existing explanatory comments; AAA comments are added alongside them, not as replacements
+
+## Architecture Linting
+
+This project uses [cargo-pup](https://github.com/datadog/cargo-pup) (an ArchUnit alternative for Rust) to enforce architectural boundaries and code hygiene.
+
+Architecture rules are defined in `tests/architecture.rs` using the `cargo_pup_lint_config` builder API, which generates a `pup.ron` config file. The `arch-lint` mise task then runs `cargo pup` to lint the project.
+
+### Rules
+
+**Layer isolation (Error):**
+- `domain_is_self_contained` — domain must not import app, event, io, ui, tui, ratatui, or crossterm
+- `ui_no_io_access` — UI must not import IO modules
+- `io_no_ui_dependency` — IO must not import UI or presentation crates
+
+**Code hygiene (Warn):**
+- `clean_mod_files` — mod.rs files should only contain mod declarations and re-exports
+- `no_wildcard_imports` — no `use something::*`
+- `function_length_limit` — functions should not exceed 60 lines
+
+### Nightly Toolchain Requirement
+
+cargo-pup hooks into `rustc` compiler internals (`rustc_private` API) to analyze module structure, imports, and function bodies. These internals are only available on nightly Rust. This does **not** affect the normal build — cargo-pup performs a separate analysis build in `.pup/`.
+
+The pinned nightly version is defined once in `mise.toml` as `PUP_NIGHTLY`. When upgrading cargo-pup, update:
+1. `PUP_NIGHTLY` in `mise.toml`
+2. `cargo_pup_lint_config` version in `Cargo.toml`
+
+Then run `mise run setup` to install the new toolchain and cargo-pup version.
 
 ## Config File Format
 
