@@ -25,6 +25,8 @@ src/
 │   └── tests.rs     # Parser tests
 └── ui/              # UI widgets
     ├── mod.rs       # Re-exports
+    ├── layout.rs    # Screen layout and modal rendering
+    ├── color_render.rs # Color-to-terminal rendering utilities
     ├── keyboard.rs  # Keyboard layout widget
     ├── layer_list.rs
     ├── color_picker.rs
