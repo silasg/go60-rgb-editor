@@ -158,8 +158,26 @@ impl<'a> ColorPickerWidget<'a> {
     }
 }
 
-impl<'a> Widget for ColorPickerWidget<'a> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+impl<'a> ColorPickerWidget<'a> {
+    fn render_regular_colors(&self, buf: &mut Buffer, indices: &[usize], x: u16, y: u16) {
+        for (i, &idx) in indices.iter().enumerate() {
+            let row = i / COLORS_PER_PICKER_ROW;
+            let col = i % COLORS_PER_PICKER_ROW;
+
+            if row >= MAX_REGULAR_COLOR_ROWS {
+                break;
+            }
+
+            let cell_x = x + col as u16 * KEY_CELL_WIDTH;
+            let cell_y = y + row as u16;
+            let abbrev = &self.palette.colors[idx].abbrev;
+            render_color_cell(buf, cell_x, cell_y, abbrev, idx == self.selected, self.palette);
+        }
+    }
+}
+
+impl<'a> ColorPickerWidget<'a> {
+    fn render_block(&self, area: Rect, buf: &mut Buffer) -> Option<Rect> {
         let title = if self.focused {
             " Colors [Enter to apply, Esc to cancel] "
         } else {
@@ -178,33 +196,21 @@ impl<'a> Widget for ColorPickerWidget<'a> {
         let inner = block.inner(area);
         block.render(area, buf);
 
-        if inner.width < 20 || inner.height < 4 {
+        (inner.width >= 20 && inner.height >= 4).then_some(inner)
+    }
+}
+
+impl<'a> Widget for ColorPickerWidget<'a> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let Some(inner) = self.render_block(area, buf) else {
             return;
-        }
+        };
 
-        let color_start_x = inner.x + 1;
         let label_style = Style::default().fg(Color::DarkGray);
-
         let categories = self.palette.categorize();
 
-        let mut current_y = inner.y;
-
-        let max_cols = COLORS_PER_PICKER_ROW;
-        for (i, &idx) in categories.regular.iter().enumerate() {
-            let row = i / max_cols;
-            let col = i % max_cols;
-
-            if row >= MAX_REGULAR_COLOR_ROWS {
-                break;
-            }
-
-            let x = color_start_x + col as u16 * KEY_CELL_WIDTH;
-            let y = current_y + row as u16;
-            let is_selected = idx == self.selected;
-            let abbrev = &self.palette.colors[idx].abbrev;
-            render_color_cell(buf, x, y, abbrev, is_selected, self.palette);
-        }
-        current_y += MAX_REGULAR_COLOR_ROWS as u16 + 1;
+        self.render_regular_colors(buf, &categories.regular, inner.x + 1, inner.y);
+        let mut current_y = inner.y + MAX_REGULAR_COLOR_ROWS as u16 + 1;
 
         current_y = self.render_labeled_section(
             buf,

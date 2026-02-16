@@ -199,17 +199,8 @@ fn parse_layers(section: &str) -> Result<Vec<Layer>, String> {
     for line in section.lines() {
         let trimmed = line.trim();
 
-        if trimmed.starts_with("#ifdef LAYER_") {
-            let macro_name = trimmed
-                .strip_prefix("#ifdef ")
-                .unwrap_or("")
-                .trim()
-                .to_string();
-            let name = macro_name
-                .strip_prefix("LAYER_")
-                .unwrap_or(&macro_name)
-                .to_string();
-            current_layer = Some(Layer::new(name, macro_name));
+        if let Some(layer) = try_begin_layer(trimmed) {
+            current_layer = Some(layer);
             state = LayerParseState::InLayer;
             continue;
         }
@@ -223,35 +214,59 @@ fn parse_layers(section: &str) -> Result<Vec<Layer>, String> {
         }
 
         if let Some(ref mut layer) = current_layer {
-            match &mut state {
-                LayerParseState::InBindings(ref mut content) => {
-                    if trimmed.starts_with(">;") {
-                        parse_bindings(content, layer)?;
-                        state = LayerParseState::InLayer;
-                    } else {
-                        content.push_str(line);
-                        content.push('\n');
-                    }
-                }
-                LayerParseState::InLayer => {
-                    if trimmed.starts_with("bindings = <") {
-                        state = LayerParseState::InBindings(String::new());
-                    } else if trimmed.starts_with("layer-id") {
-                        // Already captured from #ifdef
-                    } else if trimmed.starts_with("fade-delay") {
-                        if let (Some(start), Some(end)) = (trimmed.find('<'), trimmed.find('>')) {
-                            if let Ok(delay) = trimmed[start + 1..end].parse() {
-                                layer.fade_delay = delay;
-                            }
-                        }
-                    }
-                }
-                LayerParseState::Idle => {}
-            }
+            state = process_layer_line(line, trimmed, state, layer)?;
         }
     }
 
     Ok(layers)
+}
+
+fn try_begin_layer(trimmed: &str) -> Option<Layer> {
+    if !trimmed.starts_with("#ifdef LAYER_") {
+        return None;
+    }
+    let macro_name = trimmed
+        .strip_prefix("#ifdef ")
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let name = macro_name
+        .strip_prefix("LAYER_")
+        .unwrap_or(&macro_name)
+        .to_string();
+    Some(Layer::new(name, macro_name))
+}
+
+fn process_layer_line(
+    line: &str, trimmed: &str, state: LayerParseState, layer: &mut Layer,
+) -> Result<LayerParseState, String> {
+    match state {
+        LayerParseState::InBindings(mut content) => {
+            if trimmed.starts_with(">;") {
+                parse_bindings(&content, layer)?;
+                Ok(LayerParseState::InLayer)
+            } else {
+                content.push_str(line);
+                content.push('\n');
+                Ok(LayerParseState::InBindings(content))
+            }
+        }
+        LayerParseState::InLayer => {
+            if trimmed.starts_with("bindings = <") {
+                Ok(LayerParseState::InBindings(String::new()))
+            } else {
+                if trimmed.starts_with("fade-delay") {
+                    if let (Some(start), Some(end)) = (trimmed.find('<'), trimmed.find('>')) {
+                        if let Ok(delay) = trimmed[start + 1..end].parse() {
+                            layer.fade_delay = delay;
+                        }
+                    }
+                }
+                Ok(LayerParseState::InLayer)
+            }
+        }
+        LayerParseState::Idle => Ok(LayerParseState::Idle),
+    }
 }
 
 /// Parse bindings into left/right halves.

@@ -18,13 +18,6 @@ enum ModalSize {
     Fixed,
 }
 
-struct ModalStyle<'a> {
-    title: &'a str,
-    border_color: Color,
-    alignment: Alignment,
-    size: ModalSize,
-}
-
 pub fn draw(frame: &mut Frame, app: &App) {
     let area = frame.area();
 
@@ -82,77 +75,53 @@ fn render_modals(frame: &mut Frame, app: &App, area: Rect) {
             frame.render_widget(Clear, help_area);
             frame.render_widget(help, help_area);
         }
-        Mode::ConfirmQuit => {
-            render_modal(frame, "You have unsaved changes.\n\nPress 'y' to quit, 'n' to cancel, 's' to save and quit", &ModalStyle {
-                title: " Confirm Quit ", border_color: Color::Red, alignment: Alignment::Center, size: ModalSize::FitText,
-            }, area);
-        }
-        Mode::ConfirmCopy => {
-            render_modal(frame, "You have unsaved changes.\n\nPress 'y' to copy anyway, 'n' to cancel, 's' to save and copy", &ModalStyle {
-                title: " Copy to Clipboard ", border_color: Color::Red, alignment: Alignment::Center, size: ModalSize::FitText,
-            }, area);
-        }
-        Mode::SaveAs => {
-            let text = format!(
-                "Enter filename:\n\n{}▌\n\n[Enter] Save  [Esc] Cancel  [Ctrl+U] Clear",
-                &app.filename_input
-            );
-            render_modal(frame, &text, &ModalStyle {
-                title: " Save As ", border_color: Color::Yellow, alignment: Alignment::Left, size: ModalSize::Fixed,
-            }, area);
-        }
-        Mode::SaveAsConfirm => {
-            let text = format!(
-                "File already exists:\n{}\n\nOverwrite? [y] Yes  [n] Back  [Esc] Cancel",
-                &app.filename_input
-            );
-            render_modal(frame, &text, &ModalStyle {
-                title: " Confirm Overwrite ", border_color: Color::Red, alignment: Alignment::Center, size: ModalSize::Fixed,
-            }, area);
-        }
-        Mode::AddLayer => {
-            let text = format!(
-                "Enter layer name:\n\n{}▌\n\n[Enter] Add  [Esc] Cancel  [Ctrl+U] Clear",
-                &app.layer_name_input
-            );
-            render_modal(frame, &text, &ModalStyle {
-                title: " Add Layer ", border_color: Color::Yellow, alignment: Alignment::Left, size: ModalSize::Fixed,
-            }, area);
-        }
-        Mode::RenameLayer => {
-            let text = format!(
-                "Rename layer:\n\n{}▌\n\n[Enter] Rename  [Esc] Cancel  [Ctrl+U] Clear",
-                &app.layer_name_input
-            );
-            render_modal(frame, &text, &ModalStyle {
-                title: " Rename Layer ", border_color: Color::Yellow, alignment: Alignment::Left, size: ModalSize::Fixed,
-            }, area);
-        }
+        Mode::ConfirmQuit => render_modal(frame, area,
+            "You have unsaved changes.\n\nPress 'y' to quit, 'n' to cancel, 's' to save and quit",
+            " Confirm Quit ", Color::Red, Alignment::Center, ModalSize::FitText,
+        ),
+        Mode::ConfirmCopy => render_modal(frame, area,
+            "You have unsaved changes.\n\nPress 'y' to copy anyway, 'n' to cancel, 's' to save and copy",
+            " Copy to Clipboard ", Color::Red, Alignment::Center, ModalSize::FitText,
+        ),
+        Mode::SaveAs => render_modal(frame, area,
+            &format!("Enter filename:\n\n{}▌\n\n[Enter] Save  [Esc] Cancel  [Ctrl+U] Clear", &app.filename_input),
+            " Save As ", Color::Yellow, Alignment::Left, ModalSize::Fixed,
+        ),
+        Mode::SaveAsConfirm => render_modal(frame, area,
+            &format!("File already exists:\n{}\n\nOverwrite? [y] Yes  [n] Back  [Esc] Cancel", &app.filename_input),
+            " Confirm Overwrite ", Color::Red, Alignment::Center, ModalSize::Fixed,
+        ),
+        Mode::AddLayer => render_modal(frame, area,
+            &format!("Enter layer name:\n\n{}▌\n\n[Enter] Add  [Esc] Cancel  [Ctrl+U] Clear", &app.layer_name_input),
+            " Add Layer ", Color::Yellow, Alignment::Left, ModalSize::Fixed,
+        ),
+        Mode::RenameLayer => render_modal(frame, area,
+            &format!("Rename layer:\n\n{}▌\n\n[Enter] Rename  [Esc] Cancel  [Ctrl+U] Clear", &app.layer_name_input),
+            " Rename Layer ", Color::Yellow, Alignment::Left, ModalSize::Fixed,
+        ),
         Mode::ConfirmDelete => {
-            let layer_name = app.editor.current_layer()
-                .map(|l| l.name.as_str())
-                .unwrap_or("?");
-            let text = format!(
-                "Delete layer '{}'?\n\n[y] Yes  [n] No",
-                layer_name
+            let name = app.editor.current_layer().map(|l| l.name.as_str()).unwrap_or("?");
+            render_modal(frame, area,
+                &format!("Delete layer '{name}'?\n\n[y] Yes  [n] No"),
+                " Delete Layer ", Color::Red, Alignment::Center, ModalSize::FitText,
             );
-            render_modal(frame, &text, &ModalStyle {
-                title: " Delete Layer ", border_color: Color::Red, alignment: Alignment::Center, size: ModalSize::FitText,
-            }, area);
         }
         _ => {}
     }
 }
 
-fn render_modal(frame: &mut Frame, text: &str, style: &ModalStyle, area: Rect) {
+fn render_modal(
+    frame: &mut Frame, area: Rect, text: &str,
+    title: &str, border_color: Color, alignment: Alignment, size: ModalSize,
+) {
     let popup = Paragraph::new(text)
         .block(Block::default()
-            .title(style.title)
+            .title(title)
             .borders(Borders::ALL)
-            .border_style(Style::default().fg(style.border_color)))
-        .alignment(style.alignment);
+            .border_style(Style::default().fg(border_color)))
+        .alignment(alignment);
 
-    let popup_area = match style.size {
+    let popup_area = match size {
         ModalSize::FitText => centered_rect_for_text(text, area),
         ModalSize::Fixed => centered_rect_chars(MODAL_WIDTH, MODAL_HEIGHT, area),
     };

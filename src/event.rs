@@ -28,23 +28,30 @@ fn handle_key(app: &mut App, key: KeyEvent) {
 }
 
 fn handle_normal_mode(app: &mut App, key: KeyEvent) {
-    match key.code {
-        // Quit
-        KeyCode::Char('q') => app.request_quit(),
-        KeyCode::Char('Q') => {
-            app.should_quit = true;
-        }
+    if handle_normal_navigation(app, key) {
+        return;
+    }
+    handle_normal_action(app, key);
+}
 
-        // Navigation
+fn handle_normal_navigation(app: &mut App, key: KeyEvent) -> bool {
+    match key.code {
         KeyCode::Char('h') | KeyCode::Left => app.move_cursor(Direction::Left),
         KeyCode::Char('j') | KeyCode::Down => app.move_cursor(Direction::Down),
         KeyCode::Char('k') | KeyCode::Up => app.move_cursor(Direction::Up),
         KeyCode::Char('l') | KeyCode::Right => app.move_cursor(Direction::Right),
         KeyCode::Tab => app.switch_half(),
-
-        // Layer navigation (Shift+J/K or PageDown/PageUp)
         KeyCode::Char('J') | KeyCode::PageDown => app.next_layer(),
         KeyCode::Char('K') | KeyCode::PageUp => app.prev_layer(),
+        _ => return false,
+    }
+    true
+}
+
+fn handle_normal_action(app: &mut App, key: KeyEvent) {
+    match key.code {
+        KeyCode::Char('q') => app.request_quit(),
+        KeyCode::Char('Q') => app.should_quit = true,
 
         // Layer management
         KeyCode::Char('a') => app.start_add_layer(),
@@ -52,40 +59,28 @@ fn handle_normal_mode(app: &mut App, key: KeyEvent) {
         KeyCode::Char('n') => app.start_rename_layer(),
         KeyCode::Char('x') => app.start_delete_layer(),
 
-        // Color picking - initialize selection to current key's color
+        // Color picking
         KeyCode::Enter => app.enter_color_pick(),
-
-        // Quick color selection (0-9)
         KeyCode::Char(c) if c.is_ascii_digit() => {
             let idx = c.to_digit(10).unwrap() as usize;
             app.apply_quick_color(idx);
         }
 
-        // Copy/paste (vim-style)
+        // Editing
         KeyCode::Char('y') => app.copy_color(),
         KeyCode::Char('p') => app.paste_color(),
-
-        // Clear color (set to black)
         KeyCode::Delete | KeyCode::Backspace => app.clear_color(),
-
-        // Undo/redo
         KeyCode::Char('u') => app.undo(),
         KeyCode::Char('r') if key.modifiers.contains(KeyModifiers::CONTROL) => app.redo(),
 
-        // Save
+        // File operations
         KeyCode::Char('s') => app.save(),
         KeyCode::Char('S') => app.save_as(),
-
-        // Fade duration
         KeyCode::Char('f') => app.increase_fade(),
         KeyCode::Char('F') => app.decrease_fade(),
-
-        // Copy file to clipboard
         KeyCode::Char('c') => app.request_copy(),
 
-        // Help
         KeyCode::Char('?') => app.mode = Mode::Help,
-
         _ => {}
     }
 }
