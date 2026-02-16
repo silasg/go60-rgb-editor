@@ -3,7 +3,28 @@
 //! Each half has 6 rows: 4 main rows (6 keys each) and 2 thumb rows (3 keys each).
 //! The thumb rows are visually offset toward the center of the keyboard.
 
-use super::Half;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Half {
+    #[default]
+    Left,
+    Right,
+}
+
+impl Half {
+    pub fn opposite(self) -> Self {
+        match self {
+            Half::Left => Half::Right,
+            Half::Right => Half::Left,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct RgbPos {
+    pub row: usize,
+    pub col: usize,
+    pub half: Half,
+}
 
 /// Columns in main key rows (rows 0–3).
 pub const MAIN_ROW_COLS: usize = 6;
