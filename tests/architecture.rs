@@ -62,12 +62,11 @@ fn build_architecture_rules() -> LintBuilder {
     // ── Module hygiene ─────────────────────────────────────────────────
 
     // mod.rs files should only contain mod declarations and re-exports.
-    // Warn for now — domain/mod.rs and ui/mod.rs have inline definitions.
     builder
         .module_lint()
         .lint_named("clean_mod_files")
         .matching(|m| m.module(".*"))
-        .with_severity(Severity::Warn)
+        .with_severity(Severity::Error)
         .must_have_empty_mod_file()
         .build();
 
@@ -76,7 +75,7 @@ fn build_architecture_rules() -> LintBuilder {
         .module_lint()
         .lint_named("no_wildcard_imports")
         .matching(|m| m.module(".*"))
-        .with_severity(Severity::Warn)
+        .with_severity(Severity::Error)
         .no_wildcard_imports()
         .build();
 
@@ -87,7 +86,7 @@ fn build_architecture_rules() -> LintBuilder {
         .function_lint()
         .lint_named("function_length_limit")
         .matching(|m| m.name_regex(".*"))
-        .with_severity(Severity::Warn)
+        .with_severity(Severity::Error)
         .max_length(60)
         .build();
 
