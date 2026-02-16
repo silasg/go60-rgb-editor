@@ -4,7 +4,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::prelude::*;
+use ratatui::{backend::CrosstermBackend, Terminal};
 
 pub struct Tui {
     terminal: Terminal<CrosstermBackend<Stdout>>,
