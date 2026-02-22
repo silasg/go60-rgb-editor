@@ -148,6 +148,17 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_rgb_color_new() {
+        // Act
+        let color = RgbColor::new(100, 150, 200);
+
+        // Assert
+        assert_eq!(color.r, 100);
+        assert_eq!(color.g, 150);
+        assert_eq!(color.b, 200);
+    }
+
+    #[test]
     fn test_rgb_from_hex() {
         // Arrange
         let hex_with_0x_prefix = "0xFF0000";

@@ -42,6 +42,15 @@ fn build_architecture_rules() -> LintBuilder {
         )
         .build();
 
+    // TUI must not import the wasm wrapper crate — only the domain crate.
+    builder
+        .module_lint()
+        .lint_named("tui_no_wasm_dependency")
+        .matching(|m| m.module(".*"))
+        .with_severity(Severity::Error)
+        .restrict_imports(None, Some(vec!["go60_rgb_editor_wasm::.*".to_string()]))
+        .build();
+
     // ── Module hygiene ─────────────────────────────────────────────────
 
     // mod.rs files should only contain mod declarations and re-exports.
