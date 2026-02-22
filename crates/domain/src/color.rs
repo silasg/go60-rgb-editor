@@ -18,7 +18,6 @@ pub struct RgbColor {
 }
 
 impl RgbColor {
-    #[cfg(test)]
     pub fn new(r: u8, g: u8, b: u8) -> Self {
         Self { r, g, b }
     }
@@ -147,6 +146,17 @@ pub struct CategorizedColors {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_rgb_color_new() {
+        // Act
+        let color = RgbColor::new(100, 150, 200);
+
+        // Assert
+        assert_eq!(color.r, 100);
+        assert_eq!(color.g, 150);
+        assert_eq!(color.b, 200);
+    }
 
     #[test]
     fn test_rgb_from_hex() {

@@ -1,0 +1,44 @@
+(
+    lints: [
+        Module((
+            name: "domain_has_no_external_imports",
+            matches: Module(".*"),
+            rules: [
+                RestrictImports(
+                    allowed_only: None,
+                    denied: Some([
+                        "ratatui::.*",
+                        "crossterm::.*",
+                        "color_eyre::.*",
+                        "clap::.*",
+                        "wasm_bindgen::.*",
+                        "serde::.*",
+                        "serde_json::.*",
+                    ]),
+                    severity: Error,
+                ),
+            ],
+        )),
+        Module((
+            name: "clean_mod_files",
+            matches: Module(".*"),
+            rules: [
+                MustHaveEmptyModFile(Error),
+            ],
+        )),
+        Module((
+            name: "no_wildcard_imports",
+            matches: Module(".*"),
+            rules: [
+                NoWildcardImports(Error),
+            ],
+        )),
+        Function((
+            name: "function_length_limit",
+            matches: NameRegex(".*"),
+            rules: [
+                MaxLength(60, Error),
+            ],
+        )),
+    ],
+)

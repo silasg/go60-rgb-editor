@@ -1,16 +1,16 @@
 use std::fs;
 use std::path::Path;
 
-use crate::domain::Config;
+use go60_rgb_editor_domain::Config;
 
 pub fn load_config(path: &Path) -> Result<Config, String> {
     let content =
         fs::read_to_string(path).map_err(|e| format!("Failed to read file: {}", e))?;
-    crate::domain::parser::parse_config(&content)
+    go60_rgb_editor_domain::parser::parse_config(&content)
 }
 
 pub fn save_config(config: &Config, path: &Path) -> Result<(), String> {
-    let content = crate::domain::parser::write_config(config);
+    let content = go60_rgb_editor_domain::parser::write_config(config);
     fs::write(path, content).map_err(|e| format!("Failed to write file: {}", e))?;
     Ok(())
 }

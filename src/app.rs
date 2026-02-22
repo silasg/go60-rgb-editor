@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 use std::time::Instant;
 
-pub use crate::domain::cursor::Direction;
-use crate::domain::editor::EditorState;
-use crate::domain::Config;
+pub use go60_rgb_editor_domain::cursor::Direction;
+use go60_rgb_editor_domain::editor::EditorState;
+use go60_rgb_editor_domain::Config;
 use crate::ui::ColorPickerState;
 
 const FADE_STEP_MS: u16 = 5;
@@ -335,10 +335,10 @@ impl App {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::{Half, RgbPos};
+    use go60_rgb_editor_domain::{Half, RgbPos};
 
     fn create_test_app() -> App {
-        use crate::domain::{ColorPalette, Config, Layer};
+        use go60_rgb_editor_domain::{ColorPalette, Config, Layer};
 
         let mut config = Config::new();
         config.palette = ColorPalette::new();
@@ -359,8 +359,8 @@ mod tests {
         // Arrange
         let mut temp_file = NamedTempFile::new().unwrap();
         writeln!(temp_file, "test content").unwrap();
-        let mut config = crate::domain::Config::new();
-        config.palette = crate::domain::ColorPalette::new();
+        let mut config = go60_rgb_editor_domain::Config::new();
+        config.palette = go60_rgb_editor_domain::ColorPalette::new();
         let mut app = App::new(config, temp_file.path().to_path_buf());
 
         // Act
@@ -374,8 +374,8 @@ mod tests {
     fn test_copy_to_clipboard_with_nonexistent_file() {
         // Arrange
         let nonexistent_path = PathBuf::from("/nonexistent/path/file.txt");
-        let mut config = crate::domain::Config::new();
-        config.palette = crate::domain::ColorPalette::new();
+        let mut config = go60_rgb_editor_domain::Config::new();
+        config.palette = go60_rgb_editor_domain::ColorPalette::new();
         let mut app = App::new(config, nonexistent_path);
 
         // Act
@@ -439,8 +439,8 @@ mod tests {
 
         // Arrange
         let source_file = NamedTempFile::new().unwrap();
-        let mut config = crate::domain::Config::new();
-        config.palette = crate::domain::ColorPalette::new();
+        let mut config = go60_rgb_editor_domain::Config::new();
+        config.palette = go60_rgb_editor_domain::ColorPalette::new();
         let mut app = App::new(config, source_file.path().to_path_buf());
         let mut existing_target_file = NamedTempFile::new().unwrap();
         writeln!(existing_target_file, "existing content").unwrap();
@@ -462,8 +462,8 @@ mod tests {
         // Arrange
         let mut temp_file = NamedTempFile::new().unwrap();
         writeln!(temp_file, "content").unwrap();
-        let mut config = crate::domain::Config::new();
-        config.palette = crate::domain::ColorPalette::new();
+        let mut config = go60_rgb_editor_domain::Config::new();
+        config.palette = go60_rgb_editor_domain::ColorPalette::new();
         let mut app = App::new(config, temp_file.path().to_path_buf());
         app.mode = Mode::SaveAs;
         app.filename_input = temp_file.path().to_string_lossy().to_string();
@@ -483,8 +483,8 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let source_path = temp_dir.path().join("source.txt");
         std::fs::write(&source_path, "content").unwrap();
-        let mut config = crate::domain::Config::new();
-        config.palette = crate::domain::ColorPalette::new();
+        let mut config = go60_rgb_editor_domain::Config::new();
+        config.palette = go60_rgb_editor_domain::ColorPalette::new();
         let mut app = App::new(config, source_path);
         app.mode = Mode::SaveAs;
         app.filename_input = temp_dir.path().join("new_file.txt").to_string_lossy().to_string();
@@ -505,8 +505,8 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let source_path = temp_dir.path().join("source.txt");
         std::fs::write(&source_path, "content").unwrap();
-        let mut config = crate::domain::Config::new();
-        config.palette = crate::domain::ColorPalette::new();
+        let mut config = go60_rgb_editor_domain::Config::new();
+        config.palette = go60_rgb_editor_domain::ColorPalette::new();
         let mut app = App::new(config, source_path);
         app.editor.modified = true;
         let new_path = temp_dir.path().join("new_file.txt");
@@ -584,8 +584,8 @@ mod tests {
     fn test_apply_quick_color_applies_palette_color_by_index() {
         // Arrange
         let mut app = create_test_app();
-        let red = crate::domain::ColorDef::new("RED".to_string(), crate::domain::RgbColor::new(255, 0, 0));
-        let grn = crate::domain::ColorDef::new("GRN".to_string(), crate::domain::RgbColor::new(0, 255, 0));
+        let red = go60_rgb_editor_domain::ColorDef::new("RED".to_string(), go60_rgb_editor_domain::RgbColor::new(255, 0, 0));
+        let grn = go60_rgb_editor_domain::ColorDef::new("GRN".to_string(), go60_rgb_editor_domain::RgbColor::new(0, 255, 0));
         app.editor.config.palette.add(red);
         app.editor.config.palette.add(grn);
         app.editor.cursor = RgbPos { row: 0, col: 0, half: Half::Left };
@@ -616,7 +616,7 @@ mod tests {
     fn test_apply_selected_color_sets_key_and_returns_to_normal_mode() {
         // Arrange
         let mut app = create_test_app();
-        let cyan = crate::domain::ColorDef::new("CYN".to_string(), crate::domain::RgbColor::new(0, 255, 255));
+        let cyan = go60_rgb_editor_domain::ColorDef::new("CYN".to_string(), go60_rgb_editor_domain::RgbColor::new(0, 255, 255));
         app.editor.config.palette.add(cyan);
         app.editor.cursor = RgbPos { row: 0, col: 0, half: Half::Left };
         app.mode = Mode::ColorPick;
@@ -687,8 +687,8 @@ mod tests {
     fn test_enter_color_pick_selects_current_color_in_palette() {
         // Arrange
         let mut app = create_test_app();
-        let red = crate::domain::ColorDef::new("RED".to_string(), crate::domain::RgbColor::new(255, 0, 0));
-        let grn = crate::domain::ColorDef::new("GRN".to_string(), crate::domain::RgbColor::new(0, 255, 0));
+        let red = go60_rgb_editor_domain::ColorDef::new("RED".to_string(), go60_rgb_editor_domain::RgbColor::new(255, 0, 0));
+        let grn = go60_rgb_editor_domain::ColorDef::new("GRN".to_string(), go60_rgb_editor_domain::RgbColor::new(0, 255, 0));
         app.editor.config.palette.add(red);
         app.editor.config.palette.add(grn);
         app.editor.cursor = RgbPos { row: 0, col: 0, half: Half::Left };

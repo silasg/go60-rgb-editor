@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod integration_tests {
-    use crate::domain::{ColorDef, ColorKind, ColorPalette, Config, Layer, RgbColor};
-    use crate::domain::parser::{parse_config, write_config};
+    use crate::{ColorDef, ColorKind, ColorPalette, Config, Layer, RgbColor};
+    use crate::parser::{parse_config, write_config};
 
-    const SAMPLE_CONFIG: &str = include_str!("../../../tests/fixtures/sample_config.txt");
+    const SAMPLE_CONFIG: &str = include_str!("../../tests/fixtures/sample_config.txt");
 
     fn row(keys: &[&str]) -> Vec<String> {
         keys.iter().map(|s| s.to_string()).collect()

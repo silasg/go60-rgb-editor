@@ -1,7 +1,11 @@
-//! Architecture rules enforced by cargo-pup.
+//! Architecture rules enforced by cargo-pup for the TUI crate.
 //!
 //! This test uses the cargo_pup_lint_config builder API to generate `pup.ron`.
 //! The mise `arch-lint` task runs this first, then invokes `cargo pup` to check.
+//!
+//! Note: The domain crate has its own architecture rules in crates/domain/tests/.
+//! Domain isolation is enforced structurally (zero deps in Cargo.toml) + defense-in-depth
+//! via the domain crate's own cargo-pup rules.
 //!
 //! Workflow:
 //!   1. `cargo test --test architecture` → writes `pup.ron`
@@ -13,27 +17,6 @@ fn build_architecture_rules() -> LintBuilder {
     let mut builder = LintBuilder::new();
 
     // ── Layer isolation ────────────────────────────────────────────────
-
-    // Domain must be self-contained: no dependencies on app, event, io, ui, tui,
-    // or presentation crates (ratatui, crossterm).
-    builder
-        .module_lint()
-        .lint_named("domain_is_self_contained")
-        .matching(|m| m.module(".*::domain::.*"))
-        .with_severity(Severity::Error)
-        .restrict_imports(
-            None,
-            Some(vec![
-                ".*::app::.*".to_string(),
-                ".*::event::.*".to_string(),
-                ".*::io::.*".to_string(),
-                ".*::ui::.*".to_string(),
-                ".*::tui::.*".to_string(),
-                "ratatui::.*".to_string(),
-                "crossterm::.*".to_string(),
-            ]),
-        )
-        .build();
 
     // UI must not perform IO operations directly.
     builder
@@ -57,6 +40,15 @@ fn build_architecture_rules() -> LintBuilder {
                 "ratatui::.*".to_string(),
             ]),
         )
+        .build();
+
+    // TUI must not import the wasm wrapper crate — only the domain crate.
+    builder
+        .module_lint()
+        .lint_named("tui_no_wasm_dependency")
+        .matching(|m| m.module(".*"))
+        .with_severity(Severity::Error)
+        .restrict_imports(None, Some(vec!["go60_rgb_editor_wasm::.*".to_string()]))
         .build();
 
     // ── Module hygiene ─────────────────────────────────────────────────

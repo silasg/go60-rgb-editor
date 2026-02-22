@@ -7,12 +7,18 @@ pub struct UndoHistory<T> {
     redo_stack: Vec<T>,
 }
 
-impl<T: Clone> UndoHistory<T> {
-    pub fn new() -> Self {
+impl<T: Clone> Default for UndoHistory<T> {
+    fn default() -> Self {
         Self {
             undo_stack: VecDeque::new(),
             redo_stack: Vec::new(),
         }
+    }
+}
+
+impl<T: Clone> UndoHistory<T> {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn save(&mut self, state: T) {

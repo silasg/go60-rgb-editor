@@ -1,0 +1,9 @@
+[package]
+name = "go60-rgb-editor-domain"
+version = "0.2.0"
+edition = "2021"
+license = "MIT"
+description = "Domain model for Go60 RGB underglow editor"
+
+[dev-dependencies]
+cargo_pup_lint_config = "0.1.5"

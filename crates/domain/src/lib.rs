@@ -9,5 +9,8 @@ pub mod undo;
 
 pub use color::{ColorDef, ColorKind, ColorPalette, RgbColor};
 pub use config::Config;
+pub use cursor::Direction;
+pub use editor::EditorState;
 pub use geometry::{Half, RgbPos};
 pub use layer::Layer;
+pub use parser::{parse_config, write_config};

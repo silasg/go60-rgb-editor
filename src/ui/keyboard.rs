@@ -5,8 +5,8 @@ use ratatui::{
     widgets::{Block, Borders, Widget},
 };
 
-use crate::domain::geometry::{self, ROW_COUNT};
-use crate::domain::{ColorPalette, Half, RgbPos};
+use go60_rgb_editor_domain::geometry::{self, ROW_COUNT};
+use go60_rgb_editor_domain::{ColorPalette, Half, RgbPos};
 use super::render_color_cell;
 
 const KEY_CELL_WIDTH: u16 = 4;
@@ -25,13 +25,13 @@ struct RowRenderContext {
 }
 
 pub struct KeyboardWidget<'a> {
-    layer: &'a crate::domain::Layer,
+    layer: &'a go60_rgb_editor_domain::Layer,
     palette: &'a ColorPalette,
     cursor: RgbPos,
 }
 
 impl<'a> KeyboardWidget<'a> {
-    pub fn new(layer: &'a crate::domain::Layer, palette: &'a ColorPalette, cursor: RgbPos) -> Self {
+    pub fn new(layer: &'a go60_rgb_editor_domain::Layer, palette: &'a ColorPalette, cursor: RgbPos) -> Self {
         Self { layer, palette, cursor }
     }
 

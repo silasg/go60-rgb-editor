@@ -110,6 +110,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "bumpalo"
+version = "3.20.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5d20789868f4b01b2f2caec9f5c4e0213b41e3e5702a50157d699ae31ced2fcb"
+
+[[package]]
 name = "camino"
 version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -403,16 +409,34 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e629b9b98ef3dd8afe6ca2bd0f89306cec16d43d907889945bc5d6687f2f13c7"
 
 [[package]]
-name = "go60-rgb-editor"
+name = "go60-rgb-editor-domain"
+version = "0.2.0"
+dependencies = [
+ "cargo_pup_lint_config",
+]
+
+[[package]]
+name = "go60-rgb-editor-tui"
 version = "0.2.0"
 dependencies = [
  "cargo_pup_lint_config",
  "clap",
  "color-eyre",
  "crossterm",
+ "go60-rgb-editor-domain",
  "pretty_assertions",
  "ratatui",
  "tempfile",
+]
+
+[[package]]
+name = "go60-rgb-editor-wasm"
+version = "0.2.0"
+dependencies = [
+ "go60-rgb-editor-domain",
+ "serde",
+ "serde_json",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -1031,6 +1055,51 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9517f9239f02c069db75e65f174b3da828fe5f5b945c4dd26bd25d89c03ebcf5"
 dependencies = [
  "wit-bindgen",
+]
+
+[[package]]
+name = "wasm-bindgen"
+version = "0.2.111"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec1adf1535672f5b7824f817792b1afd731d7e843d2d04ec8f27e8cb51edd8ac"
+dependencies = [
+ "cfg-if",
+ "once_cell",
+ "rustversion",
+ "wasm-bindgen-macro",
+ "wasm-bindgen-shared",
+]
+
+[[package]]
+name = "wasm-bindgen-macro"
+version = "0.2.111"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "19e638317c08b21663aed4d2b9a2091450548954695ff4efa75bff5fa546b3b1"
+dependencies = [
+ "quote",
+ "wasm-bindgen-macro-support",
+]
+
+[[package]]
+name = "wasm-bindgen-macro-support"
+version = "0.2.111"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c64760850114d03d5f65457e96fc988f11f01d38fbaa51b254e4ab5809102af"
+dependencies = [
+ "bumpalo",
+ "proc-macro2",
+ "quote",
+ "syn",
+ "wasm-bindgen-shared",
+]
+
+[[package]]
+name = "wasm-bindgen-shared"
+version = "0.2.111"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "60eecd4fe26177cfa3339eb00b4a36445889ba3ad37080c2429879718e20ca41"
+dependencies = [
+ "unicode-ident",
 ]
 
 [[package]]

@@ -1,0 +1,15 @@
+[package]
+name = "go60-rgb-editor-wasm"
+version = "0.2.0"
+edition = "2021"
+license = "MIT"
+description = "WebAssembly bindings for Go60 RGB underglow editor"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+go60-rgb-editor-domain = { path = "../domain" }
+wasm-bindgen = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
