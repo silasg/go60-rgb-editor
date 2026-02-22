@@ -70,7 +70,7 @@ impl Layer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::geometry;
+    use crate::geometry;
 
     #[test]
     fn test_layer_new() {
@@ -89,7 +89,7 @@ mod tests {
 
     #[test]
     fn test_get_set_color() {
-        use crate::domain::{Half, RgbPos};
+        use crate::{Half, RgbPos};
 
         // Arrange
         let mut layer = Layer::new("Test".to_string(), "LAYER_Test".to_string());
@@ -152,7 +152,7 @@ mod tests {
 
     #[test]
     fn test_get_color_out_of_bounds_returns_none() {
-        use crate::domain::{Half, RgbPos};
+        use crate::{Half, RgbPos};
 
         // Arrange
         let layer = Layer::new("Test".to_string(), "LAYER_Test".to_string());
@@ -170,7 +170,7 @@ mod tests {
 
     #[test]
     fn test_set_color_out_of_bounds_does_not_panic() {
-        use crate::domain::{Half, RgbPos};
+        use crate::{Half, RgbPos};
 
         // Arrange
         let mut layer = Layer::new("Test".to_string(), "LAYER_Test".to_string());

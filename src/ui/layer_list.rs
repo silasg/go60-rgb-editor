@@ -5,7 +5,7 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Widget},
 };
 
-use crate::domain::Layer;
+use go60_rgb_editor_domain::Layer;
 
 pub struct LayerListWidget<'a> {
     layers: &'a [Layer],

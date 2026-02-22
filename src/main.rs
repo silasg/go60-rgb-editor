@@ -1,5 +1,4 @@
 mod app;
-mod domain;
 mod event;
 mod io;
 mod tui;

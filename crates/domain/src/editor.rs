@@ -245,7 +245,7 @@ impl EditorState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::{ColorPalette, Config, Half, Layer, RgbPos};
+    use crate::{ColorPalette, Config, Half, Layer, RgbPos};
 
     fn create_test_editor() -> EditorState {
         let mut config = Config::new();

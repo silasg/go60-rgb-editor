@@ -3,7 +3,7 @@ use ratatui::{
     style::{Color, Modifier, Style},
 };
 
-use crate::domain::{ColorPalette, RgbColor};
+use go60_rgb_editor_domain::{ColorPalette, RgbColor};
 
 /// Convert an `RgbColor` to a ratatui `Color`.
 fn to_ratatui_color(rgb: &RgbColor) -> Color {

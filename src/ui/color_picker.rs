@@ -5,8 +5,8 @@ use ratatui::{
     widgets::{Block, Borders, Widget},
 };
 
-use crate::domain::ColorPalette;
-use crate::domain::cursor::Direction;
+use go60_rgb_editor_domain::ColorPalette;
+use go60_rgb_editor_domain::cursor::Direction;
 use super::render_color_cell;
 
 /// Number of colors per row in the color picker grid.

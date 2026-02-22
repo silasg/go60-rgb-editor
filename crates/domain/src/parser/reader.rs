@@ -1,4 +1,4 @@
-use crate::domain::{Config, ColorDef, ColorKind, ColorPalette, Layer, RgbColor};
+use crate::{Config, ColorDef, ColorKind, ColorPalette, Layer, RgbColor};
 
 pub fn parse_config(input: &str) -> Result<Config, String> {
     let mut config = Config::new();

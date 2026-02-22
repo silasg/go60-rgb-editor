@@ -58,14 +58,23 @@ cargo llvm-cov --html && open target/llvm-cov/html/index.html
 
 [tasks.run]
 description = "Run the editor with the example config file"
-run = "cargo run -- 'Go60 TK Latest RGB scheme.txt'"
+run = "cargo run --bin go60-rgb-editor -- 'Go60 TK Latest RGB scheme.txt'"
 
 [tasks.arch-lint]
 description = "Run architecture linting with cargo-pup (requires nightly)"
 run = """
 cargo test --test architecture -- --nocapture
+cargo test -p go60-rgb-editor-domain --test architecture -- --nocapture
 NIGHTLY_BIN="$(dirname "$(rustup which --toolchain {{vars.PUP_NIGHTLY}} cargo)")"
 PATH="$NIGHTLY_BIN:$PATH" cargo pup
+cd crates/domain && PATH="$NIGHTLY_BIN:$PATH" cargo pup
+"""
+
+[tasks.build-wasm]
+description = "Build domain-wasm for WebAssembly"
+run = """
+cargo build -p go60-rgb-editor-wasm --target wasm32-unknown-unknown --release
+wasm-bindgen --target web --out-dir pkg/ target/wasm32-unknown-unknown/release/go60_rgb_editor_wasm.wasm
 """
 
 [tasks.changelog]

@@ -10,13 +10,19 @@ pub struct Config {
     pub raw_footer: String,
 }
 
-impl Config {
-    pub fn new() -> Self {
+impl Default for Config {
+    fn default() -> Self {
         Self {
             layers: Vec::new(),
             palette: ColorPalette::new(),
             raw_header: String::new(),
             raw_footer: String::new(),
         }
+    }
+}
+
+impl Config {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
