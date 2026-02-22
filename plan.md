@@ -4,16 +4,30 @@
 
 Extract `src/domain/` into a standalone library crate (`crates/domain/`) with **zero external dependencies**. Add a thin `crates/domain-wasm/` wrapper crate that depends on `wasm-bindgen` and exposes the domain to JavaScript. The TUI application becomes a separate binary crate that depends on the domain library.
 
+## Crate Naming
+
+| Crate | Package name | Rust import |
+|---|---|---|
+| Domain lib | `go60-rgb-editor-domain` | `go60_rgb_editor_domain` |
+| Wasm wrapper | `go60-rgb-editor-wasm` | `go60_rgb_editor_wasm` |
+| TUI binary | `go60-rgb-editor-tui` | — (binary, not imported) |
+
+The TUI binary crate is renamed to `go60-rgb-editor-tui` in `Cargo.toml`, but the CLI binary output stays `go60-rgb-editor` via an explicit `[[bin]]` section.
+
 ## Resulting Structure
 
 ```
 go60-rgb-editor/
-├── Cargo.toml                  # [workspace] root
+├── Cargo.toml                  # [workspace] root + TUI binary (go60-rgb-editor-tui)
 ├── crates/
 │   ├── domain/                 # Pure domain lib — zero external deps
-│   │   ├── Cargo.toml          # name = "go60-domain"
+│   │   ├── Cargo.toml          # name = "go60-rgb-editor-domain"
+│   │   ├── tests/
+│   │   │   ├── fixtures/
+│   │   │   │   └── sample_config.txt
+│   │   │   └── architecture.rs
 │   │   └── src/
-│   │       ├── lib.rs          # Re-exports (current domain/mod.rs content)
+│   │       ├── lib.rs
 │   │       ├── color.rs
 │   │       ├── config.rs
 │   │       ├── cursor.rs
@@ -27,7 +41,7 @@ go60-rgb-editor/
 │   │           ├── writer.rs
 │   │           └── tests.rs
 │   └── domain-wasm/            # Thin wasm-bindgen wrapper
-│       ├── Cargo.toml          # depends on go60-domain + wasm-bindgen + serde/serde_json
+│       ├── Cargo.toml          # name = "go60-rgb-editor-wasm"
 │       └── src/
 │           └── lib.rs          # #[wasm_bindgen] functions wrapping domain API
 ├── src/                        # TUI binary crate (unchanged module structure minus domain/)
@@ -38,7 +52,7 @@ go60-rgb-editor/
 │   ├── io/
 │   └── ui/
 ├── tests/
-│   ├── fixtures/
+│   ├── fixtures/               # Keep for any TUI-level integration tests
 │   └── architecture.rs
 └── mise.toml
 ```
@@ -51,16 +65,22 @@ go60-rgb-editor/
 
 Turn the root `Cargo.toml` into a workspace definition. The TUI binary stays at the root (as the default member) so existing `cargo run`, `cargo test`, etc. keep working unchanged.
 
+Rename the package to `go60-rgb-editor-tui` and add an explicit `[[bin]]` to keep the CLI command as `go60-rgb-editor`:
+
 ```toml
+[package]
+name = "go60-rgb-editor-tui"
+# ... existing version, edition, license ...
+
+[[bin]]
+name = "go60-rgb-editor"
+path = "src/main.rs"
+
 [workspace]
 members = [".", "crates/domain", "crates/domain-wasm"]
-```
 
-The root `Cargo.toml` keeps its current `[package]`, `[dependencies]`, etc. but adds a dependency on the domain crate:
-
-```toml
 [dependencies]
-go60-domain = { path = "crates/domain" }
+go60-rgb-editor-domain = { path = "crates/domain" }
 # ... ratatui, crossterm, etc. stay here
 ```
 
@@ -71,13 +91,16 @@ go60-domain = { path = "crates/domain" }
 `Cargo.toml`:
 ```toml
 [package]
-name = "go60-domain"
+name = "go60-rgb-editor-domain"
 version = "0.2.0"
 edition = "2021"
 license = "MIT"
-description = "Domain model for Go60 RGB editor"
+description = "Domain model for Go60 RGB underglow editor"
 
 # No [dependencies] section — zero external deps
+
+[dev-dependencies]
+cargo_pup_lint_config = "0.1.5"
 ```
 
 Move source files:
@@ -92,7 +115,7 @@ Move source files:
 - `src/domain/parser/reader.rs` → `crates/domain/src/parser/reader.rs`
 - `src/domain/parser/writer.rs` → `crates/domain/src/parser/writer.rs`
 - `src/domain/parser/tests.rs` → `crates/domain/src/parser/tests.rs`
-- `src/domain/mod.rs` → `crates/domain/src/lib.rs` (adjust content)
+- `src/domain/mod.rs` content → `crates/domain/src/lib.rs` (adapted)
 
 **Changes in the moved files:**
 - `parser/reader.rs` line 1: `use crate::domain::{...}` → `use crate::{...}` (the crate root is now the domain)
@@ -100,10 +123,8 @@ Move source files:
 - `parser/writer.rs` line 33: `&crate::domain::Layer` → `&crate::Layer`
 - `parser/tests.rs` line 3: `use crate::domain::{...}` → `use crate::{...}`
 - `parser/tests.rs` line 4: `use crate::domain::parser::{...}` → `use crate::parser::{...}`
-- `parser/tests.rs` line 6: fix `include_str!` path — `../../../tests/fixtures/sample_config.txt` needs to be adjusted since the crate root moved. Either:
-  - Move the fixture file to `crates/domain/tests/fixtures/` (preferred — domain tests own their fixtures)
-  - Or adjust the relative path to `../../../../tests/fixtures/sample_config.txt`
-- `editor.rs`: uses `super::` paths which still work since `lib.rs` re-exports the same modules
+- `parser/tests.rs` line 6: fix `include_str!` path to `../../../tests/fixtures/sample_config.txt` (relative from `crates/domain/src/parser/tests.rs` → `crates/domain/tests/fixtures/sample_config.txt`)
+- `editor.rs`: uses `super::` paths which still work since `lib.rs` defines the same modules
 - `layer.rs`: uses `super::` paths — still works
 - `cursor.rs`: uses `super::` paths — still works
 
@@ -120,14 +141,10 @@ pub mod undo;
 
 pub use color::{ColorDef, ColorKind, ColorPalette, RgbColor};
 pub use config::Config;
-pub use geometry::{Half, RgbPos};
-pub use layer::Layer;
-```
-
-**Also export types that the wasm wrapper and TUI both need:**
-```rust
 pub use cursor::Direction;
 pub use editor::EditorState;
+pub use geometry::{Half, RgbPos};
+pub use layer::Layer;
 pub use parser::{parse_config, write_config};
 ```
 
@@ -137,25 +154,25 @@ pub use parser::{parse_config, write_config};
 
 - Delete `src/domain/` directory entirely (it now lives in `crates/domain/`)
 - Remove `mod domain;` from `src/main.rs`
-- All `use crate::domain::...` imports throughout the TUI crate become `use go60_domain::...`
+- All `use crate::domain::...` imports throughout the TUI crate become `use go60_rgb_editor_domain::...`
 
 Affected files (grep for `crate::domain`):
-- `src/app.rs` — `use crate::domain::cursor::Direction` → `use go60_domain::cursor::Direction` (and similar)
+- `src/app.rs` — `use crate::domain::cursor::Direction` → `use go60_rgb_editor_domain::cursor::Direction` (and similar)
 - `src/event.rs` — any domain imports
 - `src/io/` — `parse_config`, `write_config` imports
 - `src/ui/` — color types, layer types, geometry types
 
 ### Step 4: Move Test Fixture
 
-**Files moved/changed:** `tests/fixtures/sample_config.txt`
+**Files moved:** `tests/fixtures/sample_config.txt`
 
-Copy the fixture to `crates/domain/tests/fixtures/sample_config.txt` so the domain crate's parser integration tests remain self-contained. The original can stay for any TUI-level integration tests.
+Copy the fixture to `crates/domain/tests/fixtures/sample_config.txt` so the domain crate's parser integration tests remain self-contained. Keep the original in `tests/fixtures/` for any TUI-level integration tests that may exist or be added later.
 
-Update `include_str!` in `crates/domain/src/parser/tests.rs`:
+The `include_str!` path in `crates/domain/src/parser/tests.rs` becomes:
 ```rust
 const SAMPLE_CONFIG: &str = include_str!("../../../tests/fixtures/sample_config.txt");
 ```
-This path goes from `crates/domain/src/parser/tests.rs` → up 3 levels to `crates/domain/` → `tests/fixtures/sample_config.txt`.
+This resolves from `crates/domain/src/parser/tests.rs` → up 3 to `crates/domain/` → `tests/fixtures/sample_config.txt`.
 
 ### Step 5: Create `crates/domain-wasm/` Wrapper Crate
 
@@ -164,30 +181,29 @@ This path goes from `crates/domain/src/parser/tests.rs` → up 3 levels to `crat
 `Cargo.toml`:
 ```toml
 [package]
-name = "go60-domain-wasm"
+name = "go60-rgb-editor-wasm"
 version = "0.2.0"
 edition = "2021"
 license = "MIT"
-description = "WebAssembly bindings for Go60 RGB domain model"
+description = "WebAssembly bindings for Go60 RGB underglow editor"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-go60-domain = { path = "../domain" }
+go60-rgb-editor-domain = { path = "../domain" }
 wasm-bindgen = "0.2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 ```
 
-`src/lib.rs` — thin wrapper exposing an opaque `Editor` handle plus free functions for parse/write:
+`src/lib.rs` — thin wrapper exposing an opaque `Editor` handle:
 
 ```rust
 use wasm_bindgen::prelude::*;
-use go60_domain::{EditorState, Config, Direction, Half, RgbPos};
-use go60_domain::parser::{parse_config, write_config};
+use go60_rgb_editor_domain::{EditorState, Direction, Half, RgbPos};
+use go60_rgb_editor_domain::parser::{parse_config, write_config};
 
-/// Parse a TailorKey config string. Returns the editor state as an opaque handle.
 #[wasm_bindgen]
 pub struct Editor {
     inner: EditorState,
@@ -227,93 +243,117 @@ impl Editor {
 }
 ```
 
-The wrapper crate is the **only** place `wasm-bindgen` and `serde` appear. The domain crate stays dependency-free.
-
-**Design decision — opaque handle vs JSON round-trips:**
-- The `Editor` struct wraps `EditorState` as an opaque handle on the Wasm side
-- JS calls methods on it (move cursor, set color, undo, etc.)
-- JS reads the current state via `to_json()` which returns a JSON snapshot for rendering
-- This avoids serializing/deserializing on every keystroke — only state reads go through JSON
-- Undo/redo stays internal (in Rust memory) as you mentioned — no need to expose the history
+**Design decisions:**
+- `Editor` wraps `EditorState` as an opaque handle in Wasm memory
+- JS calls methods on it (move cursor, set color, etc.)
+- JS reads the current state via `to_json()` for rendering
+- Undo/redo stays internal in Rust memory — no need to expose the history
+- `wasm-bindgen` and `serde` only appear in this wrapper crate
 
 ### Step 6: Update Architecture Tests
 
-**Files changed:** `tests/architecture.rs`
+**Files changed:** `tests/architecture.rs`, new `crates/domain/tests/architecture.rs`
 
-The architecture test file lives in the TUI binary's `tests/` directory. It uses `cargo_pup_lint_config` to generate `pup.ron`. Since cargo-pup analyzes the crate being linted, and the workspace now has multiple crates, we need to decide the scope.
+Since the domain is now a separate crate with zero dependencies, architecture enforcement works at two levels:
 
-**Option A (recommended):** Keep the architecture test in the root `tests/architecture.rs` for the TUI crate. The existing rules already work because they match module paths like `.*::domain::.*` — but since domain is now an external crate, cargo-pup won't see its internals from the TUI crate's perspective. This means:
+**a. Root `tests/architecture.rs`** — update for TUI crate:
+- Remove `domain_is_self_contained` rule (domain is now external; this is enforced structurally by Cargo.toml)
+- Keep `ui_no_io_access`, `io_no_ui_dependency` (these reference TUI-internal modules)
+- Keep hygiene rules (`clean_mod_files`, `no_wildcard_imports`, `function_length_limit`)
 
-1. **`domain_is_self_contained`** — This rule can be **moved to the domain crate itself** as `crates/domain/tests/architecture.rs`. However, since the domain has zero dependencies, this rule is **enforced structurally by the Cargo.toml** — if someone adds `ratatui` to the domain's `Cargo.toml`, it would be an explicit, reviewable change. The arch lint becomes a defense-in-depth check rather than the primary guard.
+**b. New `crates/domain/tests/architecture.rs`** — domain-specific rules:
+- `domain_has_no_external_imports` — defense-in-depth: block imports of `ratatui`, `crossterm`, `color_eyre`, `clap`, `wasm_bindgen`, `serde`, `serde_json`
+- Hygiene rules (`clean_mod_files`, `no_wildcard_imports`, `function_length_limit`)
 
-2. **`ui_no_io_access`** and **`io_no_ui_dependency`** — These stay in the TUI crate's arch tests unchanged (they reference TUI-internal modules).
+```rust
+// crates/domain/tests/architecture.rs
+use cargo_pup_lint_config::{FunctionLintExt, LintBuilder, ModuleLintExt, Severity};
 
-3. **`clean_mod_files`**, **`no_wildcard_imports`**, **`function_length_limit`** — These are universal hygiene rules. They should apply to both crates.
+fn build_architecture_rules() -> LintBuilder {
+    let mut builder = LintBuilder::new();
 
-**Implementation:**
+    // Defense-in-depth: domain must not import any external crate.
+    // Primary enforcement is Cargo.toml having no [dependencies].
+    builder
+        .module_lint()
+        .lint_named("domain_has_no_external_imports")
+        .matching(|m| m.module(".*"))
+        .with_severity(Severity::Error)
+        .restrict_imports(
+            None,
+            Some(vec![
+                "ratatui::.*".to_string(),
+                "crossterm::.*".to_string(),
+                "color_eyre::.*".to_string(),
+                "clap::.*".to_string(),
+                "wasm_bindgen::.*".to_string(),
+                "serde::.*".to_string(),
+                "serde_json::.*".to_string(),
+            ]),
+        )
+        .build();
 
-a. **Root `tests/architecture.rs`** — update module path patterns:
-   - Remove `domain_is_self_contained` (no longer applicable — domain is external)
-   - Keep `ui_no_io_access`, `io_no_ui_dependency`
-   - Keep hygiene rules
+    // Module hygiene
+    builder
+        .module_lint()
+        .lint_named("clean_mod_files")
+        .matching(|m| m.module(".*"))
+        .with_severity(Severity::Error)
+        .must_have_empty_mod_file()
+        .build();
 
-b. **New `crates/domain/tests/architecture.rs`** — add domain-specific rules:
-   - `domain_has_no_external_imports`: Ensure domain modules don't import anything outside the crate (defense-in-depth)
-   - Hygiene rules (clean mod files, no wildcards, function length)
+    builder
+        .module_lint()
+        .lint_named("no_wildcard_imports")
+        .matching(|m| m.module(".*"))
+        .with_severity(Severity::Error)
+        .no_wildcard_imports()
+        .build();
 
-c. **Add `cargo_pup_lint_config` as dev-dependency** to the domain crate:
-   ```toml
-   [dev-dependencies]
-   cargo_pup_lint_config = "0.1.5"
-   ```
-   (This is the one dev-dependency — acceptable since it's test-only.)
+    // Function hygiene
+    builder
+        .function_lint()
+        .lint_named("function_length_limit")
+        .matching(|m| m.name_regex(".*"))
+        .with_severity(Severity::Error)
+        .max_length(60)
+        .build();
 
-d. **New arch rule for the domain crate:**
-   ```rust
-   // domain must not import anything outside its own crate
-   builder
-       .module_lint()
-       .lint_named("domain_has_no_external_imports")
-       .matching(|m| m.module(".*"))
-       .with_severity(Severity::Error)
-       .restrict_imports(
-           None,
-           Some(vec![
-               "ratatui::.*".to_string(),
-               "crossterm::.*".to_string(),
-               "color_eyre::.*".to_string(),
-               "clap::.*".to_string(),
-               "wasm_bindgen::.*".to_string(),
-               "serde::.*".to_string(),
-               "serde_json::.*".to_string(),
-           ]),
-       )
-       .build();
-   ```
+    builder
+}
 
-e. **Update `mise.toml`** — the `arch-lint` task needs to run cargo-pup for both crates:
-   ```toml
-   [tasks.arch-lint]
-   description = "Run architecture linting with cargo-pup (requires nightly)"
-   run = """
-   cargo test --test architecture -- --nocapture
-   cargo test -p go60-domain --test architecture -- --nocapture
-   NIGHTLY_BIN="$(dirname "$(rustup which --toolchain {{vars.PUP_NIGHTLY}} cargo)")"
-   PATH="$NIGHTLY_BIN:$PATH" cargo pup
-   PATH="$NIGHTLY_BIN:$PATH" cargo pup -p go60-domain
-   """
-   ```
+#[test]
+fn generate_pup_config() {
+    // Act
+    let builder = build_architecture_rules();
+    builder
+        .write_to_file("pup.ron")
+        .expect("Failed to write pup.ron");
+}
+```
 
-### Step 7: Add Wasm Build Task to mise.toml
+### Step 7: Update mise.toml
 
 **Files changed:** `mise.toml`
 
+Update `arch-lint` to lint both crates and add `build-wasm` task:
+
 ```toml
+[tasks.arch-lint]
+description = "Run architecture linting with cargo-pup (requires nightly)"
+run = """
+cargo test --test architecture -- --nocapture
+cargo test -p go60-rgb-editor-domain --test architecture -- --nocapture
+NIGHTLY_BIN="$(dirname "$(rustup which --toolchain {{vars.PUP_NIGHTLY}} cargo)")"
+PATH="$NIGHTLY_BIN:$PATH" cargo pup
+cd crates/domain && PATH="$NIGHTLY_BIN:$PATH" cargo pup
+"""
+
 [tasks.build-wasm]
 description = "Build domain-wasm for WebAssembly"
 run = """
-cargo build -p go60-domain-wasm --target wasm32-unknown-unknown --release
-wasm-bindgen --target web --out-dir pkg/ target/wasm32-unknown-unknown/release/go60_domain_wasm.wasm
+cargo build -p go60-rgb-editor-wasm --target wasm32-unknown-unknown --release
+wasm-bindgen --target web --out-dir pkg/ target/wasm32-unknown-unknown/release/go60_rgb_editor_wasm.wasm
 """
 ```
 
@@ -321,31 +361,33 @@ wasm-bindgen --target web --out-dir pkg/ target/wasm32-unknown-unknown/release/g
 
 Run in order:
 1. `cargo build` — TUI binary still builds
-2. `cargo test` — all existing tests pass (TUI + domain via workspace)
-3. `cargo test -p go60-domain` — domain tests pass in isolation
-4. `cargo build -p go60-domain-wasm --target wasm32-unknown-unknown` — Wasm build succeeds
-5. `mise run arch-lint` — architecture rules pass for both crates
+2. `cargo test` — all existing tests pass (workspace-wide)
+3. `cargo test -p go60-rgb-editor-domain` — domain tests pass in isolation
+4. `cargo build -p go60-rgb-editor-wasm --target wasm32-unknown-unknown` — Wasm build succeeds
+5. `mise run test` — clippy + tests pass
+6. `mise run arch-lint` — architecture rules pass for both crates
 
 ### Step 9: Update Documentation
 
-**Files changed:** `CLAUDE.md`, `README.md` (if applicable)
+**Files changed:** `CLAUDE.md`
 
-- Update project structure in CLAUDE.md to reflect workspace layout
+- Update project structure to reflect workspace layout
 - Add `crates/domain/` and `crates/domain-wasm/` descriptions
 - Document the new `build-wasm` mise task
 - Update architecture linting section to mention both crates
+- Note the crate naming convention
 
 ---
 
 ## Summary of Dependency Graph
 
 ```
-go60-domain (zero deps)
-    ↑                    ↑
-    |                    |
-go60-rgb-editor       go60-domain-wasm
-(ratatui, crossterm,  (wasm-bindgen, serde,
- color-eyre, clap)     serde_json)
+go60-rgb-editor-domain (zero deps)
+    ↑                          ↑
+    |                          |
+go60-rgb-editor-tui         go60-rgb-editor-wasm
+(ratatui, crossterm,        (wasm-bindgen, serde,
+ color-eyre, clap)           serde_json)
 ```
 
 The domain stays completely free of any external dependency. The wasm-bindgen/serde concerns are isolated in the wrapper crate. The TUI crate's dependencies don't leak into the domain.
@@ -353,6 +395,7 @@ The domain stays completely free of any external dependency. The wasm-bindgen/se
 ## Risk / Considerations
 
 1. **`include_str!` paths for test fixtures** — These are relative to the source file. Need to verify the path after moving files.
-2. **cargo-pup workspace support** — Need to verify cargo-pup can lint individual workspace members. If not, may need to run it separately per crate.
-3. **Workspace version sync** — Both crates start at `0.2.0`. Consider using `workspace.package.version` to keep them in sync, or version them independently.
-4. **`cargo release`** — Currently configured for a single crate. May need `cargo-release` workspace configuration to handle multi-crate releases (or release domain separately).
+2. **cargo-pup workspace support** — cargo-pup may need `cd` into the domain crate directory to lint it. The mise task accounts for this.
+3. **Workspace version sync** — All crates start at `0.2.0`. Consider using `workspace.package.version` to keep them in sync, or version them independently.
+4. **`cargo release`** — Currently configured for a single crate. May need `cargo-release` workspace configuration to handle multi-crate releases (or release domain independently).
+5. **Binary name vs crate name** — The `[[bin]]` section ensures `cargo install` and `cargo run` still produce/run `go60-rgb-editor` despite the crate being named `go60-rgb-editor-tui`.
