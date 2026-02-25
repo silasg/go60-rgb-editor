@@ -94,3 +94,13 @@ run = "cargo release minor --execute"
 [tasks.release-major]
 description = "Release a major version (breaking changes)"
 run = "cargo release major --execute"
+
+[tasks.web-dev]
+description = "Start web dev server"
+depends = ["build-wasm"]
+run = "cd web && npx vite"
+
+[tasks.web-build]
+description = "Build web app for production"
+depends = ["build-wasm"]
+run = "cd web && npx vite build"

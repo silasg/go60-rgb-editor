@@ -7,3 +7,6 @@
 .nvimlog
 .agency
 .sandbox
+web/node_modules/
+web/dist/
+pkg/

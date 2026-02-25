@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Go60 RGB Editor</title>
+</head>
+<body>
+  <div id="app">
+    <header id="header">
+      <h1>Go60 RGB Editor</h1>
+      <div id="toolbar"></div>
+    </header>
+
+    <main id="main">
+      <aside id="layer-panel">
+        <h2>Layers</h2>
+        <div id="layer-list"></div>
+        <div id="layer-actions"></div>
+      </aside>
+
+      <section id="editor-panel">
+        <div id="palette-section">
+          <div id="palette-colors">
+            <h3>Colors</h3>
+            <div id="palette-regular" class="swatch-grid"></div>
+          </div>
+          <div id="palette-locks">
+            <h3>Locks</h3>
+            <div id="palette-lock-grid" class="swatch-grid"></div>
+          </div>
+          <div id="palette-aliases">
+            <h3>Aliases</h3>
+            <div id="palette-alias-grid" class="swatch-grid"></div>
+          </div>
+          <div id="palette-tools">
+            <button id="eraser-btn" class="swatch eraser" title="Eraser (clear key)">✕</button>
+          </div>
+        </div>
+
+        <div id="keyboard-section">
+          <div id="keyboard-left" class="keyboard-half">
+            <span class="half-label">Left</span>
+          </div>
+          <div id="keyboard-right" class="keyboard-half">
+            <span class="half-label">Right</span>
+          </div>
+        </div>
+
+        <div id="config-section">
+          <div id="config-header">
+            <h3>Device Tree Config</h3>
+            <span id="parse-status"></span>
+          </div>
+          <textarea id="config-text" placeholder="Paste your TailorKey RGB config here..." spellcheck="false"></textarea>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

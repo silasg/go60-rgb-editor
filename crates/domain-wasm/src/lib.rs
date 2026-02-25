@@ -1,12 +1,14 @@
 use wasm_bindgen::prelude::*;
+use serde_json::json;
 
+use go60_rgb_editor_domain::color::ColorKind;
 use go60_rgb_editor_domain::cursor::Direction;
-use go60_rgb_editor_domain::{parse_config, write_config, EditorState};
+use go60_rgb_editor_domain::{parse_config, write_config, EditorState, Half, RgbPos};
 
 /// Opaque editor handle exposed to JavaScript via WebAssembly.
 ///
 /// Wraps `EditorState` in Wasm memory. JS calls methods on this handle
-/// to mutate editor state, and reads the current state via `to_json()`.
+/// to mutate editor state, and reads the current state via getter methods.
 /// Undo/redo history stays internal in Rust memory.
 #[wasm_bindgen]
 pub struct Editor {
@@ -146,8 +148,8 @@ impl Editor {
     /// Get the current cursor half ("left" or "right").
     pub fn cursor_half(&self) -> String {
         match self.inner.cursor.half {
-            go60_rgb_editor_domain::Half::Left => "left".to_string(),
-            go60_rgb_editor_domain::Half::Right => "right".to_string(),
+            Half::Left => "left".to_string(),
+            Half::Right => "right".to_string(),
         }
     }
 
@@ -164,5 +166,235 @@ impl Editor {
     /// Get the number of layers.
     pub fn layer_count(&self) -> usize {
         self.inner.config.layers.len()
+    }
+
+    // --- Bulk data getters (JSON) ---
+
+    /// Full UI state as JSON (call after any mutation to re-render).
+    /// Returns: { cursor, currentLayerIndex, layerCount, modified, layers, palette }
+    pub fn get_state_json(&self) -> String {
+        let state = &self.inner;
+        let half_str = match state.cursor.half {
+            Half::Left => "left",
+            Half::Right => "right",
+        };
+
+        let layers: Vec<serde_json::Value> = state
+            .config
+            .layers
+            .iter()
+            .map(|l| {
+                json!({
+                    "name": l.name,
+                    "fadeDelay": l.fade_delay
+                })
+            })
+            .collect();
+
+        let palette = &state.config.palette;
+        let categories = palette.categorize();
+
+        let regular: Vec<serde_json::Value> = categories
+            .regular
+            .iter()
+            .map(|&i| {
+                let c = &palette.colors[i];
+                let rgb = palette.get_effective_rgb(&c.abbrev).cloned().unwrap_or_default();
+                json!({ "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b })
+            })
+            .collect();
+
+        let locks: Vec<serde_json::Value> = categories
+            .locks
+            .iter()
+            .map(|&i| {
+                let c = &palette.colors[i];
+                let rgb = palette.get_effective_rgb(&c.abbrev).cloned().unwrap_or_default();
+                if let ColorKind::LockIndicator {
+                    ref off_color,
+                    ref on_color,
+                } = c.kind
+                {
+                    json!({
+                        "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b,
+                        "offColor": off_color, "onColor": on_color
+                    })
+                } else {
+                    json!({ "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b })
+                }
+            })
+            .collect();
+
+        let aliases: Vec<serde_json::Value> = categories
+            .aliases
+            .iter()
+            .map(|&i| {
+                let c = &palette.colors[i];
+                let rgb = palette.get_effective_rgb(&c.abbrev).cloned().unwrap_or_default();
+                if let ColorKind::Alias { ref target } = c.kind {
+                    json!({
+                        "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b,
+                        "target": target
+                    })
+                } else {
+                    json!({ "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b })
+                }
+            })
+            .collect();
+
+        json!({
+            "cursor": { "row": state.cursor.row, "col": state.cursor.col, "half": half_str },
+            "currentLayerIndex": state.current_layer,
+            "layerCount": state.config.layers.len(),
+            "modified": state.modified,
+            "layers": layers,
+            "palette": {
+                "regular": regular,
+                "locks": locks,
+                "aliases": aliases
+            }
+        })
+        .to_string()
+    }
+
+    /// Layer names and fade delays as JSON array.
+    /// Returns: [{ name, fadeDelay }]
+    pub fn get_layers_json(&self) -> String {
+        let layers: Vec<serde_json::Value> = self
+            .inner
+            .config
+            .layers
+            .iter()
+            .map(|l| {
+                json!({
+                    "name": l.name,
+                    "fadeDelay": l.fade_delay
+                })
+            })
+            .collect();
+        serde_json::to_string(&layers).unwrap_or_else(|_| "[]".to_string())
+    }
+
+    /// Palette as categorized JSON.
+    /// Returns: { regular: [...], locks: [...], aliases: [...] }
+    pub fn get_palette_json(&self) -> String {
+        let palette = &self.inner.config.palette;
+        let categories = palette.categorize();
+
+        let regular: Vec<serde_json::Value> = categories
+            .regular
+            .iter()
+            .map(|&i| {
+                let c = &palette.colors[i];
+                let rgb = palette.get_effective_rgb(&c.abbrev).cloned().unwrap_or_default();
+                json!({ "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b })
+            })
+            .collect();
+
+        let locks: Vec<serde_json::Value> = categories
+            .locks
+            .iter()
+            .map(|&i| {
+                let c = &palette.colors[i];
+                let rgb = palette.get_effective_rgb(&c.abbrev).cloned().unwrap_or_default();
+                if let ColorKind::LockIndicator {
+                    ref off_color,
+                    ref on_color,
+                } = c.kind
+                {
+                    json!({
+                        "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b,
+                        "offColor": off_color, "onColor": on_color
+                    })
+                } else {
+                    json!({ "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b })
+                }
+            })
+            .collect();
+
+        let aliases: Vec<serde_json::Value> = categories
+            .aliases
+            .iter()
+            .map(|&i| {
+                let c = &palette.colors[i];
+                let rgb = palette.get_effective_rgb(&c.abbrev).cloned().unwrap_or_default();
+                if let ColorKind::Alias { ref target } = c.kind {
+                    json!({
+                        "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b,
+                        "target": target
+                    })
+                } else {
+                    json!({ "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b })
+                }
+            })
+            .collect();
+
+        json!({
+            "regular": regular,
+            "locks": locks,
+            "aliases": aliases
+        })
+        .to_string()
+    }
+
+    /// Current layer's key grid as JSON.
+    /// Returns: { left: [[abbrev]], right: [[abbrev]], fadeDelay }
+    pub fn get_layer_grid_json(&self, index: usize) -> String {
+        if let Some(layer) = self.inner.config.layers.get(index) {
+            json!({
+                "left": layer.left_half,
+                "right": layer.right_half,
+                "fadeDelay": layer.fade_delay
+            })
+            .to_string()
+        } else {
+            json!({ "left": [], "right": [], "fadeDelay": 0 }).to_string()
+        }
+    }
+
+    /// Set the current layer by index.
+    pub fn set_layer(&mut self, index: usize) {
+        if index < self.inner.config.layers.len() {
+            self.inner.current_layer = index;
+        }
+    }
+
+    // --- Positional color editing (for direct key clicks) ---
+
+    /// Set color at a specific position (bypasses cursor).
+    pub fn set_color_at(
+        &mut self,
+        half: &str,
+        row: usize,
+        col: usize,
+        abbrev: &str,
+    ) -> bool {
+        let half = match half {
+            "left" => Half::Left,
+            "right" => Half::Right,
+            _ => return false,
+        };
+        let pos = RgbPos { row, col, half };
+        self.inner.push_undo();
+        if let Some(layer) = self.inner.current_layer_mut() {
+            layer.set_color(&pos, abbrev.to_string());
+            self.inner.modified = true;
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Clear color at a specific position.
+    pub fn clear_color_at(&mut self, half: &str, row: usize, col: usize) -> bool {
+        self.set_color_at(half, row, col, "___")
+    }
+
+    /// Get the current layer's fade delay.
+    pub fn fade_delay(&self) -> i32 {
+        self.inner
+            .current_layer()
+            .map(|l| l.fade_delay as i32)
+            .unwrap_or(-1)
     }
 }
