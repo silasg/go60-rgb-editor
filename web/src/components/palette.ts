@@ -3,6 +3,25 @@ import { rgbToHex, textColorForBg } from '../state.ts';
 
 type ColorSelectHandler = (abbrev: string) => void;
 
+function createClearSwatch(
+  selectedColor: string | null,
+  onClick: ColorSelectHandler,
+): HTMLButtonElement {
+  const btn = document.createElement('button');
+  btn.className = 'swatch';
+  btn.textContent = '___';
+  btn.title = 'Clear key';
+  btn.style.backgroundColor = '#1a1a2e';
+  btn.style.color = '#666';
+
+  if (selectedColor === '___') {
+    btn.classList.add('selected');
+  }
+
+  btn.addEventListener('click', () => onClick('___'));
+  return btn;
+}
+
 function renderSwatchGrid(
   containerId: string,
   colors: PaletteColor[],
@@ -15,7 +34,6 @@ function renderSwatchGrid(
   container.innerHTML = '';
 
   for (const color of colors) {
-    // Skip ___ from the regular color display (it's the eraser)
     if (color.abbrev === '___') continue;
 
     const btn = document.createElement('button');
@@ -42,16 +60,13 @@ export function renderPalette(
   onClick: ColorSelectHandler,
 ): void {
   renderSwatchGrid('palette-regular', state.palette.regular, selectedColor, onClick);
+
+  // Prepend clear swatch to the regular colors grid
+  const regularGrid = document.getElementById('palette-regular');
+  if (regularGrid) {
+    regularGrid.prepend(createClearSwatch(selectedColor, onClick));
+  }
+
   renderSwatchGrid('palette-lock-grid', state.palette.locks, selectedColor, onClick);
   renderSwatchGrid('palette-alias-grid', state.palette.aliases, selectedColor, onClick);
-
-  // Update eraser button state
-  const eraserBtn = document.getElementById('eraser-btn');
-  if (eraserBtn) {
-    if (selectedColor === '___') {
-      eraserBtn.classList.add('selected');
-    } else {
-      eraserBtn.classList.remove('selected');
-    }
-  }
 }

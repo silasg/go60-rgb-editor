@@ -87,13 +87,7 @@ function setupEventListeners(): void {
     }
   });
 
-  // Eraser button
-  const eraserBtn = document.getElementById('eraser-btn');
-  if (eraserBtn) {
-    eraserBtn.addEventListener('click', () => {
-      onColorSelect('___');
-    });
-  }
+
 }
 
 function onKeyClick(half: string, row: number, col: number): void {

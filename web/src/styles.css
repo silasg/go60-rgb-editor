@@ -219,24 +219,7 @@ button {
   transform: scale(1.1);
 }
 
-.swatch.eraser {
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
-  font-size: 14px;
-  border: 2px dashed var(--border);
-}
 
-.swatch.eraser.selected {
-  border-color: var(--selected-ring);
-  border-style: solid;
-  box-shadow: 0 0 8px rgba(74, 158, 255, 0.5);
-}
-
-#palette-tools {
-  display: flex;
-  align-items: flex-end;
-  padding-bottom: 2px;
-}
 
 /* ---- Keyboard ---- */
 
