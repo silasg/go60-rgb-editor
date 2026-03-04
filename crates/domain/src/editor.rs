@@ -1,7 +1,7 @@
 use super::config::Config;
 use super::cursor::{self, Direction};
 use super::undo::UndoHistory;
-use super::{Layer, RgbPos};
+use super::{Half, Layer, RgbPos};
 
 pub struct EditorState {
     pub config: Config,
@@ -38,6 +38,10 @@ impl EditorState {
 
     pub fn switch_half(&mut self) {
         cursor::switch_half(&mut self.cursor);
+    }
+
+    pub fn set_cursor(&mut self, half: Half, row: usize, col: usize) {
+        self.cursor = RgbPos { row, col, half };
     }
 
     pub fn next_layer(&mut self) {

@@ -39,6 +39,10 @@ export function setLayer(index: number): void {
   editor?.set_layer(index);
 }
 
+export function setCursor(half: string, row: number, col: number): void {
+  editor?.set_cursor(half, row, col);
+}
+
 export function setColorAt(half: string, row: number, col: number, abbrev: string): boolean {
   if (!editor) return false;
   return editor.set_color_at(half, row, col, abbrev);

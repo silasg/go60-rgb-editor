@@ -1,4 +1,4 @@
-import { initWasm, loadConfig, hasEditor, getState, getLayerGrid, serialize, setLayer, setColorAt, clearColorAt, editorUndo, editorRedo, adjustFade, addLayer, duplicateLayer, renameLayer, deleteLayer } from './editor-bridge.ts';
+import { initWasm, loadConfig, hasEditor, getState, getLayerGrid, serialize, setLayer, setCursor, setColorAt, clearColorAt, editorUndo, editorRedo, adjustFade, addLayer, duplicateLayer, renameLayer, deleteLayer } from './editor-bridge.ts';
 import { AppState, createAppState, EditorState, LayerGrid } from './state.ts';
 import { renderKeyboard } from './components/keyboard.ts';
 import { renderPalette } from './components/palette.ts';
@@ -6,6 +6,7 @@ import { renderLayers } from './components/layers.ts';
 import { updateConfigText, getConfigText } from './components/config-text.ts';
 import { renderToolbar } from './components/toolbar.ts';
 import './styles.css';
+import defaultConfig from '../../Go60 TK Latest RGB scheme.txt?raw';
 
 const appState: AppState = createAppState();
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -13,6 +14,7 @@ let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 async function main(): Promise<void> {
   await initWasm();
   setupEventListeners();
+  renderFromConfig(defaultConfig);
 }
 
 function render(): void {
@@ -95,12 +97,14 @@ function setupEventListeners(): void {
 }
 
 function onKeyClick(half: string, row: number, col: number): void {
-  if (!appState.selectedColor) return;
+  setCursor(half, row, col);
 
-  if (appState.selectedColor === '___') {
-    clearColorAt(half, row, col);
-  } else {
-    setColorAt(half, row, col, appState.selectedColor);
+  if (appState.selectedColor) {
+    if (appState.selectedColor === '___') {
+      clearColorAt(half, row, col);
+    } else {
+      setColorAt(half, row, col, appState.selectedColor);
+    }
   }
 
   render();

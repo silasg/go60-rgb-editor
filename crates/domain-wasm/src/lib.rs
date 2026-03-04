@@ -53,6 +53,16 @@ impl Editor {
         self.inner.switch_half();
     }
 
+    /// Set the cursor to a specific position.
+    pub fn set_cursor(&mut self, half: &str, row: usize, col: usize) {
+        let half = match half {
+            "left" => Half::Left,
+            "right" => Half::Right,
+            _ => return,
+        };
+        self.inner.set_cursor(half, row, col);
+    }
+
     // --- Layer navigation ---
 
     pub fn next_layer(&mut self) {
