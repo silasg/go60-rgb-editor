@@ -1,4 +1,5 @@
 [tools]
+rust = "stable"
 "cargo:cargo-llvm-cov" = "latest"
 "cargo:git-cliff" = "latest"
 "cargo:cargo-release" = "latest"
@@ -21,6 +22,10 @@ NIGHTLY_BIN="$(dirname "$(rustup which --toolchain {{vars.PUP_NIGHTLY}} cargo)")
 PATH="$NIGHTLY_BIN:$PATH" cargo install cargo_pup
 cargo install wasm-bindgen-cli
 """
+
+[tasks.clean]
+description = "Remove all build artifacts"
+run = "cargo clean"
 
 [tasks.build]
 description = "Build the project"
@@ -95,12 +100,16 @@ run = "cargo release minor --execute"
 description = "Release a major version (breaking changes)"
 run = "cargo release major --execute"
 
+[tasks.web-install]
+description = "Install web dependencies"
+run = "cd web && npm install"
+
 [tasks.web-dev]
 description = "Start web dev server"
-depends = ["build-wasm"]
+depends = ["build-wasm", "web-install"]
 run = "cd web && npx vite"
 
 [tasks.web-build]
 description = "Build web app for production"
-depends = ["build-wasm"]
+depends = ["build-wasm", "web-install"]
 run = "cd web && npx vite build"
