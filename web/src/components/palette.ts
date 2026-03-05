@@ -11,8 +11,8 @@ function createClearSwatch(
   btn.className = 'swatch';
   btn.textContent = '___';
   btn.title = 'Clear key';
-  btn.style.backgroundColor = '#1a1a2e';
-  btn.style.color = '#666';
+  btn.style.backgroundColor = 'var(--key-off)';
+  btn.style.color = 'var(--text-secondary)';
 
   if (selectedColor === '___') {
     btn.classList.add('selected');

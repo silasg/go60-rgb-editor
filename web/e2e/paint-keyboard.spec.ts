@@ -66,9 +66,9 @@ test('paint and edit a keyboard layout', async ({ page }) => {
   // Act — click the colored key to clear it
   await coloredKey.click();
 
-  // Assert — key is cleared
+  // Assert — key is cleared (no longer has its painted color)
   await expect(coloredKey).toHaveText('___');
-  await expect(coloredKey).toHaveCSS('background-color', 'rgb(26, 26, 46)');
+  await expect(coloredKey).not.toHaveCSS('background-color', 'rgb(255, 0, 0)');
   const configAfterClear = await configText.inputValue();
   expect(configAfterClear).not.toBe(configBeforeClear);
 

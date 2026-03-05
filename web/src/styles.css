@@ -22,6 +22,28 @@
   --selected-ring: #4a9eff;
   --error: #ff4444;
   --success: #44ff44;
+  --key-border: rgba(255, 255, 255, 0.08);
+  --key-border-hover: rgba(255, 255, 255, 0.3);
+  --swatch-hover-border: rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="light"] {
+  --bg-primary: #f0f0f5;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e4e4ee;
+  --text-primary: #1a1a2e;
+  --text-secondary: #666;
+  --accent: #2a7de1;
+  --accent-hover: #1a6dd1;
+  --border: #d0d0e0;
+  --key-off: #e0e0ea;
+  --cursor-ring: #cc9900;
+  --selected-ring: #2a7de1;
+  --error: #cc0000;
+  --success: #008800;
+  --key-border: rgba(0, 0, 0, 0.1);
+  --key-border-hover: rgba(0, 0, 0, 0.3);
+  --swatch-hover-border: rgba(0, 0, 0, 0.3);
 }
 
 html, body {
@@ -210,7 +232,7 @@ button {
 
 .swatch:hover {
   transform: scale(1.1);
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: var(--swatch-hover-border);
 }
 
 .swatch.selected {
@@ -255,13 +277,13 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid rgba(255, 255, 255, 0.08);
+  border: 2px solid var(--key-border);
   transition: border-color 0.15s, transform 0.1s;
   min-width: 0;
 }
 
 .key:hover {
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: var(--key-border-hover);
   transform: scale(1.05);
   z-index: 1;
 }
@@ -392,6 +414,23 @@ button {
   color: var(--cursor-ring);
   padding-right: 8px;
   border-right: 1px solid var(--border);
+}
+
+/* ---- Theme Toggle ---- */
+
+.theme-toggle {
+  padding: 4px 10px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-radius: 4px;
+  font-size: 14px;
+  transition: background 0.15s;
+  margin-left: auto;
+}
+
+.theme-toggle:hover {
+  background: var(--accent);
+  color: #fff;
 }
 
 /* ---- Responsive ---- */

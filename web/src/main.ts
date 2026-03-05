@@ -11,7 +11,27 @@ import defaultConfig from '../../Go60 TK Latest RGB scheme.txt?raw';
 const appState: AppState = createAppState();
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
+function initTheme(): void {
+  const stored = localStorage.getItem('theme');
+  if (stored === 'light' || stored === 'dark') {
+    document.documentElement.setAttribute('data-theme', stored);
+  } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+    document.documentElement.setAttribute('data-theme', 'light');
+  } else {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+}
+
+function toggleTheme(): void {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  render();
+}
+
 async function main(): Promise<void> {
+  initTheme();
   await initWasm();
   setupEventListeners();
   renderFromConfig(defaultConfig);
@@ -29,7 +49,7 @@ function render(): void {
   renderKeyboard(state, grid, onKeyClick);
   renderPalette(state, appState.selectedColor, onColorSelect);
   renderLayers(state, onLayerSelect, onLayerAction);
-  renderToolbar(state, onUndo, onRedo, onFadeChange);
+  renderToolbar(state, onUndo, onRedo, onFadeChange, toggleTheme);
   updateConfigText(serialize());
 }
 

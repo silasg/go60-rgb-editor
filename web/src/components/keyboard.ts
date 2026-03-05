@@ -28,8 +28,8 @@ function applyKeyStyle(
       btn.style.color = textColorForBg(colorDef.r, colorDef.g, colorDef.b);
     }
   } else {
-    btn.style.backgroundColor = '#1a1a2e';
-    btn.style.color = '#666';
+    btn.style.backgroundColor = 'var(--key-off)';
+    btn.style.color = 'var(--text-secondary)';
   }
 }
 

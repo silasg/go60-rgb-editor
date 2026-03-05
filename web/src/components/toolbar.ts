@@ -8,6 +8,7 @@ export function renderToolbar(
   onUndo: VoidHandler,
   onRedo: VoidHandler,
   onFadeChange: FadeHandler,
+  onThemeToggle: VoidHandler,
 ): void {
   const toolbar = document.getElementById('toolbar');
   if (!toolbar) return;
@@ -61,4 +62,13 @@ export function renderToolbar(
   redoBtn.textContent = '↪ Redo';
   redoBtn.addEventListener('click', onRedo);
   toolbar.appendChild(redoBtn);
+
+  // Theme toggle
+  const themeBtn = document.createElement('button');
+  themeBtn.className = 'theme-toggle';
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  themeBtn.textContent = isDark ? '☀️' : '🌙';
+  themeBtn.title = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+  themeBtn.addEventListener('click', onThemeToggle);
+  toolbar.appendChild(themeBtn);
 }
