@@ -18,7 +18,7 @@ function createClearSwatch(
     btn.classList.add('selected');
   }
 
-  btn.addEventListener('click', () => onClick('___'));
+  btn.addEventListener('click', () => { onClick('___'); });
   return btn;
 }
 
@@ -49,7 +49,7 @@ function renderSwatchGrid(
       btn.classList.add('selected');
     }
 
-    btn.addEventListener('click', () => onClick(color.abbrev));
+    btn.addEventListener('click', () => { onClick(color.abbrev); });
     container.appendChild(btn);
   }
 }

@@ -33,7 +33,7 @@ export function renderLayers(
     fadeSpan.textContent = `${layer.fadeDelay}ms`;
     item.appendChild(fadeSpan);
 
-    item.addEventListener('click', () => onSelect(i));
+    item.addEventListener('click', () => { onSelect(i); });
     listEl.appendChild(item);
   }
 
@@ -51,7 +51,7 @@ export function renderLayers(
     const btn = document.createElement('button');
     btn.className = 'layer-action-btn';
     btn.textContent = label;
-    btn.addEventListener('click', () => onAction(action));
+    btn.addEventListener('click', () => { onAction(action); });
     actionsEl.appendChild(btn);
   }
 }

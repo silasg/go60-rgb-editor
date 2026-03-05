@@ -100,6 +100,15 @@ run = "cargo release minor --execute"
 description = "Release a major version (breaking changes)"
 run = "cargo release major --execute"
 
+[tasks.web-lint]
+description = "Run TypeScript linting (ESLint)"
+depends = ["web-install"]
+run = "cd web && npx eslint src/"
+
+[tasks.lint-all]
+description = "Run linting across all stacks (Rust clippy + TypeScript ESLint)"
+depends = ["lint", "web-lint"]
+
 [tasks.web-install]
 description = "Install web dependencies"
 run = "cd web && npm install"

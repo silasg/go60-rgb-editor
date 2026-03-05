@@ -9,5 +9,6 @@
 .sandbox
 web/node_modules/
 web/dist/
-pkg/
+pkg/*
+!pkg/go60_rgb_editor_wasm.d.ts
 .rodney/

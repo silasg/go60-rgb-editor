@@ -203,4 +203,4 @@ function onFadeChange(delta: number): void {
   render();
 }
 
-main();
+void main();

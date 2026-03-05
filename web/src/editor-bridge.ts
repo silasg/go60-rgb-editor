@@ -22,12 +22,14 @@ export function hasEditor(): boolean {
 
 export function getState(): EditorState | null {
   if (!editor) return null;
-  return JSON.parse(editor.get_state_json());
+  // Trust boundary: JSON shape guaranteed by Rust serialization in domain-wasm
+  return JSON.parse(editor.get_state_json()) as EditorState;
 }
 
 export function getLayerGrid(index: number): LayerGrid | null {
   if (!editor) return null;
-  return JSON.parse(editor.get_layer_grid_json(index));
+  // Trust boundary: JSON shape guaranteed by Rust serialization in domain-wasm
+  return JSON.parse(editor.get_layer_grid_json(index)) as LayerGrid;
 }
 
 export function serialize(): string {

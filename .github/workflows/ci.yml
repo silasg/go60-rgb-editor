@@ -19,6 +19,10 @@ jobs:
         with:
           components: clippy, llvm-tools-preview
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - uses: jdx/mise-action@v2
 
       - name: Setup
@@ -27,8 +31,8 @@ jobs:
       - name: Build
         run: mise run build
 
-      - name: Lint
-        run: mise run lint
+      - name: Lint (all stacks)
+        run: mise run lint-all
 
       - name: Test
         run: mise run test

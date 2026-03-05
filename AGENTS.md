@@ -56,8 +56,11 @@ src/                            # TUI binary (go60-rgb-editor-tui)
 tests/
 ├── fixtures/                   # Test fixture files for TUI
 └── architecture.rs             # TUI architecture rules (cargo-pup)
+pkg/                            # WASM build output (generated, gitignored except .d.ts)
+├── go60_rgb_editor_wasm.d.ts   # Type declarations (committed stub, overwritten by build-wasm)
 web/                            # Web editor SPA (Vite + TypeScript + WASM)
 ├── index.html                  # Entry HTML
+├── eslint.config.js            # ESLint flat config (strict TS + architecture rules)
 ├── package.json                # Node dependencies
 ├── playwright.config.ts        # Playwright E2E test config
 ├── tsconfig.json               # TypeScript config (strict mode)
@@ -113,6 +116,8 @@ mise run build        # Build (debug)
 mise run build-release # Build (release)
 mise run test         # Run clippy + tests
 mise run lint         # Run clippy lints
+mise run web-lint     # Run TypeScript linting (ESLint)
+mise run lint-all     # Run linting across all stacks (Rust + TypeScript)
 mise run arch-lint    # Run architecture linting with cargo-pup (requires nightly)
 mise run coverage     # Test coverage report
 mise run coverage-html # Coverage report in browser
@@ -179,6 +184,8 @@ mise run release-major    # Release major version (breaking)
 
 ## Architecture Linting
 
+### Rust (cargo-pup)
+
 This project uses [cargo-pup](https://github.com/datadog/cargo-pup) (an ArchUnit alternative for Rust) to enforce architectural boundaries and code hygiene.
 
 Architecture rules are defined in two places:
@@ -210,6 +217,32 @@ The pinned nightly version is defined once in `mise.toml` as `PUP_NIGHTLY`. When
 2. `cargo_pup_lint_config` version in both `Cargo.toml` (root) and `crates/domain/Cargo.toml`
 
 Then run `mise run setup` to install the new toolchain and cargo-pup version.
+
+### TypeScript (ESLint)
+
+The web editor uses ESLint with `typescript-eslint` strict type-checked rules, configured in `web/eslint.config.js`. Rules are aligned with the Rust linting and the project's coding style / TypeScript skill definitions.
+
+**Architecture rules** (mirror Rust cargo-pup rules):
+- Components (`src/components/`) must not import `editor-bridge` — mirrors `ui_no_io_access`
+- `editor-bridge.ts` must not import components — mirrors `io_no_ui_dependency`
+
+**Code hygiene** (mirror Rust rules):
+- `max-lines-per-function: 60` — matches Rust `function_length_limit`
+- `max-depth: 4` — enforces early returns (coding-style skill)
+- `complexity: 15` — keeps functions focused
+
+**TypeScript skill rules:**
+- `strictTypeChecked` + `stylisticTypeChecked` presets (includes no-any, no-unsafe-*, no-floating-promises)
+- `explicit-function-return-type` — all functions must declare return types
+- `consistent-type-imports` — enforce `type` imports for type-only symbols
+- `consistent-type-assertions` — minimize `as`, forbid on object literals
+- `switch-exhaustiveness-check` — compiler-enforced exhaustive switches
+- `consistent-type-definitions: off` — allows both `type` (data) and `interface` (behavior)
+- `prefer-readonly` — enforce readonly class fields
+
+**WASM type declarations:**
+- `pkg/go60_rgb_editor_wasm.d.ts` is a committed type stub so ESLint can resolve WASM types without building the package
+- The `build-wasm` task overwrites it with wasm-bindgen's generated declarations
 
 ## Config File Format
 

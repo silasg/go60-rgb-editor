@@ -54,7 +54,7 @@ function createKeyButton(
     btn.classList.add('cursor');
   }
 
-  btn.addEventListener('click', () => onClick(half, row, col));
+  btn.addEventListener('click', () => { onClick(half, row, col); });
   return btn;
 }
 

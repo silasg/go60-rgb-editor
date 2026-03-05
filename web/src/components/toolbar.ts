@@ -31,21 +31,21 @@ export function renderToolbar(
   const fadeLabel = document.createElement('span');
   fadeLabel.className = 'fade-label';
   const currentLayer = state.layers[state.currentLayerIndex];
-  fadeLabel.textContent = `Fade: ${currentLayer?.fadeDelay ?? 0}ms`;
+  fadeLabel.textContent = `Fade: ${currentLayer.fadeDelay}ms`;
   fadeGroup.appendChild(fadeLabel);
 
   const fadeDown = document.createElement('button');
   fadeDown.className = 'toolbar-btn';
   fadeDown.textContent = '−';
   fadeDown.title = 'Decrease fade delay';
-  fadeDown.addEventListener('click', () => onFadeChange(-5));
+  fadeDown.addEventListener('click', () => { onFadeChange(-5); });
   fadeGroup.appendChild(fadeDown);
 
   const fadeUp = document.createElement('button');
   fadeUp.className = 'toolbar-btn';
   fadeUp.textContent = '+';
   fadeUp.title = 'Increase fade delay';
-  fadeUp.addEventListener('click', () => onFadeChange(5));
+  fadeUp.addEventListener('click', () => { onFadeChange(5); });
   fadeGroup.appendChild(fadeUp);
 
   toolbar.appendChild(fadeGroup);
