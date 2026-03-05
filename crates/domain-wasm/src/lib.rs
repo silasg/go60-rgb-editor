@@ -1,7 +1,8 @@
-use wasm_bindgen::prelude::*;
 use serde_json::json;
+use wasm_bindgen::prelude::*;
 
-use go60_rgb_editor_domain::color::ColorKind;
+use go60_rgb_editor_domain::color::{ColorKind, ColorPalette};
+use go60_rgb_editor_domain::config::Config;
 use go60_rgb_editor_domain::cursor::Direction;
 use go60_rgb_editor_domain::{parse_config, write_config, EditorState, Half, RgbPos};
 
@@ -189,68 +190,8 @@ impl Editor {
             Half::Right => "right",
         };
 
-        let layers: Vec<serde_json::Value> = state
-            .config
-            .layers
-            .iter()
-            .map(|l| {
-                json!({
-                    "name": l.name,
-                    "fadeDelay": l.fade_delay
-                })
-            })
-            .collect();
-
-        let palette = &state.config.palette;
-        let categories = palette.categorize();
-
-        let regular: Vec<serde_json::Value> = categories
-            .regular
-            .iter()
-            .map(|&i| {
-                let c = &palette.colors[i];
-                let rgb = palette.get_effective_rgb(&c.abbrev).cloned().unwrap_or_default();
-                json!({ "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b })
-            })
-            .collect();
-
-        let locks: Vec<serde_json::Value> = categories
-            .locks
-            .iter()
-            .map(|&i| {
-                let c = &palette.colors[i];
-                let rgb = palette.get_effective_rgb(&c.abbrev).cloned().unwrap_or_default();
-                if let ColorKind::LockIndicator {
-                    ref off_color,
-                    ref on_color,
-                } = c.kind
-                {
-                    json!({
-                        "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b,
-                        "offColor": off_color, "onColor": on_color
-                    })
-                } else {
-                    json!({ "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b })
-                }
-            })
-            .collect();
-
-        let aliases: Vec<serde_json::Value> = categories
-            .aliases
-            .iter()
-            .map(|&i| {
-                let c = &palette.colors[i];
-                let rgb = palette.get_effective_rgb(&c.abbrev).cloned().unwrap_or_default();
-                if let ColorKind::Alias { ref target } = c.kind {
-                    json!({
-                        "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b,
-                        "target": target
-                    })
-                } else {
-                    json!({ "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b })
-                }
-            })
-            .collect();
+        let layers = serialize_layers(&state.config);
+        let palette = serialize_palette(&state.config.palette);
 
         json!({
             "cursor": { "row": state.cursor.row, "col": state.cursor.col, "half": half_str },
@@ -258,91 +199,7 @@ impl Editor {
             "layerCount": state.config.layers.len(),
             "modified": state.modified,
             "layers": layers,
-            "palette": {
-                "regular": regular,
-                "locks": locks,
-                "aliases": aliases
-            }
-        })
-        .to_string()
-    }
-
-    /// Layer names and fade delays as JSON array.
-    /// Returns: [{ name, fadeDelay }]
-    pub fn get_layers_json(&self) -> String {
-        let layers: Vec<serde_json::Value> = self
-            .inner
-            .config
-            .layers
-            .iter()
-            .map(|l| {
-                json!({
-                    "name": l.name,
-                    "fadeDelay": l.fade_delay
-                })
-            })
-            .collect();
-        serde_json::to_string(&layers).unwrap_or_else(|_| "[]".to_string())
-    }
-
-    /// Palette as categorized JSON.
-    /// Returns: { regular: [...], locks: [...], aliases: [...] }
-    pub fn get_palette_json(&self) -> String {
-        let palette = &self.inner.config.palette;
-        let categories = palette.categorize();
-
-        let regular: Vec<serde_json::Value> = categories
-            .regular
-            .iter()
-            .map(|&i| {
-                let c = &palette.colors[i];
-                let rgb = palette.get_effective_rgb(&c.abbrev).cloned().unwrap_or_default();
-                json!({ "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b })
-            })
-            .collect();
-
-        let locks: Vec<serde_json::Value> = categories
-            .locks
-            .iter()
-            .map(|&i| {
-                let c = &palette.colors[i];
-                let rgb = palette.get_effective_rgb(&c.abbrev).cloned().unwrap_or_default();
-                if let ColorKind::LockIndicator {
-                    ref off_color,
-                    ref on_color,
-                } = c.kind
-                {
-                    json!({
-                        "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b,
-                        "offColor": off_color, "onColor": on_color
-                    })
-                } else {
-                    json!({ "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b })
-                }
-            })
-            .collect();
-
-        let aliases: Vec<serde_json::Value> = categories
-            .aliases
-            .iter()
-            .map(|&i| {
-                let c = &palette.colors[i];
-                let rgb = palette.get_effective_rgb(&c.abbrev).cloned().unwrap_or_default();
-                if let ColorKind::Alias { ref target } = c.kind {
-                    json!({
-                        "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b,
-                        "target": target
-                    })
-                } else {
-                    json!({ "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b })
-                }
-            })
-            .collect();
-
-        json!({
-            "regular": regular,
-            "locks": locks,
-            "aliases": aliases
+            "palette": palette
         })
         .to_string()
     }
@@ -400,4 +257,63 @@ impl Editor {
             .map(|l| l.fade_delay as i32)
             .unwrap_or(-1)
     }
+}
+
+// --- Serialization helpers (not exposed to WASM) ---
+
+fn serialize_layers(config: &Config) -> Vec<serde_json::Value> {
+    config
+        .layers
+        .iter()
+        .map(|l| json!({ "name": l.name, "fadeDelay": l.fade_delay }))
+        .collect()
+}
+
+fn serialize_palette(palette: &ColorPalette) -> serde_json::Value {
+    let categories = palette.categorize();
+
+    let regular: Vec<serde_json::Value> = categories
+        .regular
+        .iter()
+        .map(|&i| serialize_color(palette, i))
+        .collect();
+
+    let locks: Vec<serde_json::Value> = categories
+        .locks
+        .iter()
+        .map(|&i| serialize_color(palette, i))
+        .collect();
+
+    let aliases: Vec<serde_json::Value> = categories
+        .aliases
+        .iter()
+        .map(|&i| serialize_color(palette, i))
+        .collect();
+
+    json!({ "regular": regular, "locks": locks, "aliases": aliases })
+}
+
+fn serialize_color(palette: &ColorPalette, index: usize) -> serde_json::Value {
+    let c = &palette.colors[index];
+    let rgb = palette
+        .get_effective_rgb(&c.abbrev)
+        .cloned()
+        .unwrap_or_default();
+    let mut val = json!({ "abbrev": c.abbrev, "r": rgb.r, "g": rgb.g, "b": rgb.b });
+
+    match &c.kind {
+        ColorKind::LockIndicator {
+            off_color,
+            on_color,
+        } => {
+            val["offColor"] = json!(off_color);
+            val["onColor"] = json!(on_color);
+        }
+        ColorKind::Alias { target } => {
+            val["target"] = json!(target);
+        }
+        _ => {}
+    }
+
+    val
 }
