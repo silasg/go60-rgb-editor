@@ -115,36 +115,40 @@ function onLayerSelect(index: number): void {
   render();
 }
 
+function handleAddLayer(): void {
+  const name = prompt('New layer name:');
+  if (name) {
+    const err = addLayer(name);
+    if (err) alert(err);
+  }
+}
+
+function handleDuplicateLayer(): void {
+  const err = duplicateLayer();
+  if (err) alert(err);
+}
+
+function handleRenameLayer(): void {
+  const name = prompt('New name:');
+  if (name) {
+    const err = renameLayer(name);
+    if (err) alert(err);
+  }
+}
+
+function handleDeleteLayer(): void {
+  if (confirm('Delete this layer?')) {
+    const err = deleteLayer();
+    if (err) alert(err);
+  }
+}
+
 function onLayerAction(action: LayerAction): void {
   switch (action) {
-    case 'add': {
-      const name = prompt('New layer name:');
-      if (name) {
-        const err = addLayer(name);
-        if (err) alert(err);
-      }
-      break;
-    }
-    case 'duplicate': {
-      const err = duplicateLayer();
-      if (err) alert(err);
-      break;
-    }
-    case 'rename': {
-      const name = prompt('New name:');
-      if (name) {
-        const err = renameLayer(name);
-        if (err) alert(err);
-      }
-      break;
-    }
-    case 'delete': {
-      if (confirm('Delete this layer?')) {
-        const err = deleteLayer();
-        if (err) alert(err);
-      }
-      break;
-    }
+    case 'add': handleAddLayer(); break;
+    case 'duplicate': handleDuplicateLayer(); break;
+    case 'rename': handleRenameLayer(); break;
+    case 'delete': handleDeleteLayer(); break;
   }
   render();
 }

@@ -16,9 +16,51 @@ function findColor(
   );
 }
 
+function applyKeyStyle(
+  btn: HTMLButtonElement,
+  abbrev: string,
+  state: EditorState,
+): void {
+  if (abbrev !== '___') {
+    const colorDef = findColor(abbrev, state.palette);
+    if (colorDef) {
+      btn.style.backgroundColor = rgbToHex(colorDef.r, colorDef.g, colorDef.b);
+      btn.style.color = textColorForBg(colorDef.r, colorDef.g, colorDef.b);
+    }
+  } else {
+    btn.style.backgroundColor = '#1a1a2e';
+    btn.style.color = '#666';
+  }
+}
+
+function createKeyButton(
+  half: Half,
+  row: number,
+  col: number,
+  abbrev: string,
+  state: EditorState,
+  onClick: KeyClickHandler,
+): HTMLButtonElement {
+  const btn = document.createElement('button');
+  btn.className = 'key';
+  btn.textContent = abbrev;
+  btn.dataset.half = half;
+  btn.dataset.row = String(row);
+  btn.dataset.col = String(col);
+
+  applyKeyStyle(btn, abbrev, state);
+
+  if (state.cursor.half === half && state.cursor.row === row && state.cursor.col === col) {
+    btn.classList.add('cursor');
+  }
+
+  btn.addEventListener('click', () => onClick(half, row, col));
+  return btn;
+}
+
 function renderHalf(
   containerId: string,
-  half: 'left' | 'right',
+  half: Half,
   grid: string[][],
   state: EditorState,
   onClick: KeyClickHandler,
@@ -26,7 +68,6 @@ function renderHalf(
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  // Keep the label, clear keys
   const label = container.querySelector('.half-label');
   container.innerHTML = '';
   if (label) container.appendChild(label);
@@ -39,42 +80,9 @@ function renderHalf(
   for (let row = 0; row < ROW_COUNT && row < grid.length; row++) {
     const cols = colsForRow(row);
     for (let col = 0; col < cols && col < grid[row].length; col++) {
-      const abbrev = grid[row][col];
-      const btn = document.createElement('button');
-      btn.className = 'key';
-      btn.textContent = abbrev;
-      btn.dataset.half = half;
-      btn.dataset.row = String(row);
-      btn.dataset.col = String(col);
-
-      const gCol = gridColumn(half, row, col);
-      const gRow = gridRow(row);
-      btn.style.gridColumn = String(gCol);
-      btn.style.gridRow = String(gRow);
-
-      // Color styling
-      if (abbrev !== '___') {
-        const colorDef = findColor(abbrev, state.palette);
-        if (colorDef) {
-          const bg = rgbToHex(colorDef.r, colorDef.g, colorDef.b);
-          btn.style.backgroundColor = bg;
-          btn.style.color = textColorForBg(colorDef.r, colorDef.g, colorDef.b);
-        }
-      } else {
-        btn.style.backgroundColor = '#1a1a2e';
-        btn.style.color = '#666';
-      }
-
-      // Cursor highlight
-      if (
-        state.cursor.half === half &&
-        state.cursor.row === row &&
-        state.cursor.col === col
-      ) {
-        btn.classList.add('cursor');
-      }
-
-      btn.addEventListener('click', () => onClick(half, row, col));
+      const btn = createKeyButton(half, row, col, grid[row][col], state, onClick);
+      btn.style.gridColumn = String(gridColumn(half, row, col));
+      btn.style.gridRow = String(gridRow(row));
       container.appendChild(btn);
     }
   }
