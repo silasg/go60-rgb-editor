@@ -56,6 +56,29 @@ src/                            # TUI binary (go60-rgb-editor-tui)
 tests/
 ├── fixtures/                   # Test fixture files for TUI
 └── architecture.rs             # TUI architecture rules (cargo-pup)
+web/                            # Web editor SPA (Vite + TypeScript + WASM)
+├── index.html                  # Entry HTML
+├── package.json                # Node dependencies
+├── playwright.config.ts        # Playwright E2E test config
+├── tsconfig.json               # TypeScript config (strict mode)
+├── vite.config.ts              # Vite config (WASM plugin)
+├── e2e/                        # E2E tests (Playwright, headless Chrome)
+│   ├── paint-keyboard.spec.ts  # Journey 1: paint, clear, undo/redo
+│   ├── manage-layers.spec.ts   # Journey 2: layer CRUD, fade delay
+│   └── load-config.spec.ts     # Journey 3: config loading, error recovery
+└── src/
+    ├── main.ts                 # App entry, event handlers, orchestration
+    ├── editor-bridge.ts        # WASM ↔ JS bridge (wraps Editor handle)
+    ├── state.ts                # TypeScript types matching WASM JSON, color utils
+    ├── geometry.ts             # Keyboard layout constants (mirrors domain)
+    ├── styles.css              # App styles, dark theme
+    ├── vite-env.d.ts           # Vite/WASM type declarations
+    └── components/
+        ├── keyboard.ts         # Keyboard half rendering
+        ├── palette.ts          # Color palette swatches
+        ├── layers.ts           # Layer list and actions
+        ├── toolbar.ts          # Toolbar (undo/redo, fade, modified indicator)
+        └── config-text.ts      # Config textarea sync
 ```
 
 ### Dependency Graph
@@ -64,9 +87,9 @@ tests/
 go60-rgb-editor-domain (zero deps)
     ↑                          ↑
     |                          |
-go60-rgb-editor-tui         go60-rgb-editor-wasm
-(ratatui, crossterm,        (wasm-bindgen, serde,
- color-eyre, clap)           serde_json)
+go60-rgb-editor-tui         go60-rgb-editor-wasm ← web/ SPA
+(ratatui, crossterm,        (wasm-bindgen, serde,  (Vite, TypeScript,
+ color-eyre, clap)           serde_json)            Playwright)
 ```
 
 ## Tech Stack
@@ -75,6 +98,8 @@ go60-rgb-editor-tui         go60-rgb-editor-wasm
 - Ratatui (TUI framework)
 - Crossterm (terminal backend)
 - wasm-bindgen (WebAssembly bindings)
+- Vite + TypeScript (web editor SPA)
+- Playwright (web E2E tests, headless Chrome)
 - [cargo-pup](https://github.com/datadog/cargo-pup) (architecture linting)
 
 ## Development
@@ -93,6 +118,10 @@ mise run coverage     # Test coverage report
 mise run coverage-html # Coverage report in browser
 mise run run          # Run editor with example config
 mise run build-wasm   # Build domain-wasm for WebAssembly
+mise run web-install  # Install web dependencies
+mise run web-dev      # Start web dev server
+mise run web-build    # Build web app for production
+mise run web-e2e      # Run web E2E tests (Playwright, headless Chrome)
 mise run changelog    # Preview unreleased changelog entries
 mise run release-patch # Release patch version
 mise run release-minor # Release minor version
