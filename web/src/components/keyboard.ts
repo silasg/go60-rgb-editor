@@ -20,7 +20,6 @@ function renderHalf(
   half: 'left' | 'right',
   grid: string[][],
   state: EditorState,
-  selectedColor: string | null,
   onClick: KeyClickHandler,
 ): void {
   const container = document.getElementById(containerId);
@@ -83,9 +82,8 @@ function renderHalf(
 export function renderKeyboard(
   state: EditorState,
   grid: LayerGrid,
-  selectedColor: string | null,
   onClick: KeyClickHandler,
 ): void {
-  renderHalf('keyboard-left', 'left', grid.left, state, selectedColor, onClick);
-  renderHalf('keyboard-right', 'right', grid.right, state, selectedColor, onClick);
+  renderHalf('keyboard-left', 'left', grid.left, state, onClick);
+  renderHalf('keyboard-right', 'right', grid.right, state, onClick);
 }

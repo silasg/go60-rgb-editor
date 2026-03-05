@@ -3,7 +3,7 @@ import { AppState, createAppState, EditorState, LayerGrid } from './state.ts';
 import { renderKeyboard } from './components/keyboard.ts';
 import { renderPalette } from './components/palette.ts';
 import { renderLayers } from './components/layers.ts';
-import { updateConfigText, getConfigText } from './components/config-text.ts';
+import { updateConfigText } from './components/config-text.ts';
 import { renderToolbar } from './components/toolbar.ts';
 import './styles.css';
 import defaultConfig from '../../Go60 TK Latest RGB scheme.txt?raw';
@@ -26,7 +26,7 @@ function render(): void {
   const grid = getLayerGrid(state.currentLayerIndex);
   if (!grid) return;
 
-  renderKeyboard(state, grid, appState.selectedColor, onKeyClick);
+  renderKeyboard(state, grid, onKeyClick);
   renderPalette(state, appState.selectedColor, onColorSelect);
   renderLayers(state, onLayerSelect, onLayerAction);
   renderToolbar(state, onUndo, onRedo, onFadeChange);
