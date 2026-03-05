@@ -3,7 +3,7 @@ import { type AppState, createAppState } from './state.ts';
 import { renderKeyboard } from './components/keyboard.ts';
 import { renderPalette } from './components/palette.ts';
 import { renderLayers, type LayerAction } from './components/layers.ts';
-import { updateConfigText } from './components/config-text.ts';
+import { updateConfigText, copyConfigToClipboard, pasteConfigFromClipboard } from './components/config-text.ts';
 import { renderToolbar } from './components/toolbar.ts';
 import './styles.css';
 import defaultConfig from '../../Go60 TK Latest RGB scheme.txt?raw';
@@ -72,6 +72,21 @@ function setupEventListeners(): void {
       setTimeout(() => {
         renderFromConfig(textarea.value);
       }, 50);
+    });
+  }
+
+  // Copy/Paste config buttons
+  const copyBtn = document.getElementById('copy-config-btn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => { void copyConfigToClipboard(); });
+  }
+
+  const pasteBtn = document.getElementById('paste-config-btn');
+  if (pasteBtn) {
+    pasteBtn.addEventListener('click', () => {
+      void pasteConfigFromClipboard().then((text) => {
+        if (text) renderFromConfig(text);
+      });
     });
   }
 
