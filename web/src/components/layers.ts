@@ -1,7 +1,8 @@
 import type { EditorState } from '../state.ts';
 
 type LayerSelectHandler = (index: number) => void;
-type LayerActionHandler = (action: string) => void;
+export type LayerAction = 'add' | 'duplicate' | 'rename' | 'delete';
+type LayerActionHandler = (action: LayerAction) => void;
 
 export function renderLayers(
   state: EditorState,
@@ -39,7 +40,7 @@ export function renderLayers(
   // Layer action buttons
   actionsEl.innerHTML = '';
 
-  const actions = [
+  const actions: { label: string; action: LayerAction }[] = [
     { label: '+ Add', action: 'add' },
     { label: 'Dup', action: 'duplicate' },
     { label: 'Ren', action: 'rename' },

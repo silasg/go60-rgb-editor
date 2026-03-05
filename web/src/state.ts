@@ -1,51 +1,51 @@
 // ---- JSON types matching WASM API output ----
 
 export interface CursorState {
-  row: number;
-  col: number;
-  half: 'left' | 'right';
+  readonly row: number;
+  readonly col: number;
+  readonly half: 'left' | 'right';
 }
 
 export interface LayerInfo {
-  name: string;
-  fadeDelay: number;
+  readonly name: string;
+  readonly fadeDelay: number;
 }
 
 export interface PaletteColor {
-  abbrev: string;
-  r: number;
-  g: number;
-  b: number;
+  readonly abbrev: string;
+  readonly r: number;
+  readonly g: number;
+  readonly b: number;
 }
 
 export interface PaletteLock extends PaletteColor {
-  offColor: string;
-  onColor: string;
+  readonly offColor: string;
+  readonly onColor: string;
 }
 
 export interface PaletteAlias extends PaletteColor {
-  target: string;
+  readonly target: string;
 }
 
 export interface PaletteState {
-  regular: PaletteColor[];
-  locks: PaletteLock[];
-  aliases: PaletteAlias[];
+  readonly regular: PaletteColor[];
+  readonly locks: PaletteLock[];
+  readonly aliases: PaletteAlias[];
 }
 
 export interface EditorState {
-  cursor: CursorState;
-  currentLayerIndex: number;
-  layerCount: number;
-  modified: boolean;
-  layers: LayerInfo[];
-  palette: PaletteState;
+  readonly cursor: CursorState;
+  readonly currentLayerIndex: number;
+  readonly layerCount: number;
+  readonly modified: boolean;
+  readonly layers: LayerInfo[];
+  readonly palette: PaletteState;
 }
 
 export interface LayerGrid {
-  left: string[][];
-  right: string[][];
-  fadeDelay: number;
+  readonly left: string[][];
+  readonly right: string[][];
+  readonly fadeDelay: number;
 }
 
 // ---- Application state (frontend-only) ----

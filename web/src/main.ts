@@ -1,8 +1,8 @@
 import { initWasm, loadConfig, hasEditor, getState, getLayerGrid, serialize, setLayer, setCursor, setColorAt, clearColorAt, editorUndo, editorRedo, adjustFade, addLayer, duplicateLayer, renameLayer, deleteLayer } from './editor-bridge.ts';
-import { AppState, createAppState, EditorState, LayerGrid } from './state.ts';
+import { type AppState, createAppState } from './state.ts';
 import { renderKeyboard } from './components/keyboard.ts';
 import { renderPalette } from './components/palette.ts';
-import { renderLayers } from './components/layers.ts';
+import { renderLayers, type LayerAction } from './components/layers.ts';
 import { updateConfigText } from './components/config-text.ts';
 import { renderToolbar } from './components/toolbar.ts';
 import './styles.css';
@@ -57,6 +57,7 @@ function renderFromConfig(text: string): void {
 // ---- Event handlers ----
 
 function setupEventListeners(): void {
+  // DOM query returns generic Element; textarea needs specific type for .value access
   const textarea = document.getElementById('config-text') as HTMLTextAreaElement | null;
   if (textarea) {
     textarea.addEventListener('input', () => {
@@ -90,7 +91,7 @@ function setupEventListeners(): void {
 
 }
 
-function onKeyClick(half: string, row: number, col: number): void {
+function onKeyClick(half: 'left' | 'right', row: number, col: number): void {
   setCursor(half, row, col);
 
   if (appState.selectedColor) {
@@ -114,7 +115,7 @@ function onLayerSelect(index: number): void {
   render();
 }
 
-function onLayerAction(action: string): void {
+function onLayerAction(action: LayerAction): void {
   switch (action) {
     case 'add': {
       const name = prompt('New layer name:');

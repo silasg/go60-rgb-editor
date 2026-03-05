@@ -39,16 +39,16 @@ export function setLayer(index: number): void {
   editor?.set_layer(index);
 }
 
-export function setCursor(half: string, row: number, col: number): void {
+export function setCursor(half: 'left' | 'right', row: number, col: number): void {
   editor?.set_cursor(half, row, col);
 }
 
-export function setColorAt(half: string, row: number, col: number, abbrev: string): boolean {
+export function setColorAt(half: 'left' | 'right', row: number, col: number, abbrev: string): boolean {
   if (!editor) return false;
   return editor.set_color_at(half, row, col, abbrev);
 }
 
-export function clearColorAt(half: string, row: number, col: number): boolean {
+export function clearColorAt(half: 'left' | 'right', row: number, col: number): boolean {
   if (!editor) return false;
   return editor.clear_color_at(half, row, col);
 }

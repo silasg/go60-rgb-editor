@@ -2,7 +2,8 @@ import type { EditorState, LayerGrid, PaletteColor, PaletteLock, PaletteAlias } 
 import { rgbToHex, textColorForBg } from '../state.ts';
 import { ROW_COUNT, colsForRow, gridColumn, gridRow, GRID_COLS } from '../geometry.ts';
 
-type KeyClickHandler = (half: string, row: number, col: number) => void;
+type Half = 'left' | 'right';
+type KeyClickHandler = (half: Half, row: number, col: number) => void;
 
 function findColor(
   abbrev: string,
