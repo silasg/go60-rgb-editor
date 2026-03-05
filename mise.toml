@@ -20,7 +20,7 @@ rustup toolchain install {{vars.PUP_NIGHTLY}}
 rustup component add --toolchain {{vars.PUP_NIGHTLY}} rust-src rustc-dev llvm-tools-preview
 NIGHTLY_BIN="$(dirname "$(rustup which --toolchain {{vars.PUP_NIGHTLY}} cargo)")"
 PATH="$NIGHTLY_BIN:$PATH" cargo install cargo_pup
-cargo install wasm-bindgen-cli
+cargo install wasm-bindgen-cli --version 0.2.114
 """
 
 [tasks.clean]
