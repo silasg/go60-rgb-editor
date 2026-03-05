@@ -9,19 +9,26 @@ pub struct EditorState {
     pub current_layer: usize,
     pub yanked_color: Option<String>,
     pub modified: bool,
+    saved_config: Config,
     history: UndoHistory<Config>,
 }
 
 impl EditorState {
     pub fn new(config: Config) -> Self {
+        let saved_config = config.clone();
         Self {
             config,
             cursor: RgbPos::default(),
             current_layer: 0,
             yanked_color: None,
             modified: false,
+            saved_config,
             history: UndoHistory::new(),
         }
+    }
+
+    fn update_modified(&mut self) {
+        self.modified = self.config != self.saved_config;
     }
 
     pub fn current_layer(&self) -> Option<&Layer> {
@@ -66,7 +73,7 @@ impl EditorState {
         let pos = self.cursor;
         if let Some(layer) = self.current_layer_mut() {
             layer.set_color(&pos, color.to_string());
-            self.modified = true;
+            self.update_modified();
             true
         } else {
             false
@@ -78,7 +85,7 @@ impl EditorState {
         self.push_undo();
         if let Some(layer) = self.current_layer_mut() {
             layer.set_color(pos, color.to_string());
-            self.modified = true;
+            self.update_modified();
             true
         } else {
             false
@@ -118,7 +125,7 @@ impl EditorState {
             if let Some(layer) = self.current_layer_mut() {
                 let new_delay = (layer.fade_delay as i32 + delta).max(0) as u16;
                 layer.fade_delay = new_delay;
-                self.modified = true;
+                self.update_modified();
                 return Some(new_delay);
             }
         }
@@ -133,7 +140,7 @@ impl EditorState {
     pub fn undo(&mut self) -> bool {
         if let Some(prev_config) = self.history.undo(self.config.clone()) {
             self.config = prev_config;
-            self.modified = true;
+            self.update_modified();
             true
         } else {
             false
@@ -144,7 +151,7 @@ impl EditorState {
     pub fn redo(&mut self) -> bool {
         if let Some(next_config) = self.history.redo(self.config.clone()) {
             self.config = next_config;
-            self.modified = true;
+            self.update_modified();
             true
         } else {
             false
@@ -162,7 +169,7 @@ impl EditorState {
         let insert_pos = self.current_layer + 1;
         self.config.layers.insert(insert_pos, layer);
         self.current_layer = insert_pos;
-        self.modified = true;
+        self.update_modified();
         Ok(())
     }
 
@@ -182,7 +189,7 @@ impl EditorState {
         let insert_pos = self.current_layer + 1;
         self.config.layers.insert(insert_pos, new_layer);
         self.current_layer = insert_pos;
-        self.modified = true;
+        self.update_modified();
         Ok(new_name)
     }
 
@@ -194,7 +201,7 @@ impl EditorState {
             layer.name = new_name.to_string();
             layer.macro_name = format!("LAYER_{}", new_name);
         }
-        self.modified = true;
+        self.update_modified();
         Ok(())
     }
 
@@ -208,7 +215,7 @@ impl EditorState {
         if self.current_layer >= self.config.layers.len() {
             self.current_layer = self.config.layers.len() - 1;
         }
-        self.modified = true;
+        self.update_modified();
         Ok(removed.name)
     }
 
@@ -254,6 +261,7 @@ impl EditorState {
 
     /// Mark the editor state as saved (not modified).
     pub fn mark_saved(&mut self) {
+        self.saved_config = self.config.clone();
         self.modified = false;
     }
 }
@@ -1048,7 +1056,7 @@ mod tests {
         // Arrange
         let mut editor = create_test_editor();
         editor.add_layer("Second").unwrap();
-        editor.modified = false;
+        editor.mark_saved();
         editor.current_layer = 1;
 
         // Act
@@ -1092,5 +1100,86 @@ mod tests {
         // Assert
         assert_eq!(editor.config.layers.len(), 2);
         assert_eq!(editor.config.layers[1].name, "Second");
+    }
+
+    // --- Modified flag: undo/redo correctness ---
+
+    #[test]
+    fn test_undo_to_original_state_clears_modified() {
+        // Arrange
+        let mut editor = create_test_editor();
+        editor.cursor = RgbPos { row: 0, col: 0, half: Half::Left };
+        editor.set_key_color("RED");
+        assert!(editor.modified);
+
+        // Act
+        editor.undo();
+
+        // Assert
+        assert!(!editor.modified, "undoing the only change should clear modified");
+    }
+
+    #[test]
+    fn test_redo_after_undo_to_original_sets_modified() {
+        // Arrange
+        let mut editor = create_test_editor();
+        editor.cursor = RgbPos { row: 0, col: 0, half: Half::Left };
+        editor.set_key_color("RED");
+        editor.undo();
+        assert!(!editor.modified);
+
+        // Act
+        editor.redo();
+
+        // Assert
+        assert!(editor.modified, "redoing a change should set modified again");
+    }
+
+    #[test]
+    fn test_partial_undo_stays_modified() {
+        // Arrange
+        let mut editor = create_test_editor();
+        editor.cursor = RgbPos { row: 0, col: 0, half: Half::Left };
+        editor.set_key_color("RED");
+        editor.set_key_color("BLU");
+        assert!(editor.modified);
+
+        // Act — undo only the second change
+        editor.undo();
+
+        // Assert
+        assert!(editor.modified, "undoing one of two changes should stay modified");
+    }
+
+    #[test]
+    fn test_manual_revert_clears_modified() {
+        // Arrange
+        let mut editor = create_test_editor();
+        editor.cursor = RgbPos { row: 0, col: 0, half: Half::Left };
+        let original = editor.current_color().unwrap().to_string();
+        editor.set_key_color("RED");
+        assert!(editor.modified);
+
+        // Act — manually paint back to original color
+        editor.set_key_color(&original);
+
+        // Assert
+        assert!(!editor.modified, "manually reverting to original state should clear modified");
+    }
+
+    #[test]
+    fn test_undo_after_save_sets_modified() {
+        // Arrange
+        let mut editor = create_test_editor();
+        editor.cursor = RgbPos { row: 0, col: 0, half: Half::Left };
+        editor.set_key_color("RED");
+        editor.mark_saved();
+        assert!(!editor.modified);
+
+        // Act
+        editor.undo();
+
+        // Assert
+        assert!(editor.modified, "undoing past save point should set modified");
     }
 }

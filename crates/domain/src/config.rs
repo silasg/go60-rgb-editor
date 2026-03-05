@@ -1,6 +1,6 @@
 use super::{ColorPalette, Layer};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Config {
     pub layers: Vec<Layer>,
     pub palette: ColorPalette,

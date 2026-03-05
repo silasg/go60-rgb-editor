@@ -49,7 +49,7 @@ impl RgbColor {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ColorDef {
     /// e.g., "RED", "CYN", "___"
     pub abbrev: String,
@@ -79,7 +79,7 @@ impl ColorDef {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct ColorPalette {
     pub colors: Vec<ColorDef>,
     pub abbrev_to_index: HashMap<String, usize>,

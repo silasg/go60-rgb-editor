@@ -4,7 +4,7 @@ use super::geometry::{MAIN_ROW_COLS, THUMB_ROW_COLS};
 ///
 /// Each half has 6 rows: rows 0-3 are main keys (6 cols), rows 4-5 are thumb keys (3 cols).
 /// Colors are stored as abbreviations (e.g., "RED", "CYN", "___" for off).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Layer {
     /// e.g., "Cursor", "Symbol"
     pub name: String,
