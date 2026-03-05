@@ -385,14 +385,7 @@ impl Editor {
             _ => return false,
         };
         let pos = RgbPos { row, col, half };
-        self.inner.push_undo();
-        if let Some(layer) = self.inner.current_layer_mut() {
-            layer.set_color(&pos, abbrev.to_string());
-            self.inner.modified = true;
-            true
-        } else {
-            false
-        }
+        self.inner.set_key_color_at(&pos, abbrev)
     }
 
     /// Clear color at a specific position.

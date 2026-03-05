@@ -73,6 +73,18 @@ impl EditorState {
         }
     }
 
+    /// Set the color at a specific position. Returns true if a layer exists.
+    pub fn set_key_color_at(&mut self, pos: &RgbPos, color: &str) -> bool {
+        self.push_undo();
+        if let Some(layer) = self.current_layer_mut() {
+            layer.set_color(pos, color.to_string());
+            self.modified = true;
+            true
+        } else {
+            false
+        }
+    }
+
     /// Clear the color at the current cursor position.
     pub fn clear_key_color(&mut self) -> bool {
         self.set_key_color("___")
