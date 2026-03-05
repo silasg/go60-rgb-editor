@@ -1,6 +1,6 @@
 # Go60 RGB Editor
 
-A terminal-based (TUI) RGB underglow editor for the MoErgo Go60 keyboard running the `community.pr36.per-key-rgb` community firmware.
+A visual RGB underglow editor for the MoErgo Go60 keyboard running the `community.pr36.per-key-rgb` community firmware. Available as a terminal app (TUI) and a [web editor](https://silasg.github.io/go60-rgb-editor/).
 
 ![CI](https://github.com/silasg/go60-rgb-editor/actions/workflows/ci.yml/badge.svg)
 ![GitHub Release](https://img.shields.io/github/v/release/silasg/go60-rgb-editor)
@@ -34,7 +34,15 @@ Press `?` in the editor to see all key bindings.
 **Not supported (alternatives available):**
 - Glove80 - see the [TailorKey RGB documentation](https://sites.google.com/view/tailorkey/how-to/rgb) for alternative tools
 
-## Installation
+## Web Editor
+
+Try the editor directly in your browser — no installation required:
+
+**[https://silasg.github.io/go60-rgb-editor/](https://silasg.github.io/go60-rgb-editor/)**
+
+The web editor supports the same core features: painting per-key colors, layer management, undo/redo, and copy/paste of [TailorKey RGB](https://sites.google.com/view/tailorkey/how-to/rgb) config text.
+
+## Installation (TUI)
 
 ### Prebuilt binaries
 
