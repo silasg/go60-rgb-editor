@@ -126,4 +126,4 @@ run = "cd web && npx vite build"
 [tasks.web-e2e]
 description = "Run web E2E tests with Playwright (headless Chrome)"
 depends = ["build-wasm", "web-install"]
-run = "cd web && npx playwright test"
+run = "cd web && npx playwright install chromium && npx playwright test"
