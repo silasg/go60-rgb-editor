@@ -68,7 +68,8 @@ web/                            # Web editor SPA (Vite + TypeScript + WASM)
 ├── e2e/                        # E2E tests (Playwright, headless Chrome)
 │   ├── paint-keyboard.spec.ts  # Journey 1: paint, clear, undo/redo
 │   ├── manage-layers.spec.ts   # Journey 2: layer CRUD, fade delay
-│   └── load-config.spec.ts     # Journey 3: config loading, error recovery
+│   ├── load-config.spec.ts     # Journey 3: config loading, error recovery
+│   └── keyboard-navigation.spec.ts # Journey 4: keyboard navigation, palette picker, help
 └── src/
     ├── main.ts                 # App entry, event handlers, orchestration
     ├── editor-bridge.ts        # WASM ↔ JS bridge (wraps Editor handle)

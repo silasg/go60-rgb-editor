@@ -109,3 +109,38 @@ export function deleteLayer(): string | null {
     return String(e);
   }
 }
+
+// --- Cursor navigation ---
+
+export function moveCursorUp(): void { editor?.move_up(); }
+export function moveCursorDown(): void { editor?.move_down(); }
+export function moveCursorLeft(): void { editor?.move_left(); }
+export function moveCursorRight(): void { editor?.move_right(); }
+export function switchHalf(): void { editor?.switch_half(); }
+
+// --- Color at cursor ---
+
+export function setColorAtCursor(abbrev: string): boolean {
+  if (!editor) return false;
+  return editor.set_color(abbrev);
+}
+
+export function clearColorAtCursor(): boolean {
+  if (!editor) return false;
+  return editor.clear_color();
+}
+
+export function yankColor(): string {
+  if (!editor) return '';
+  return editor.yank_color();
+}
+
+export function pasteColor(): boolean {
+  if (!editor) return false;
+  return editor.paste_color();
+}
+
+// --- Layer navigation ---
+
+export function nextLayer(): void { editor?.next_layer(); }
+export function prevLayer(): void { editor?.prev_layer(); }

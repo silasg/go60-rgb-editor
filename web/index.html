@@ -74,6 +74,62 @@
         </div>
       </section>
     </main>
+
+    <div id="help-overlay" class="overlay hidden">
+      <div class="overlay-content">
+        <div class="overlay-header">
+          <h2>Keyboard Shortcuts</h2>
+          <button id="help-close" class="overlay-close">×</button>
+        </div>
+        <div class="overlay-body">
+          <div class="shortcut-group">
+            <h3>Navigation</h3>
+            <dl>
+              <dt>← → ↑ ↓</dt><dd>Move cursor</dd>
+              <dt>Tab</dt><dd>Switch keyboard half</dd>
+              <dt>PageUp / PageDown</dt><dd>Switch layer</dd>
+            </dl>
+          </div>
+          <div class="shortcut-group">
+            <h3>Editing</h3>
+            <dl>
+              <dt>Enter</dt><dd>Pick color from palette</dd>
+              <dt>0–9</dt><dd>Quick-apply color by index</dd>
+              <dt>Backspace</dt><dd>Clear key color</dd>
+              <dt>c</dt><dd>Copy color at cursor</dd>
+              <dt>v</dt><dd>Paste color to cursor</dd>
+              <dt>+ / −</dt><dd>Adjust fade delay</dd>
+            </dl>
+          </div>
+          <div class="shortcut-group">
+            <h3>Layers</h3>
+            <dl>
+              <dt>a</dt><dd>Add layer</dd>
+              <dt>d</dt><dd>Duplicate layer</dd>
+              <dt>r</dt><dd>Rename layer</dd>
+              <dt>x</dt><dd>Delete layer</dd>
+            </dl>
+          </div>
+          <div class="shortcut-group">
+            <h3>Config</h3>
+            <dl>
+              <dt>Shift+C</dt><dd>Copy config to clipboard</dd>
+              <dt>Shift+V</dt><dd>Paste config from clipboard</dd>
+            </dl>
+          </div>
+          <div class="shortcut-group">
+            <h3>General</h3>
+            <dl>
+              <dt>Ctrl/⌘+Z</dt><dd>Undo</dd>
+              <dt>Ctrl/⌘+Y</dt><dd>Redo</dd>
+              <dt>t</dt><dd>Toggle theme</dd>
+              <dt>Escape</dt><dd>Exit textarea / close modal</dd>
+              <dt>?</dt><dd>Toggle this help</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="/src/main.ts"></script>

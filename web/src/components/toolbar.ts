@@ -9,6 +9,7 @@ export function renderToolbar(
   onRedo: VoidHandler,
   onFadeChange: FadeHandler,
   onThemeToggle: VoidHandler,
+  onHelpToggle: VoidHandler,
 ): void {
   const toolbar = document.getElementById('toolbar');
   if (!toolbar) return;
@@ -71,4 +72,12 @@ export function renderToolbar(
   themeBtn.title = isDark ? 'Switch to light mode' : 'Switch to dark mode';
   themeBtn.addEventListener('click', onThemeToggle);
   toolbar.appendChild(themeBtn);
+
+  // Help toggle
+  const helpBtn = document.createElement('button');
+  helpBtn.className = 'toolbar-btn help-toggle';
+  helpBtn.textContent = '? Help';
+  helpBtn.title = 'Toggle keyboard shortcuts';
+  helpBtn.addEventListener('click', onHelpToggle);
+  toolbar.appendChild(helpBtn);
 }

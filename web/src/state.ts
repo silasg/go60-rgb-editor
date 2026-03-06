@@ -50,15 +50,21 @@ export interface LayerGrid {
 
 // ---- Application state (frontend-only) ----
 
+export type FocusRegion = 'keyboard' | 'palette' | 'config';
+
 export interface AppState {
   selectedColor: string | null;
   configLoaded: boolean;
+  focusRegion: FocusRegion;
+  paletteIndex: number;
 }
 
 export function createAppState(): AppState {
   return {
     selectedColor: null,
     configLoaded: false,
+    focusRegion: 'keyboard',
+    paletteIndex: 0,
   };
 }
 

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('paint and edit a keyboard layout', async ({ page }) => {
+test('paint and edit a keyboard layout', async ({ page, context }) => {
   // Arrange — load app and wait for WASM to render keyboard keys
   await page.goto('/');
   const keys = page.locator('.key');
@@ -84,4 +84,16 @@ test('paint and edit a keyboard layout', async ({ page }) => {
 
   // Assert — key is cleared again
   await expect(coloredKey).toHaveText('___');
+
+  // Act — copy config to clipboard via button
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const configValue = await configText.inputValue();
+  const copyBtn = page.locator('#copy-config-btn');
+  await copyBtn.click();
+
+  // Assert — clipboard contains the config text and button shows feedback
+  const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
+  expect(clipboardText).toBe(configValue);
+  await expect(copyBtn).toHaveText('✅ Copied');
+  await expect(copyBtn).toHaveText('📋 Copy', { timeout: 3000 });
 });

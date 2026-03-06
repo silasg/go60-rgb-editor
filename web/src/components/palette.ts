@@ -27,12 +27,15 @@ function renderSwatchGrid(
   colors: PaletteColor[],
   selectedColor: string | null,
   onClick: ColorSelectHandler,
+  paletteCursorIndex: number | null,
+  flatStartIndex: number,
 ): void {
   const container = document.getElementById(containerId);
   if (!container) return;
 
   container.innerHTML = '';
 
+  let localIdx = 0;
   for (const color of colors) {
     if (color.abbrev === '___') continue;
 
@@ -49,8 +52,13 @@ function renderSwatchGrid(
       btn.classList.add('selected');
     }
 
-    btn.addEventListener('click', () => { onClick(color.abbrev); });
+    if (paletteCursorIndex !== null && (flatStartIndex + localIdx) === paletteCursorIndex) {
+      btn.classList.add('palette-cursor');
+    }
+
+    btn.addEventListener('click', () => onClick(color.abbrev));
     container.appendChild(btn);
+    localIdx++;
   }
 }
 
@@ -58,8 +66,12 @@ export function renderPalette(
   state: EditorState,
   selectedColor: string | null,
   onClick: ColorSelectHandler,
+  paletteCursorIndex: number | null,
 ): void {
-  renderSwatchGrid('palette-regular', state.palette.regular, selectedColor, onClick);
+  let flatIndex = 0;
+
+  renderSwatchGrid('palette-regular', state.palette.regular, selectedColor, onClick, paletteCursorIndex, flatIndex);
+  flatIndex += state.palette.regular.filter(c => c.abbrev !== '___').length;
 
   // Prepend clear swatch to the regular colors grid
   const regularGrid = document.getElementById('palette-regular');
@@ -67,6 +79,8 @@ export function renderPalette(
     regularGrid.prepend(createClearSwatch(selectedColor, onClick));
   }
 
-  renderSwatchGrid('palette-lock-grid', state.palette.locks, selectedColor, onClick);
-  renderSwatchGrid('palette-alias-grid', state.palette.aliases, selectedColor, onClick);
+  renderSwatchGrid('palette-lock-grid', state.palette.locks, selectedColor, onClick, paletteCursorIndex, flatIndex);
+  flatIndex += state.palette.locks.length;
+
+  renderSwatchGrid('palette-alias-grid', state.palette.aliases, selectedColor, onClick, paletteCursorIndex, flatIndex);
 }

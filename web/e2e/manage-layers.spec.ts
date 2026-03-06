@@ -15,7 +15,7 @@ test('manage layers and fade delay', async ({ page }) => {
 
   // Act — add a new layer (name must be alphanumeric/underscore only)
   page.once('dialog', (dialog) => dialog.accept('Test_Layer'));
-  await page.locator('.layer-action-btn', { hasText: '+ Add' }).click();
+  await page.locator('.layer-action-btn[data-action="add"]').click();
 
   // Assert — new layer appears in the list
   await expect(layerItems).toHaveCount(initialCount + 1);
@@ -24,14 +24,14 @@ test('manage layers and fade delay', async ({ page }) => {
 
   // Act — duplicate the current layer
   const countBeforeDup = await layerItems.count();
-  await page.locator('.layer-action-btn', { hasText: 'Dup' }).click();
+  await page.locator('.layer-action-btn[data-action="duplicate"]').click();
 
   // Assert — layer count increased by 1
   await expect(layerItems).toHaveCount(countBeforeDup + 1);
 
   // Act — rename the active layer
   page.once('dialog', (dialog) => dialog.accept('Renamed_Layer'));
-  await page.locator('.layer-action-btn', { hasText: 'Ren' }).click();
+  await page.locator('.layer-action-btn[data-action="rename"]').click();
 
   // Assert — active layer name updated
   const activeLayer = page.locator('#layer-list .layer-item.active');
@@ -67,7 +67,7 @@ test('manage layers and fade delay', async ({ page }) => {
 
   // Act — delete a layer
   page.once('dialog', (dialog) => dialog.accept());
-  await page.locator('.layer-action-btn', { hasText: 'Del' }).click();
+  await page.locator('.layer-action-btn[data-action="delete"]').click();
 
   // Assert — layer count decreased
   await expect(layerItems).toHaveCount(countBeforeDelete - 1);

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('load config from text', async ({ page }) => {
+test('load config from text', async ({ page, context }) => {
   // Arrange
   await page.goto('/');
   await page.locator('.key').first().waitFor();
@@ -36,4 +36,22 @@ test('load config from text', async ({ page }) => {
   await expect(parseStatus).toHaveText('');
   const recoveredColoredKey = keys.filter({ hasNot: page.locator('text="___"') }).first();
   await expect(recoveredColoredKey).toBeVisible();
+
+  // Act — paste config from clipboard via button
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+
+  // Put valid config on clipboard, break the textarea, then paste to recover
+  await page.evaluate((text) => navigator.clipboard.writeText(text), validConfig);
+  await configText.fill('garbage');
+  await page.waitForTimeout(600);
+  await expect(parseStatus).toContainText(/error/i);
+
+  const pasteBtn = page.locator('#paste-config-btn');
+  await pasteBtn.click();
+  await page.waitForTimeout(600);
+
+  // Assert — valid config restored from clipboard, parse error cleared
+  await expect(parseStatus).toHaveText('');
+  const restoredConfig = await configText.inputValue();
+  expect(restoredConfig).toBe(validConfig);
 });
