@@ -135,50 +135,56 @@ function setupEventListeners(): void {
   }
 
   // Keyboard shortcuts
-  document.addEventListener('keydown', (e) => {
-    if (!hasEditor()) return;
+  document.addEventListener('keydown', handleKeyDown);
+}
 
-    // When config textarea has focus, only intercept Escape
-    const inTextarea = document.activeElement?.id === 'config-text';
-    if (inTextarea) {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        (document.activeElement as HTMLElement).blur();
-        appState.focusRegion = 'keyboard';
-        render();
-      }
-      return;
-    }
+function handleKeyDown(e: KeyboardEvent): void {
+  if (!hasEditor()) return;
 
-    // Help overlay intercepts all keys when open
-    const helpOverlay = document.getElementById('help-overlay');
-    if (helpOverlay && !helpOverlay.classList.contains('hidden')) {
-      if (e.key === 'Escape' || e.key === '?') {
-        e.preventDefault();
-        toggleHelp();
-      }
-      return;
-    }
-
-    // Global shortcuts (work in all focus regions)
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+  // When config textarea has focus, only intercept Escape
+  const inTextarea = document.activeElement?.id === 'config-text';
+  if (inTextarea) {
+    if (e.key === 'Escape') {
       e.preventDefault();
-      onUndo();
-      return;
+      (document.activeElement as HTMLElement).blur();
+      appState.focusRegion = 'keyboard';
+      render();
     }
-    if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-      e.preventDefault();
-      onRedo();
-      return;
-    }
+    return;
+  }
 
-    // Dispatch to focus-region handler
-    if (appState.focusRegion === 'palette') {
-      handlePaletteKey(e);
-    } else {
-      handleKeyboardKey(e);
+  // Help overlay intercepts all keys when open
+  const helpOverlay = document.getElementById('help-overlay');
+  if (helpOverlay && !helpOverlay.classList.contains('hidden')) {
+    if (e.key === 'Escape' || e.key === '?') {
+      e.preventDefault();
+      toggleHelp();
     }
-  });
+    return;
+  }
+
+  if (handleGlobalShortcuts(e)) return;
+
+  // Dispatch to focus-region handler
+  if (appState.focusRegion === 'palette') {
+    handlePaletteKey(e);
+  } else {
+    handleKeyboardKey(e);
+  }
+}
+
+function handleGlobalShortcuts(e: KeyboardEvent): boolean {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+    e.preventDefault();
+    onUndo();
+    return true;
+  }
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+    e.preventDefault();
+    onRedo();
+    return true;
+  }
+  return false;
 }
 
 // ---- Keyboard navigation handlers ----
@@ -222,64 +228,50 @@ function handleKeyboardEdit(e: KeyboardEvent): boolean {
   }
 }
 
-function handleKeyboardKey(e: KeyboardEvent): void {
-  if (handleKeyboardNav(e)) return;
-  if (handleKeyboardEdit(e)) return;
-
+function handleKeyboardMisc(e: KeyboardEvent): boolean {
   if (e.key === '?') {
     e.preventDefault();
     toggleHelp();
-    return;
+    return true;
   }
-
-  // Theme toggle
   if (e.key === 't' && !e.ctrlKey && !e.metaKey) {
     e.preventDefault();
     toggleTheme();
-    return;
+    return true;
   }
+  return false;
+}
 
-  // Config copy/paste (Shift+C / Shift+V)
-  if (e.key === 'C' && !e.ctrlKey && !e.metaKey) {
-    e.preventDefault();
-    void copyConfigToClipboard();
-    return;
-  }
-  if (e.key === 'V' && !e.ctrlKey && !e.metaKey) {
-    e.preventDefault();
-    void pasteConfigFromClipboard().then((text) => {
-      if (text) renderFromConfig(text);
-    });
-    return;
-  }
+function handleKeyboardShortcuts(e: KeyboardEvent): boolean {
+  if (e.ctrlKey || e.metaKey) return false;
 
-  // Layer management
-  if (e.key === 'a' && !e.ctrlKey && !e.metaKey) {
-    e.preventDefault();
-    onLayerAction('add');
-    return;
+  switch (e.key) {
+    case 'C': e.preventDefault(); void copyConfigToClipboard(); return true;
+    case 'V':
+      e.preventDefault();
+      void pasteConfigFromClipboard().then((text) => {
+        if (text) renderFromConfig(text);
+      });
+      return true;
+    case 'a': e.preventDefault(); onLayerAction('add'); return true;
+    case 'd': e.preventDefault(); onLayerAction('duplicate'); return true;
+    case 'r': e.preventDefault(); onLayerAction('rename'); return true;
+    case 'x': e.preventDefault(); onLayerAction('delete'); return true;
+    default:
+      if (e.key >= '0' && e.key <= '9') {
+        e.preventDefault();
+        applyColorByIndex(parseInt(e.key, 10));
+        return true;
+      }
+      return false;
   }
-  if (e.key === 'd' && !e.ctrlKey && !e.metaKey) {
-    e.preventDefault();
-    onLayerAction('duplicate');
-    return;
-  }
-  if (e.key === 'r' && !e.ctrlKey && !e.metaKey) {
-    e.preventDefault();
-    onLayerAction('rename');
-    return;
-  }
-  if (e.key === 'x' && !e.ctrlKey && !e.metaKey) {
-    e.preventDefault();
-    onLayerAction('delete');
-    return;
-  }
+}
 
-  // 0-9 quick color selection
-  if (e.key >= '0' && e.key <= '9' && !e.ctrlKey && !e.metaKey) {
-    e.preventDefault();
-    applyColorByIndex(parseInt(e.key, 10));
-  }
+function handleKeyboardKey(e: KeyboardEvent): void {
+  if (handleKeyboardNav(e)) return;
+  if (handleKeyboardEdit(e)) return;
+  if (handleKeyboardMisc(e)) return;
+  handleKeyboardShortcuts(e);
 }
 
 function applyColorByIndex(index: number): void {
@@ -299,9 +291,7 @@ function enterPaletteMode(): void {
   if (!state) return;
 
   const allColors = getAllPaletteColors(state);
-  const currentColor = state.cursor
-    ? getCurrentColorAbbrev(state)
-    : null;
+  const currentColor = getCurrentColorAbbrev(state);
   const matchIndex = currentColor
     ? allColors.findIndex(c => c.abbrev === currentColor)
     : -1;
@@ -316,10 +306,7 @@ function getCurrentColorAbbrev(state: EditorState): string | null {
   if (!grid) return null;
 
   const half = state.cursor.half === 'left' ? grid.left : grid.right;
-  const row = half[state.cursor.row];
-  if (!row) return null;
-
-  const abbrev = row[state.cursor.col];
+  const abbrev = half[state.cursor.row]?.[state.cursor.col];
   return abbrev && abbrev !== '___' ? abbrev : null;
 }
 

@@ -53,7 +53,7 @@ export function renderLayers(
     btn.textContent = icon;
     btn.title = title;
     btn.dataset.action = action;
-    btn.addEventListener('click', () => onAction(action));
+    btn.addEventListener('click', () => { onAction(action); });
     actionsEl.appendChild(btn);
   }
 }

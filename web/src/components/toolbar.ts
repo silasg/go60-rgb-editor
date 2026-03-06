@@ -3,29 +3,7 @@ import type { EditorState } from '../state.ts';
 type VoidHandler = () => void;
 type FadeHandler = (delta: number) => void;
 
-export function renderToolbar(
-  state: EditorState,
-  onUndo: VoidHandler,
-  onRedo: VoidHandler,
-  onFadeChange: FadeHandler,
-  onThemeToggle: VoidHandler,
-  onHelpToggle: VoidHandler,
-): void {
-  const toolbar = document.getElementById('toolbar');
-  if (!toolbar) return;
-
-  toolbar.innerHTML = '';
-
-  // Modified indicator
-  if (state.modified) {
-    const dot = document.createElement('span');
-    dot.className = 'modified-indicator';
-    dot.textContent = '● Modified';
-    dot.title = 'Config has unsaved changes';
-    toolbar.appendChild(dot);
-  }
-
-  // Fade delay controls
+function createFadeControls(state: EditorState, onFadeChange: FadeHandler): HTMLElement {
   const fadeGroup = document.createElement('div');
   fadeGroup.className = 'toolbar-group';
 
@@ -49,7 +27,32 @@ export function renderToolbar(
   fadeUp.addEventListener('click', () => { onFadeChange(5); });
   fadeGroup.appendChild(fadeUp);
 
-  toolbar.appendChild(fadeGroup);
+  return fadeGroup;
+}
+
+export function renderToolbar(
+  state: EditorState,
+  onUndo: VoidHandler,
+  onRedo: VoidHandler,
+  onFadeChange: FadeHandler,
+  onThemeToggle: VoidHandler,
+  onHelpToggle: VoidHandler,
+): void {
+  const toolbar = document.getElementById('toolbar');
+  if (!toolbar) return;
+
+  toolbar.innerHTML = '';
+
+  // Modified indicator
+  if (state.modified) {
+    const dot = document.createElement('span');
+    dot.className = 'modified-indicator';
+    dot.textContent = '● Modified';
+    dot.title = 'Config has unsaved changes';
+    toolbar.appendChild(dot);
+  }
+
+  toolbar.appendChild(createFadeControls(state, onFadeChange));
 
   // Undo/Redo buttons
   const undoBtn = document.createElement('button');

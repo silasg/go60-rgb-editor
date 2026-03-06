@@ -56,7 +56,7 @@ function renderSwatchGrid(
       btn.classList.add('palette-cursor');
     }
 
-    btn.addEventListener('click', () => onClick(color.abbrev));
+    btn.addEventListener('click', () => { onClick(color.abbrev); });
     container.appendChild(btn);
     localIdx++;
   }
