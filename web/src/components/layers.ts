@@ -40,18 +40,20 @@ export function renderLayers(
   // Layer action buttons
   actionsEl.innerHTML = '';
 
-  const actions: { label: string; action: LayerAction }[] = [
-    { label: '+ Add', action: 'add' },
-    { label: 'Dup', action: 'duplicate' },
-    { label: 'Ren', action: 'rename' },
-    { label: 'Del', action: 'delete' },
+  const actions: { icon: string; title: string; action: LayerAction }[] = [
+    { icon: '+', title: 'Add layer', action: 'add' },
+    { icon: '⎘', title: 'Duplicate layer', action: 'duplicate' },
+    { icon: 'Aa', title: 'Rename layer', action: 'rename' },
+    { icon: '✕', title: 'Delete layer', action: 'delete' },
   ];
 
-  for (const { label, action } of actions) {
+  for (const { icon, title, action } of actions) {
     const btn = document.createElement('button');
     btn.className = 'layer-action-btn';
-    btn.textContent = label;
-    btn.addEventListener('click', () => { onAction(action); });
+    btn.textContent = icon;
+    btn.title = title;
+    btn.dataset.action = action;
+    btn.addEventListener('click', () => onAction(action));
     actionsEl.appendChild(btn);
   }
 }
