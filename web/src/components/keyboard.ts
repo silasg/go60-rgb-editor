@@ -68,9 +68,7 @@ function renderHalf(
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  const label = container.querySelector('.half-label');
   container.innerHTML = '';
-  if (label) container.appendChild(label);
 
   container.style.display = 'grid';
   container.style.gridTemplateColumns = `repeat(${GRID_COLS}, 1fr)`;
