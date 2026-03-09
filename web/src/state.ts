@@ -51,12 +51,14 @@ export interface LayerGrid {
 // ---- Application state (frontend-only) ----
 
 export type FocusRegion = 'keyboard' | 'palette' | 'config';
+export type InteractionMode = 'select' | 'paint';
 
 export interface AppState {
   selectedColor: string | null;
   configLoaded: boolean;
   focusRegion: FocusRegion;
   paletteIndex: number;
+  interactionMode: InteractionMode;
 }
 
 export function createAppState(): AppState {
@@ -65,6 +67,7 @@ export function createAppState(): AppState {
     configLoaded: false,
     focusRegion: 'keyboard',
     paletteIndex: 0,
+    interactionMode: 'select',
   };
 }
 

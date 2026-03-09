@@ -1,4 +1,4 @@
-import type { EditorState } from '../state.ts';
+import type { EditorState, InteractionMode } from '../state.ts';
 
 type VoidHandler = () => void;
 type FadeHandler = (delta: number) => void;
@@ -30,6 +30,32 @@ function createFadeControls(state: EditorState, onFadeChange: FadeHandler): HTML
   return fadeGroup;
 }
 
+function createModeToggle(
+  mode: InteractionMode,
+  onToggle: VoidHandler,
+): HTMLElement {
+  const group = document.createElement('div');
+  group.className = 'toolbar-group mode-toggle-group';
+
+  const selectBtn = document.createElement('button');
+  selectBtn.className = 'mode-toggle-btn';
+  selectBtn.textContent = '🔘 Select';
+  selectBtn.title = 'Select mode (m): click a key to select it, then click a color to apply';
+  if (mode === 'select') selectBtn.classList.add('mode-active');
+  selectBtn.addEventListener('click', () => { if (mode !== 'select') onToggle(); });
+
+  const paintBtn = document.createElement('button');
+  paintBtn.className = 'mode-toggle-btn';
+  paintBtn.textContent = '🎨 Paint';
+  paintBtn.title = 'Paint mode (m): choose a color, then click keys to paint them';
+  if (mode === 'paint') paintBtn.classList.add('mode-active');
+  paintBtn.addEventListener('click', () => { if (mode !== 'paint') onToggle(); });
+
+  group.appendChild(selectBtn);
+  group.appendChild(paintBtn);
+  return group;
+}
+
 export function renderToolbar(
   state: EditorState,
   onUndo: VoidHandler,
@@ -37,6 +63,8 @@ export function renderToolbar(
   onFadeChange: FadeHandler,
   onThemeToggle: VoidHandler,
   onHelpToggle: VoidHandler,
+  interactionMode: InteractionMode,
+  onModeToggle: VoidHandler,
 ): void {
   const toolbar = document.getElementById('toolbar');
   if (!toolbar) return;
@@ -52,6 +80,7 @@ export function renderToolbar(
     toolbar.appendChild(dot);
   }
 
+  toolbar.appendChild(createModeToggle(interactionMode, onModeToggle));
   toolbar.appendChild(createFadeControls(state, onFadeChange));
 
   // Undo/Redo buttons

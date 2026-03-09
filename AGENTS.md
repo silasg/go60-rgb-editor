@@ -125,7 +125,7 @@ mise run coverage-html # Coverage report in browser
 mise run run          # Run editor with example config
 mise run build-wasm   # Build domain-wasm for WebAssembly
 mise run web-install  # Install web dependencies
-mise run web-dev      # Start web dev server
+mise run web-dev      # Start web dev server (⚠️ BLOCKING — see warning below)
 mise run web-build    # Build web app for production
 mise run web-e2e      # Run web E2E tests (Playwright, headless Chrome)
 mise run changelog    # Preview unreleased changelog entries
@@ -133,6 +133,16 @@ mise run release-patch # Release patch version
 mise run release-minor # Release minor version
 mise run release-major # Release major version
 ```
+
+### ⚠️ Blocking Tasks
+
+**NEVER run `mise run web-dev` directly** — it starts a long-running dev server that blocks the agent indefinitely. Use one of these approaches instead:
+
+1. **tmux** (preferred): `tmux new-session -d -s webdev 'mise run web-dev'` — then `tmux kill-session -t webdev` to stop
+2. **Subagent**: Delegate to a subagent, but note the server outlives the agent and is hard to clean up
+3. **Background**: `mise run web-dev &` works but the process is difficult to stop reliably
+
+The same applies to any other long-running/blocking task (e.g., `mise run run` for the TUI binary).
 
 ## Commits
 

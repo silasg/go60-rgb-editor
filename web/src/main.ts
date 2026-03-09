@@ -59,7 +59,7 @@ function render(): void {
   }
 
   renderLayers(state, onLayerSelect, onLayerAction);
-  renderToolbar(state, onUndo, onRedo, onFadeChange, toggleTheme, toggleHelp);
+  renderToolbar(state, onUndo, onRedo, onFadeChange, toggleTheme, toggleHelp, appState.interactionMode, toggleInteractionMode);
   updateConfigText(serialize());
 }
 
@@ -239,6 +239,11 @@ function handleKeyboardMisc(e: KeyboardEvent): boolean {
     toggleTheme();
     return true;
   }
+  if (e.key === 'm' && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault();
+    toggleInteractionMode();
+    return true;
+  }
   return false;
 }
 
@@ -357,6 +362,11 @@ function handlePaletteKey(e: KeyboardEvent): void {
   }
 }
 
+function toggleInteractionMode(): void {
+  appState.interactionMode = appState.interactionMode === 'select' ? 'paint' : 'select';
+  render();
+}
+
 function toggleHelp(): void {
   const overlay = document.getElementById('help-overlay');
   if (!overlay) return;
@@ -366,7 +376,7 @@ function toggleHelp(): void {
 function onKeyClick(half: 'left' | 'right', row: number, col: number): void {
   setCursor(half, row, col);
 
-  if (appState.selectedColor) {
+  if (appState.interactionMode === 'paint' && appState.selectedColor) {
     if (appState.selectedColor === '___') {
       clearColorAt(half, row, col);
     } else {
@@ -379,6 +389,15 @@ function onKeyClick(half: 'left' | 'right', row: number, col: number): void {
 
 function onColorSelect(abbrev: string): void {
   appState.selectedColor = abbrev;
+
+  if (appState.interactionMode === 'select') {
+    if (abbrev === '___') {
+      clearColorAtCursor();
+    } else {
+      setColorAtCursor(abbrev);
+    }
+  }
+
   render();
 }
 

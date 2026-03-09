@@ -21,6 +21,11 @@ test('paint and edit a keyboard layout', async ({ page, context }) => {
   const configText = page.locator('#config-text');
   await expect(configText).not.toBeEmpty();
 
+  // Arrange — switch to paint mode (default is select mode)
+  const paintModeBtn = page.locator('.mode-toggle-btn', { hasText: 'Paint' });
+  await paintModeBtn.click();
+  await expect(paintModeBtn).toHaveClass(/mode-active/);
+
   // Act — pick the RED color swatch
   const redSwatch = page.locator('#palette-regular .swatch', { hasText: 'RED' });
   await redSwatch.click();
