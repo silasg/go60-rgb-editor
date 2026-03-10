@@ -3,7 +3,7 @@ import { type AppState, type EditorState, type PaletteColor, createAppState } fr
 import { renderKeyboard } from './components/keyboard.ts';
 import { renderPalette } from './components/palette.ts';
 import { renderLayers, type LayerAction } from './components/layers.ts';
-import { updateConfigText, copyConfigToClipboard, pasteConfigFromClipboard } from './components/config-text.ts';
+import { updateConfigText, copyConfigToClipboard, pasteConfigFromClipboard, openConfigFile } from './components/config-text.ts';
 import { renderToolbar } from './components/toolbar.ts';
 import './styles.css';
 import defaultConfig from '../../Go60 TK Latest RGB scheme.txt?raw';
@@ -123,6 +123,15 @@ function setupEventListeners(): void {
   if (pasteBtn) {
     pasteBtn.addEventListener('click', () => {
       void pasteConfigFromClipboard().then((text) => {
+        if (text) renderFromConfig(text);
+      });
+    });
+  }
+
+  const openBtn = document.getElementById('open-config-btn');
+  if (openBtn) {
+    openBtn.addEventListener('click', () => {
+      void openConfigFile().then((text) => {
         if (text) renderFromConfig(text);
       });
     });
@@ -255,6 +264,12 @@ function handleKeyboardShortcuts(e: KeyboardEvent): boolean {
     case 'V':
       e.preventDefault();
       void pasteConfigFromClipboard().then((text) => {
+        if (text) renderFromConfig(text);
+      });
+      return true;
+    case 'O':
+      e.preventDefault();
+      void openConfigFile().then((text) => {
         if (text) renderFromConfig(text);
       });
       return true;

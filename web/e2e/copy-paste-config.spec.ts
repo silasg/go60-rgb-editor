@@ -42,7 +42,8 @@ test('paste button loads config from clipboard', async ({ page, context }) => {
   const parseStatus = page.locator('#parse-status');
   await expect(parseStatus).toContainText(/error/i);
 
-  // Act — click paste button to restore from clipboard
+  // Act — accept overwrite confirmation, then click paste button to restore
+  page.once('dialog', (dialog) => { void dialog.accept(); });
   const pasteBtn = page.locator('#paste-config-btn');
   await pasteBtn.click();
   await page.waitForTimeout(600);

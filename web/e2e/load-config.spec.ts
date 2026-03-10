@@ -46,6 +46,8 @@ test('load config from text', async ({ page, context }) => {
   await page.waitForTimeout(600);
   await expect(parseStatus).toContainText(/error/i);
 
+  // Accept overwrite confirmation, then click paste
+  page.once('dialog', (dialog) => { void dialog.accept(); });
   const pasteBtn = page.locator('#paste-config-btn');
   await pasteBtn.click();
   await page.waitForTimeout(600);
@@ -54,4 +56,50 @@ test('load config from text', async ({ page, context }) => {
   await expect(parseStatus).toHaveText('');
   const restoredConfig = await configText.inputValue();
   expect(restoredConfig).toBe(validConfig);
+});
+
+test('paste overwrite cancelled preserves current config', async ({ page, context }) => {
+  // Arrange
+  await page.goto('/');
+  await page.locator('.key').first().waitFor();
+
+  const configText = page.locator('#config-text');
+  const currentConfig = await configText.inputValue();
+
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.evaluate(() => navigator.clipboard.writeText('replacement config'));
+
+  // Act — dismiss overwrite confirmation
+  page.once('dialog', (dialog) => { void dialog.dismiss(); });
+  await page.locator('#paste-config-btn').click();
+  await page.waitForTimeout(200);
+
+  // Assert — config unchanged
+  await expect(configText).toHaveValue(currentConfig);
+});
+
+test('open config file', async ({ page }) => {
+  // Arrange
+  await page.goto('/');
+  await page.locator('.key').first().waitFor();
+
+  const configText = page.locator('#config-text');
+  const validConfig = await configText.inputValue();
+  const parseStatus = page.locator('#parse-status');
+
+  // Act — accept overwrite, then select file via file chooser
+  page.once('dialog', (dialog) => { void dialog.accept(); });
+  const fileChooserPromise = page.waitForEvent('filechooser');
+  await page.locator('#open-config-btn').click();
+  const fileChooser = await fileChooserPromise;
+  await fileChooser.setFiles({
+    name: 'config.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from(validConfig),
+  });
+  await page.waitForTimeout(600);
+
+  // Assert — config loaded successfully
+  await expect(parseStatus).toHaveText('');
+  await expect(configText).toHaveValue(validConfig);
 });
