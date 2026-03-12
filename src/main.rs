@@ -1,8 +1,4 @@
-mod app;
-mod event;
-mod io;
 mod tui;
-mod ui;
 
 use std::path::PathBuf;
 use std::time::Duration;
@@ -10,7 +6,10 @@ use std::time::Duration;
 use clap::Parser;
 use color_eyre::Result;
 
-use app::App;
+use go60_rgb_editor::app::App;
+use go60_rgb_editor::event;
+use go60_rgb_editor::io;
+use go60_rgb_editor::ui;
 
 const TICK_RATE_MS: u64 = 250;
 

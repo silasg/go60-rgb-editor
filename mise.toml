@@ -39,6 +39,10 @@ run = "cargo build --release"
 description = "Run all tests and clippy"
 run = ["cargo clippy -- -D warnings", "cargo test"]
 
+[tasks.tui-e2e]
+description = "Run TUI E2E tests"
+run = "cargo test --test 'e2e_*'"
+
 [tasks.lint]
 description = "Run clippy lints"
 run = "cargo clippy -- -D warnings"

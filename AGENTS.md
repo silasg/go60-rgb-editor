@@ -38,7 +38,8 @@ crates/
 │   ├── Cargo.toml
 │   └── src/
 │       └── lib.rs              # #[wasm_bindgen] wrapper around domain
-src/                            # TUI binary (go60-rgb-editor-tui)
+src/                            # TUI binary + library (go60-rgb-editor-tui)
+├── lib.rs                      # Library re-exports (app, event, io, ui)
 ├── main.rs                     # Entry point, CLI args
 ├── app.rs                      # Application state & logic
 ├── event.rs                    # Key event handling
@@ -54,6 +55,13 @@ src/                            # TUI binary (go60-rgb-editor-tui)
 │   ├── status_bar.rs
 │   └── help.rs
 tests/
+├── helpers/
+│   └── mod.rs                  # E2E test harness (create_e2e_app, send_key, render, etc.)
+├── e2e_paint_keyboard.rs       # Journey 1: paint, clear, undo/redo
+├── e2e_manage_layers.rs        # Journey 2: layer CRUD, fade delay
+├── e2e_load_config.rs          # Journey 3: config loading, save/save-as
+├── e2e_navigation.rs           # Journey 4: keyboard navigation, palette picker, help
+├── e2e_copy_config.rs          # Journey 5: clipboard confirm/cancel
 ├── fixtures/                   # Test fixture files for TUI
 └── architecture.rs             # TUI architecture rules (cargo-pup)
 pkg/                            # WASM build output (generated, gitignored except .d.ts)
@@ -128,6 +136,7 @@ mise run web-install  # Install web dependencies
 mise run web-dev      # Start web dev server (⚠️ BLOCKING — see warning below)
 mise run web-build    # Build web app for production
 mise run web-e2e      # Run web E2E tests (Playwright, headless Chrome)
+mise run tui-e2e      # Run TUI E2E tests (in-process, ratatui TestBackend)
 mise run changelog    # Preview unreleased changelog entries
 mise run release-patch # Release patch version
 mise run release-minor # Release minor version

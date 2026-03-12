@@ -5,6 +5,10 @@ edition = "2021"
 description = "TUI RGB Underglow Editor for ZMK Keyboards"
 license = "MIT"
 
+[lib]
+name = "go60_rgb_editor"
+path = "src/lib.rs"
+
 [[bin]]
 name = "go60-rgb-editor"
 path = "src/main.rs"

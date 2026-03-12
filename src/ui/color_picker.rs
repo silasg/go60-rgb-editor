@@ -12,13 +12,14 @@ use super::render_color_cell;
 /// Number of colors per row in the color picker grid.
 pub const COLORS_PER_PICKER_ROW: usize = 17;
 
+#[derive(Default)]
 pub struct ColorPickerState {
     pub selected: usize,
 }
 
 impl ColorPickerState {
     pub fn new() -> Self {
-        Self { selected: 0 }
+        Self::default()
     }
 
     pub fn move_selection(&mut self, direction: Direction, palette: &ColorPalette) {

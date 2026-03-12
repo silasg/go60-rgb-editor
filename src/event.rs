@@ -12,7 +12,7 @@ pub fn handle_events(app: &mut App, timeout: Duration) -> std::io::Result<bool> 
     Ok(!app.should_quit)
 }
 
-fn handle_key(app: &mut App, key: KeyEvent) {
+pub fn handle_key(app: &mut App, key: KeyEvent) {
     match app.mode {
         Mode::Normal => handle_normal_mode(app, key),
         Mode::ColorPick => handle_color_pick_mode(app, key),
