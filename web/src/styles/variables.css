@@ -1,0 +1,37 @@
+:root {
+  --bg-primary: #0f0f1a;
+  --bg-secondary: #1a1a2e;
+  --bg-tertiary: #16213e;
+  --text-primary: #e0e0e0;
+  --text-secondary: #999;
+  --accent: #4a9eff;
+  --accent-hover: #6bb3ff;
+  --border: #2a2a4a;
+  --key-off: #1a1a2e;
+  --cursor-ring: #ffcc00;
+  --selected-ring: #4a9eff;
+  --error: #ff4444;
+  --success: #44ff44;
+  --key-border: rgba(255, 255, 255, 0.08);
+  --key-border-hover: rgba(255, 255, 255, 0.3);
+  --swatch-hover-border: rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="light"] {
+  --bg-primary: #f0f0f5;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e4e4ee;
+  --text-primary: #1a1a2e;
+  --text-secondary: #666;
+  --accent: #2a7de1;
+  --accent-hover: #1a6dd1;
+  --border: #d0d0e0;
+  --key-off: #e0e0ea;
+  --cursor-ring: #cc9900;
+  --selected-ring: #2a7de1;
+  --error: #cc0000;
+  --success: #008800;
+  --key-border: rgba(0, 0, 0, 0.1);
+  --key-border-hover: rgba(0, 0, 0, 0.3);
+  --swatch-hover-border: rgba(0, 0, 0, 0.3);
+}

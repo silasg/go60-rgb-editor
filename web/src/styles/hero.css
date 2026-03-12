@@ -1,0 +1,77 @@
+#hero {
+  text-align: center;
+  padding: 40px 24px 32px;
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.hero-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.hero-tagline {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 560px;
+  margin: 0 auto 16px;
+}
+
+.hero-tagline a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.hero-tagline a:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+.hero-tagline code {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 12px;
+  background: var(--bg-tertiary);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--text-primary);
+}
+
+.hero-badges {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.hero-badges a,
+.hero-badges img {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.hero-links {
+  font-size: 13px;
+}
+
+.hero-links a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.hero-links a:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+.hero-sep {
+  color: var(--text-secondary);
+  margin: 0 6px;
+}

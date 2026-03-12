@@ -1,0 +1,41 @@
+@media (max-width: 900px) {
+  #hero {
+    padding: 28px 16px 24px;
+  }
+
+  .hero-title {
+    font-size: 22px;
+  }
+
+  .hero-tagline {
+    font-size: 13px;
+  }
+
+  #main {
+    flex-direction: column;
+  }
+
+  #layer-panel {
+    width: 100%;
+    min-width: unset;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 120px;
+  }
+
+  #layer-list {
+    display: flex;
+    overflow-x: auto;
+    gap: 4px;
+  }
+
+  .layer-item {
+    min-width: max-content;
+  }
+
+  #keyboard-section {
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+}
