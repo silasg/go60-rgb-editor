@@ -1,0 +1,26 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "packageRules": [
+    {
+      "description": "Automerge patch and minor updates when CI passes",
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true
+    },
+    {
+      "description": "Do not automerge major updates",
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    },
+    {
+      "description": "Keep wasm-bindgen and wasm-bindgen-cli in sync",
+      "matchPackageNames": ["wasm-bindgen", "wasm-bindgen-cli"],
+      "groupName": "wasm-bindgen"
+    },
+    {
+      "description": "Do not touch cargo-pup (manually pinned to nightly)",
+      "matchPackageNames": ["cargo_pup_lint_config"],
+      "enabled": false
+    }
+  ]
+}
