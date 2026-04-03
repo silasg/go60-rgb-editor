@@ -30,32 +30,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
+      - uses: jdx/mise-action@v2
 
-      - name: Install cross
-        if: matrix.cross
-        run: cargo install cross --locked
+      - name: Build release
+        run: mise run release-build
+        env:
+          TARGET: ${{ matrix.target }}
+          USE_CROSS: ${{ matrix.cross && '1' || '' }}
 
-      - name: Build
-        run: ${{ matrix.cross && 'cross' || 'cargo' }} build --release --target ${{ matrix.target }}
+      - name: Generate SBOM
+        run: mise run sbom
 
-      - name: Package (unix)
-        if: runner.os != 'Windows'
-        run: |
-          VERSION=${GITHUB_REF_NAME}
-          cd target/${{ matrix.target }}/release
-          tar czf ../../../go60-rgb-editor-${VERSION}-${{ matrix.target }}.tar.gz go60-rgb-editor
-          cd ../../..
-
-      - name: Package (windows)
-        if: runner.os == 'Windows'
-        run: |
-          $VERSION = $env:GITHUB_REF_NAME
-          cd target/${{ matrix.target }}/release
-          7z a ../../../go60-rgb-editor-${VERSION}-${{ matrix.target }}.zip go60-rgb-editor.exe
-          cd ../../..
+      - name: Package release
+        run: mise run release-package
+        env:
+          TARGET: ${{ matrix.target }}
+          VERSION: ${{ github.ref_name }}
 
       - uses: actions/upload-artifact@v4
         with:
@@ -77,3 +67,4 @@ jobs:
           files: |
             go60-rgb-editor-${{ github.ref_name }}-*.tar.gz
             go60-rgb-editor-${{ github.ref_name }}-*.zip
+            go60-rgb-editor-${{ github.ref_name }}-*.cdx.json

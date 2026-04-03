@@ -12,3 +12,4 @@ web/dist/
 pkg/*
 !pkg/go60_rgb_editor_wasm.d.ts
 .rodney/
+*.cdx.json

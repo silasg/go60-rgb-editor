@@ -3,6 +3,7 @@ rust = "stable"
 "cargo:cargo-llvm-cov" = "latest"
 "cargo:git-cliff" = "latest"
 "cargo:cargo-release" = "latest"
+"cargo:cargo-cyclonedx" = "latest"
 
 [vars]
 # Pinned nightly toolchain for cargo-pup (architecture linting).
@@ -86,6 +87,46 @@ description = "Build domain-wasm for WebAssembly"
 run = """
 cargo build -p go60-rgb-editor-wasm --target wasm32-unknown-unknown --release
 wasm-bindgen --target web --out-dir pkg/ target/wasm32-unknown-unknown/release/go60_rgb_editor_wasm.wasm
+"""
+
+[tasks.sbom]
+description = "Generate Rust SBOM (CycloneDX JSON)"
+run = "cargo cyclonedx --format json --spec-version 1.5 --top-level --override-filename go60-rgb-editor.cdx"
+
+[tasks.sbom-all]
+description = "Generate SBOMs for all stacks (Rust + Web)"
+depends = ["sbom", "sbom-web"]
+
+[tasks.sbom-web]
+description = "Generate web SBOM (CycloneDX JSON)"
+depends = ["web-install"]
+run = "cd web && npx @cyclonedx/cyclonedx-npm --output-file ../go60-rgb-editor-web.cdx.json"
+
+[tasks.release-build]
+description = "Build release binary for a target (set TARGET env var, USE_CROSS=1 for cross)"
+run = """
+if [ -n "$USE_CROSS" ]; then
+  cargo install cross --locked
+  cross build --release --target "$TARGET"
+else
+  rustup target add "$TARGET"
+  cargo build --release --target "$TARGET"
+fi
+"""
+
+[tasks.release-package]
+description = "Package release binary + SBOM into archive (set TARGET and VERSION env vars)"
+run = """
+ARCHIVE_BASE="go60-rgb-editor-${VERSION}-${TARGET}"
+cd target/${TARGET}/release
+if echo "$TARGET" | grep -q windows; then
+  7z a ../../../${ARCHIVE_BASE}.zip go60-rgb-editor.exe
+else
+  tar czf ../../../${ARCHIVE_BASE}.tar.gz go60-rgb-editor
+fi
+cd ../../..
+mv go60-rgb-editor.cdx.json ${ARCHIVE_BASE}.cdx.json
+
 """
 
 [tasks.changelog]

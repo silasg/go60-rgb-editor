@@ -42,6 +42,15 @@ jobs:
       - name: Build web app
         run: cd web && npm run build
 
+      - name: Generate web SBOM
+        run: mise run sbom-web
+
+      - name: Upload web SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-web
+          path: go60-rgb-editor-web.cdx.json
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: web/dist

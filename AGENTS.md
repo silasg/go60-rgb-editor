@@ -131,11 +131,16 @@ mise run arch-lint    # Run architecture linting with cargo-pup (requires nightl
 mise run coverage     # Test coverage report
 mise run coverage-html # Coverage report in browser
 mise run run          # Run editor with example config
+mise run sbom          # Generate Rust SBOM (CycloneDX JSON)
+mise run sbom-web      # Generate web SBOM (CycloneDX JSON)
+mise run sbom-all      # Generate SBOMs for all stacks (Rust + Web)
 mise run build-wasm   # Build domain-wasm for WebAssembly
 mise run web-install  # Install web dependencies
 mise run web-dev      # Start web dev server (⚠️ BLOCKING — see warning below)
 mise run web-build    # Build web app for production
 mise run web-e2e      # Run web E2E tests (Playwright, headless Chrome)
+mise run release-build   # Build release binary (set TARGET, USE_CROSS env vars)
+mise run release-package # Package release binary + SBOM (set TARGET, VERSION env vars)
 mise run tui-e2e      # Run TUI E2E tests (in-process, ratatui TestBackend)
 mise run changelog    # Preview unreleased changelog entries
 mise run release-patch # Release patch version

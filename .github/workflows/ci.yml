@@ -38,3 +38,14 @@ jobs:
 
       - name: Coverage
         run: mise run coverage
+
+      - name: Generate SBOMs
+        run: mise run sbom-all
+
+      - name: Upload SBOMs
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: |
+            go60-rgb-editor.cdx.json
+            go60-rgb-editor-web.cdx.json
