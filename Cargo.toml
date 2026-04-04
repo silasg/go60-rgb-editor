@@ -18,7 +18,7 @@ members = [".", "crates/domain", "crates/domain-wasm"]
 
 [dependencies]
 go60-rgb-editor-domain = { path = "crates/domain" }
-ratatui = "0.28"
+ratatui = "0.30"
 crossterm = "0.29"
 color-eyre = "0.6"
 clap = { version = "4.5", features = ["derive"] }
